@@ -29,6 +29,18 @@ class AppColors {
 
   static const borderSoft = Color(0x4CC7C4D7);
 
+  static const borderSlate = Color(0xFFCBD5E1);
+  static const formFieldBg = Color(0xFFF0F3FF);
+  static const placeholder = Color(0xFF6B7280);
+  static const placeholderMuted = Color(0xFF767586);
+  static const dangerAction = Color(0xFFBA1A1A);
+  static const warmInk = Color(0xFF2A1700);
+
+  static const successSoft = Color(0xFFC8E6C9);
+  static const successInk = Color(0xFF1B5E20);
+  static const dangerSoft = Color(0xFFFFDAD6);
+  static const dangerInk = Color(0xFF93000A);
+
   static const shadowSoft = Color(0x0C000000);
   static const shadowCard = Color(0x19000000);
   static const shadowHairline = Color(0x0F000000);

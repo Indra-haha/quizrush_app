@@ -7,13 +7,11 @@ import '../../services/quiz_service.dart';
 import '../../services/session_service.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/quiz_option_theme.dart';
+import '../../widgets/app_field_decoration.dart';
 import '../../widgets/app_header_bar_with_actions.dart';
+import '../../widgets/app_primary_button.dart';
+import '../../widgets/app_secondary_button.dart';
 import '../../widgets/app_snackbar.dart';
-
-const _fieldBg = Color(0xFFF0F3FF);
-const _placeholder = Color(0xFF6B7280);
-const _questionCardBg = Color(0xFFE7EEFF);
-const _danger = Color(0xFFBA1A1A);
 
 const _durations = [1.5, 2.0, 3.0, 5.0];
 
@@ -156,31 +154,12 @@ class _CreateQuizPageState extends State<CreateQuizPage> {
           icon: const Icon(Icons.arrow_back),
         ),
         actions: [
-          FilledButton(
-            onPressed: _saving ? null : _save,
-            style: FilledButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              foregroundColor: Colors.white,
-              disabledBackgroundColor: AppColors.primary.withValues(alpha: 0.6),
-              shape: const StadiumBorder(),
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-            ),
-            child: _saving
-                ? const SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: Colors.white,
-                    ),
-                  )
-                : Text(
-                    'Simpan Quiz',
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
+          AppPrimaryButton(
+            label: 'Simpan Quiz',
+            onPressed: _save,
+            loading: _saving,
+            radius: 9999,
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
           ),
         ],
       ),
@@ -222,38 +201,6 @@ class _CreateQuizPageState extends State<CreateQuizPage> {
     );
   }
 
-  InputDecoration _fieldDecoration({
-    required String hint,
-    required double radius,
-    TextStyle? hintStyle,
-  }) {
-    return InputDecoration(
-      hintText: hint,
-      hintStyle:
-          hintStyle ??
-          GoogleFonts.montserrat(
-            fontSize: 16,
-            fontWeight: FontWeight.w700,
-            color: _placeholder,
-          ),
-      filled: true,
-      fillColor: _fieldBg,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(radius),
-        borderSide: const BorderSide(color: AppColors.border, width: 2),
-      ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(radius),
-        borderSide: const BorderSide(color: AppColors.border, width: 2),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(radius),
-        borderSide: const BorderSide(color: AppColors.primary, width: 2),
-      ),
-    );
-  }
-
   Widget _buildTitleField() {
     return TextField(
       controller: _titleController,
@@ -262,10 +209,10 @@ class _CreateQuizPageState extends State<CreateQuizPage> {
         fontWeight: FontWeight.w700,
         color: AppColors.ink,
       ),
-      decoration: _fieldDecoration(
+      decoration: const AppFieldDecoration.bordered(
         hint: 'Masukkan judul yang menarik...',
         radius: 32,
-      ),
+      ).build(),
     );
   }
 
@@ -279,10 +226,9 @@ class _CreateQuizPageState extends State<CreateQuizPage> {
         fontWeight: FontWeight.w500,
         color: AppColors.ink,
       ),
-      decoration: _fieldDecoration(
+      decoration: const AppFieldDecoration.bordered(
         hint: 'Masukkan deskripsi yang menarik...',
-        radius: 19,
-      ),
+      ).build(),
     );
   }
 
@@ -292,7 +238,7 @@ class _CreateQuizPageState extends State<CreateQuizPage> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: _questionCardBg,
+        color: AppColors.heroBg,
         borderRadius: BorderRadius.circular(32),
         border: Border.all(color: Colors.white, width: 2),
       ),
@@ -329,7 +275,7 @@ class _CreateQuizPageState extends State<CreateQuizPage> {
                   style: GoogleFonts.plusJakartaSans(
                     fontSize: 14,
                     fontWeight: FontWeight.w700,
-                    color: _danger,
+                    color: AppColors.dangerAction,
                   ),
                 ),
               ),
@@ -345,15 +291,14 @@ class _CreateQuizPageState extends State<CreateQuizPage> {
               fontWeight: FontWeight.w500,
               color: AppColors.ink,
             ),
-            decoration: _fieldDecoration(
+            decoration: const AppFieldDecoration.bordered(
               hint: 'Tuliskan pertanyaan Anda di sini...',
-              radius: 19,
-              hintStyle: GoogleFonts.plusJakartaSans(
+              hintStyle: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w500,
-                color: const Color(0xFF767586),
+                color: AppColors.placeholderMuted,
               ),
-            ),
+            ).build(),
           ),
           const SizedBox(height: 16),
           for (var i = 0; i < optionThemes.length; i++) ...[
@@ -441,7 +386,7 @@ class _CreateQuizPageState extends State<CreateQuizPage> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 decoration: BoxDecoration(
-                  color: _fieldBg,
+                  color: AppColors.formFieldBg,
                   borderRadius: BorderRadius.circular(19),
                   border: Border.all(color: AppColors.border, width: 2),
                 ),
@@ -487,15 +432,14 @@ class _CreateQuizPageState extends State<CreateQuizPage> {
                   fontWeight: FontWeight.w600,
                   color: AppColors.ink,
                 ),
-                decoration: _fieldDecoration(
+                decoration: const AppFieldDecoration.bordered(
                   hint: '20',
-                  radius: 19,
-                  hintStyle: GoogleFonts.plusJakartaSans(
+                  hintStyle: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
-                    color: _placeholder,
+                    color: AppColors.placeholder,
                   ),
-                ),
+                ).build(),
               ),
             ],
           ),
@@ -505,42 +449,10 @@ class _CreateQuizPageState extends State<CreateQuizPage> {
   }
 
   Widget _buildAddQuestionButton() {
-    return OutlinedButton(
+    return AppSecondaryButton(
+      label: 'Tambah Pertanyaan',
+      icon: Icons.add,
       onPressed: _addQuestion,
-      style: OutlinedButton.styleFrom(
-        backgroundColor: AppColors.cardBg,
-        side: const BorderSide(color: AppColors.border, width: 4),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(32)),
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            width: 48,
-            height: 48,
-            decoration: const BoxDecoration(
-              color: AppColors.highlight,
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(Icons.add, color: Colors.white),
-          ),
-          const SizedBox(width: 12),
-          Flexible(
-            child: FittedBox(
-              fit: BoxFit.scaleDown,
-              child: Text(
-                'Tambah Pertanyaan',
-                style: GoogleFonts.montserrat(
-                  fontSize: 24,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.primary,
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
     );
   }
 

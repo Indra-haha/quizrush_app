@@ -1,7 +1,6 @@
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../../models/quiz.dart';
 import '../../models/room.dart';
@@ -9,6 +8,9 @@ import '../../services/api_client.dart';
 import '../../services/room_service.dart';
 import '../../services/session_service.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/app_field_decoration.dart';
+import '../../widgets/app_inline_error.dart';
+import '../../widgets/app_primary_button.dart';
 
 Future<Room?> showCreateRoomSheet(BuildContext context, List<Quizes> quarantine) {
   return showModalBottomSheet<Room>(
@@ -170,41 +172,15 @@ class _CreateRoomSheetState extends State<CreateRoomSheet> {
             ),
             if (_error != null) ...[
               const SizedBox(height: 12),
-              Text(
-                _error!,
-                style: const TextStyle(
-                  color: Colors.redAccent,
-                  fontSize: 12,
-                ),
-              ),
+              AppInlineError(message: _error!),
             ],
             const SizedBox(height: 20),
-            SizedBox(
-              height: 48,
-              child: ElevatedButton(
-                onPressed: _canSubmit ? _submit : null,
-                style: ElevatedButton.styleFrom(
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(9999),
-                  ),
-                ),
-                child: _submitting
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.white,
-                        ),
-                      )
-                    : Text(
-                        'Kirim',
-                        style: GoogleFonts.montserrat(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-              ),
+            AppPrimaryButton(
+              label: 'Kirim',
+              onPressed: _canSubmit ? _submit : null,
+              loading: _submitting,
+              radius: 9999,
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
             ),
           ],
         ),
@@ -213,19 +189,6 @@ class _CreateRoomSheetState extends State<CreateRoomSheet> {
   }
 
   InputDecoration _inputDecoration(String label) {
-    return InputDecoration(
-      labelText: label,
-      filled: true,
-      fillColor: AppColors.lineLight,
-      labelStyle: GoogleFonts.plusJakartaSans(
-        color: AppColors.muted,
-        fontSize: 12,
-        fontWeight: FontWeight.w600,
-      ),
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide.none,
-      ),
-    );
+    return AppFieldDecoration.filled(label: label).build();
   }
 }
