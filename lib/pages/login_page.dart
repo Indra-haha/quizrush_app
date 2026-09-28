@@ -6,9 +6,9 @@ import '../services/api_client.dart';
 import '../services/auth_service.dart';
 import '../services/session_service.dart';
 import '../theme/app_theme.dart';
-import '../components/app_loading_indicator.dart';
+import '../widgets/app_loading_indicator.dart';
 import '../widgets/app_snackbar.dart';
-import '../components/app_text_field.dart';
+import '../widgets/app_text_field.dart';
 import 'button.dart';
 import 'regis_page.dart';
 

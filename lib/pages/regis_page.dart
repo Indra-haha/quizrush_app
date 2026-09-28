@@ -5,9 +5,9 @@ import 'package:numerus/utils/format.dart';
 import '../services/api_client.dart';
 import '../services/auth_service.dart';
 import '../theme/app_theme.dart';
-import '../components/app_loading_indicator.dart';
+import '../widgets/app_loading_indicator.dart';
 import '../widgets/app_snackbar.dart';
-import '../components/app_text_field.dart';
+import '../widgets/app_text_field.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
