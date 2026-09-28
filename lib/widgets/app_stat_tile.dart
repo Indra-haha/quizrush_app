@@ -13,7 +13,12 @@ class AppStatTile extends StatelessWidget {
   final String value;
   final String label;
   final Color? iconBackground;
+  final Color? background;
+  final Color? foreground;
+  final Color? borderColor;
+  final double fontSize;
   final bool onDarkSurface;
+  final bool compact;
 
   const AppStatTile.stacked({
     super.key,
@@ -21,7 +26,12 @@ class AppStatTile extends StatelessWidget {
     required this.value,
     required this.label,
     this.onDarkSurface = true,
-  }) : iconBackground = null;
+  }) : iconBackground = null,
+       background = null,
+       foreground = null,
+       borderColor = null,
+       fontSize = 16,
+       compact = false;
 
   const AppStatTile.detailed({
     super.key,
@@ -30,10 +40,64 @@ class AppStatTile extends StatelessWidget {
     required this.label,
     required Color iconBg,
   }) : onDarkSurface = false,
-       iconBackground = iconBg;
+       iconBackground = iconBg,
+       background = null,
+       foreground = null,
+       borderColor = null,
+       fontSize = 16,
+       compact = false;
+
+  /// Kotak nilai kecil bergaya netral atau hangat, tanpa label bawah dan tanpa
+  /// ikon, dipakai pada header halaman test quiz ("Max 20 pts", total skor).
+  const AppStatTile.compact({
+    super.key,
+    required this.value,
+    required Color bg,
+    required Color fg,
+    this.fontSize = 16,
+    this.borderColor,
+  }) : icon = Icons.abc,
+       label = '',
+       iconBackground = null,
+       background = bg,
+       foreground = fg,
+       onDarkSurface = false,
+       compact = true;
 
   @override
   Widget build(BuildContext context) {
+    if (compact) {
+      return Container(
+        height: 40,
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        decoration: BoxDecoration(
+          color: background,
+          borderRadius: BorderRadius.circular(8),
+          border: borderColor == null
+              ? null
+              : Border.all(color: borderColor!),
+          boxShadow: const [
+            BoxShadow(
+              color: AppColors.shadowSoft,
+              blurRadius: 2,
+              offset: Offset(0, 1),
+            ),
+          ],
+        ),
+        child: Center(
+          child: Text(
+            value,
+            style: GoogleFonts.montserrat(
+              color: foreground,
+              fontSize: fontSize,
+              fontWeight: FontWeight.w700,
+              height: 1,
+            ),
+          ),
+        ),
+      );
+    }
+
     return Container(
       padding: onDarkSurface
           ? const EdgeInsets.symmetric(vertical: 12, horizontal: 8)

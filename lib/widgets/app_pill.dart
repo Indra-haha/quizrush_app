@@ -10,6 +10,8 @@ import '../theme/quiz_status.dart';
 /// halaman: pil status room, badge jumlah, dan badge room yang difokuskan.
 class AppPill extends StatelessWidget {
   final String text;
+  final String? trailingText;
+  final Color? trailingColor;
   final Color background;
   final Color foreground;
   final Color? border;
@@ -23,6 +25,8 @@ class AppPill extends StatelessWidget {
   const AppPill({
     super.key,
     required this.text,
+    this.trailingText,
+    this.trailingColor,
     required this.background,
     required this.foreground,
     this.border,
@@ -94,6 +98,18 @@ class AppPill extends StatelessWidget {
               ),
             ),
           ),
+          if (trailingText != null)
+            Text(
+              trailingText!,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: GoogleFonts.plusJakartaSans(
+                color: trailingColor ?? foreground,
+                fontSize: fontSize,
+                fontWeight: fontWeight,
+                height: 1.33,
+              ),
+            ),
         ],
       ),
     );
