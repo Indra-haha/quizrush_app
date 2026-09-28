@@ -9,21 +9,18 @@ import '../../services/room_service.dart';
 import '../../services/session_service.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/quiz_option_theme.dart';
-import '../../theme/quiz_status.dart';
 import '../../utils/format.dart';
 import '../../widgets/app_header_bar_with_actions.dart';
+import '../../widgets/app_pill.dart';
+import '../../widgets/app_primary_button.dart';
 import '../../widgets/app_snackbar.dart';
+import '../../widgets/app_stat_tile.dart';
 import '../../widgets/empty_state_view.dart';
 import '../../widgets/error_state_view.dart';
 import '../../widgets/section_header.dart';
-import '../../components/status_badge.dart';
 import '../login_page.dart';
 
 const _statusFlow = ['waiting', 'open', 'in-Game', 'ended'];
-const _heroBg = Color(0xFFE7EEFF);
-const _optionBg = Color(0xFFF0F3FF);
-const _ptsColor = Color(0xFF825100);
-const _purpleBadge = Color(0xFF8455EF);
 final _optionColors = [
   optionThemes[1].dot,
   optionThemes[2].dot,
@@ -492,17 +489,17 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
       width: double.infinity,
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: _heroBg,
+        color: AppColors.heroBg,
         borderRadius: BorderRadius.circular(32),
         boxShadow: const [
           BoxShadow(
-            color: Color(0x19000000),
+            color: AppColors.shadowCard,
             blurRadius: 4,
             offset: Offset(0, 2),
             spreadRadius: -2,
           ),
           BoxShadow(
-            color: Color(0x19000000),
+            color: AppColors.shadowCard,
             blurRadius: 6,
             offset: Offset(0, 4),
             spreadRadius: -1,
@@ -520,7 +517,7 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
             children: [
               if (_room.kode.isNotEmpty)
                 _pill(
-                  color: _purpleBadge,
+                  color: AppColors.badgePurple,
                   textColor: Colors.white,
                   text: _room.kode,
                 ),
@@ -542,16 +539,16 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
             ),
           ],
           const SizedBox(height: 20),
-          _statTile(
+          AppStatTile.detailed(
             icon: Icons.list_alt,
-            iconBg: const Color(0xFFE1E0FF),
+            iconBg: AppColors.softLavender,
             value: '${quiz.questions.length}',
             label: 'Total Pertanyaan',
           ),
           const SizedBox(height: 8),
-          _statTile(
+          AppStatTile.detailed(
             icon: Icons.timer_outlined,
-            iconBg: const Color(0xFFFFDDB8),
+            iconBg: AppColors.warmSurface,
             value: formatDuration(totalDuration(quiz)),
             label: 'Durasi Kuis',
           ),
@@ -565,118 +562,16 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
     required Color textColor,
     required String text,
   }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(9999),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x0C000000),
-            blurRadius: 2,
-            offset: Offset(0, 1),
-          ),
-        ],
-      ),
-      child: Text(
-        text,
-        style: GoogleFonts.plusJakartaSans(
-          color: textColor,
-          fontSize: 12,
-          fontWeight: FontWeight.w600,
-          height: 1.33,
-        ),
-      ),
+    return AppPill(
+      text: text,
+      background: color,
+      foreground: textColor,
+      elevated: true,
     );
   }
 
   Widget _statusPill() {
-    final dot = StatusBadge.dotColor(_room.status);
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(9999),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x0C000000),
-            blurRadius: 2,
-            offset: Offset(0, 1),
-          ),
-        ],
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 8,
-            height: 8,
-            decoration: BoxDecoration(color: dot, shape: BoxShape.circle),
-          ),
-          const SizedBox(width: 4),
-          Text(
-            QuizStatus.labelOf(_room.status),
-            style: GoogleFonts.plusJakartaSans(
-              color: AppColors.brandDeep,
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              height: 1.33,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _statTile({
-    required IconData icon,
-    required Color iconBg,
-    required String value,
-    required String label,
-  }) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x0C000000),
-            blurRadius: 2,
-            offset: Offset(0, 1),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: iconBg,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(icon, size: 20, color: AppColors.ink),
-          ),
-          const SizedBox(width: 12),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                value,
-                style: GoogleFonts.montserrat(
-                  color: AppColors.ink,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                  height: 1.33,
-                ),
-              ),
-              Text(label, style: AppTextStyles.bodyMeta),
-            ],
-          ),
-        ],
-      ),
-    );
+    return AppPill.roomStatus(_room.status);
   }
 
   Widget _questionCard(QuizQuestion q, int index) {
@@ -688,13 +583,13 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
         borderRadius: BorderRadius.circular(32),
         boxShadow: const [
           BoxShadow(
-            color: Color(0x19000000),
+            color: AppColors.shadowCard,
             blurRadius: 4,
             offset: Offset(0, 2),
             spreadRadius: -2,
           ),
           BoxShadow(
-            color: Color(0x19000000),
+            color: AppColors.shadowCard,
             blurRadius: 6,
             offset: Offset(0, 4),
             spreadRadius: -1,
@@ -713,7 +608,7 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
               ),
               const SizedBox(width: 8),
               _pill(
-                color: _heroBg,
+                color: AppColors.heroBg,
                 textColor: AppColors.muted,
                 text: formatQDuration(q.duration),
               ),
@@ -721,7 +616,7 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
               Text(
                 '${q.skor} Pts',
                 style: GoogleFonts.plusJakartaSans(
-                  color: _ptsColor,
+                  color: AppColors.ptsInk,
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
                   height: 1.33,
@@ -754,10 +649,10 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
       width: double.infinity,
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: _optionBg,
+        color: AppColors.optionBg,
         boxShadow: const [
           BoxShadow(
-            color: Color(0x0C000000),
+            color: AppColors.shadowSoft,
             blurRadius: 2,
             offset: Offset(0, 1),
           ),
@@ -806,7 +701,7 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
 
   Widget _loadMoreButton(int total, int remaining) {
     return Material(
-      color: _heroBg,
+      color: AppColors.heroBg,
       borderRadius: BorderRadius.circular(32),
       child: InkWell(
         borderRadius: BorderRadius.circular(32),
@@ -818,7 +713,7 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
             borderRadius: BorderRadius.circular(32),
             boxShadow: const [
               BoxShadow(
-                color: Color(0x0C000000),
+                color: AppColors.shadowSoft,
                 blurRadius: 2,
                 offset: Offset(0, 1),
               ),
@@ -842,44 +737,15 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
   Widget _publishButton() {
     final meta = _publishMeta;
     final disabled = _nextStatus == null;
-    final fg = disabled ? AppColors.neutral : Colors.white;
     return SizedBox(
       width: double.infinity,
-      child: FilledButton(
-        onPressed: _publishing || disabled ? null : _publish,
-        style: FilledButton.styleFrom(
-          backgroundColor: AppColors.primary,
-          disabledBackgroundColor: AppColors.neutralBorder,
-          padding: const EdgeInsets.symmetric(vertical: 14),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
-          ),
-        ),
-        child: _publishing
-            ? const SizedBox(
-                width: 22,
-                height: 22,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2.4,
-                  color: Colors.white,
-                ),
-              )
-            : Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(meta.$2, size: 18, color: fg),
-                  const SizedBox(width: 8),
-                  Text(
-                    meta.$1,
-                    style: GoogleFonts.plusJakartaSans(
-                      color: fg,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w700,
-                      height: 1.43,
-                    ),
-                  ),
-                ],
-              ),
+      child: AppPrimaryButton(
+        label: meta.$1,
+        icon: meta.$2,
+        loading: _publishing,
+        radius: 14,
+        padding: const EdgeInsets.symmetric(vertical: 14),
+        onPressed: disabled ? null : _publish,
       ),
     );
   }

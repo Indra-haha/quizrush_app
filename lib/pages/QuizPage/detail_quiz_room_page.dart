@@ -6,7 +6,11 @@ import '../../theme/app_theme.dart';
 import '../../theme/quiz_status.dart';
 import '../../utils/format.dart';
 import '../../widgets/app_header_bar.dart';
+import '../../widgets/app_hero_card.dart';
+import '../../widgets/app_pill.dart';
+import '../../widgets/app_primary_button.dart';
 import '../../widgets/app_snackbar.dart';
+import '../../widgets/app_stat_tile.dart';
 import '../../widgets/empty_state_view.dart';
 
 class DetailQuizRoomPage extends StatelessWidget {
@@ -63,151 +67,60 @@ class DetailQuizRoomPage extends StatelessWidget {
     final status = _quizStatus(quiz);
     final info = _statusInfo(status);
 
-    return Container(
-      width: double.infinity,
-      clipBehavior: Clip.antiAlias,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(32),
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFF6063EE), Color(0xFF4648D4)],
-        ),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x144648D4),
-            blurRadius: 24,
-            offset: Offset(0, 8),
-          ),
-        ],
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(children: [_heroStatusPill(info.color)]),
-            const SizedBox(height: 16),
-            Text(
-              quiz.title,
-              style: AppTextStyles.heading1.copyWith(color: Colors.white),
-            ),
-            if (quiz.description.isNotEmpty) ...[
-              const SizedBox(height: 8),
-              Text(
-                quiz.description,
-                style: GoogleFonts.plusJakartaSans(
-                  color: Colors.white.withValues(alpha: 0.80),
-                  fontSize: 14,
-                  fontWeight: FontWeight.w400,
-                  height: 1.50,
-                ),
+    return AppHeroCard(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              AppPill(
+                text: info.label,
+                background: Colors.white.withValues(alpha: 0.90),
+                foreground: AppColors.primary,
+                dot: info.color,
+                fontWeight: FontWeight.w600,
               ),
             ],
-            const SizedBox(height: 20),
-            IntrinsicHeight(
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Expanded(
-                    child: _statTile(
-                      icon: Icons.timer_outlined,
-                      value: formatDuration(totalDuration(quiz)),
-                      label: 'Durasi',
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: _statTile(
-                      icon: Icons.list_alt,
-                      value: '${quiz.questions.length}',
-                      label: 'Pertanyaan',
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: _statTile(
-                      icon: Icons.checklist_rtl,
-                      value: 'Pilihan Ganda',
-                      label: 'Tipe',
-                    ),
-                  ),
-                ],
-              ),
-            ),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            quiz.title,
+            style: AppTextStyles.heading1.copyWith(color: Colors.white),
+          ),
+          if (quiz.description.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            AppHeroSubtitle(quiz.description, fontSize: 14),
           ],
-        ),
-      ),
-    );
-  }
-
-  Widget _heroStatusPill(Color dotColor) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.90),
-        borderRadius: BorderRadius.circular(9999),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 8,
-            height: 8,
-            decoration: BoxDecoration(color: dotColor, shape: BoxShape.circle),
-          ),
-          const SizedBox(width: 4),
-          Text(
-            _statusInfo(_quizStatus(quiz)).label,
-            style: GoogleFonts.plusJakartaSans(
-              color: AppColors.primary,
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              height: 1.33,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _statTile({
-    required IconData icon,
-    required String value,
-    required String label,
-  }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.16),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, color: Colors.white, size: 18),
-          const SizedBox(height: 6),
-          Text(
-            value,
-            textAlign: TextAlign.center,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: GoogleFonts.montserrat(
-              color: Colors.white,
-              fontSize: 14,
-              fontWeight: FontWeight.w700,
-              height: 1.20,
-            ),
-          ),
-          const SizedBox(height: 2),
-          Text(
-            label,
-            textAlign: TextAlign.center,
-            style: GoogleFonts.plusJakartaSans(
-              color: Colors.white.withValues(alpha: 0.80),
-              fontSize: 10,
-              fontWeight: FontWeight.w600,
-              height: 1.33,
+          const SizedBox(height: 20),
+          IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Expanded(
+                  child: AppStatTile.stacked(
+                    icon: Icons.timer_outlined,
+                    value: formatDuration(totalDuration(quiz)),
+                    label: 'Durasi',
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: AppStatTile.stacked(
+                    icon: Icons.list_alt,
+                    value: '${quiz.questions.length}',
+                    label: 'Pertanyaan',
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: AppStatTile.stacked(
+                    icon: Icons.checklist_rtl,
+                    value: 'Pilihan Ganda',
+                    label: 'Tipe',
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -226,21 +139,11 @@ class DetailQuizRoomPage extends StatelessWidget {
               style: AppTextStyles.heading1.copyWith(fontSize: 24),
             ),
             const SizedBox(width: 8),
-            Container(
+            AppPill(
+              text: '$count Room',
+              background: AppColors.softLavender,
+              foreground: AppColors.inkStrong,
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: const Color(0xFFE1E0FF),
-                borderRadius: BorderRadius.circular(9999),
-              ),
-              child: Text(
-                '$count Room',
-                style: GoogleFonts.plusJakartaSans(
-                  color: const Color(0xFF07006C),
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  height: 1.33,
-                ),
-              ),
             ),
           ],
         ),
@@ -276,7 +179,7 @@ class DetailQuizRoomPage extends StatelessWidget {
             : null,
         boxShadow: const [
           BoxShadow(
-            color: Color(0x0F000000),
+            color: AppColors.shadowHairline,
             blurRadius: 20,
             offset: Offset(0, 8),
           ),
@@ -313,7 +216,12 @@ class DetailQuizRoomPage extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           if (isFocused) ...[
-            _focusBadge(),
+            const AppPill(
+              text: 'Room dari PIN yang kamu masukkan',
+              background: AppColors.softLavender,
+              foreground: AppColors.inkStrong,
+              icon: Icons.pin,
+            ),
             const SizedBox(height: 12),
           ],
           Text(
@@ -341,7 +249,7 @@ class DetailQuizRoomPage extends StatelessWidget {
           Container(
             padding: const EdgeInsets.fromLTRB(12, 16, 12, 12),
             decoration: BoxDecoration(
-              color: const Color(0xFFF0F3FF),
+              color: AppColors.optionBg,
               borderRadius: BorderRadius.circular(16),
             ),
             child: Row(
@@ -367,55 +275,17 @@ class DetailQuizRoomPage extends StatelessWidget {
                 if (room.status == 'open')
                   SizedBox(
                     height: 44,
-                    child: FilledButton(
+                    child: AppPrimaryButton(
+                      label: 'Masuk',
+                      radius: 12,
+                      padding: const EdgeInsets.symmetric(horizontal: 24),
                       onPressed: () => AppSnackBar.show(
                         context,
                         'Join Room ${room.kode} — fitur join menyusul.',
                       ),
-                      style: FilledButton.styleFrom(
-                        backgroundColor: AppColors.primary,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        padding: const EdgeInsets.symmetric(horizontal: 24),
-                      ),
-                      child: Text(
-                        'Masuk',
-                        style: GoogleFonts.plusJakartaSans(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w700,
-                          height: 1.43,
-                        ),
-                      ),
                     ),
                   ),
               ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _focusBadge() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: const Color(0xFFE1E0FF),
-        borderRadius: BorderRadius.circular(9999),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Icon(Icons.pin, size: 14, color: AppColors.primary),
-          const SizedBox(width: 4),
-          Text(
-            'Room dari PIN yang kamu masukkan',
-            style: GoogleFonts.plusJakartaSans(
-              color: const Color(0xFF07006C),
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              height: 1.33,
             ),
           ),
         ],
@@ -428,7 +298,6 @@ class DetailQuizRoomPage extends StatelessWidget {
       padding: EdgeInsets.symmetric(vertical: 32),
       child: EmptyStateView(
         icon: Icons.meeting_room_outlined,
-        iconColor: AppColors.neutral,
         message: 'Belum ada room untuk kuis ini.',
       ),
     );
@@ -447,41 +316,13 @@ class DetailQuizRoomPage extends StatelessWidget {
     return '';
   }
 
+  /// Label, warna teks, dan warna latar dari satu palet status bersama.
   ({String label, Color color, Color bg}) _statusInfo(String status) {
+    final palette = QuizStatus.palette(status);
     return (
       label: QuizStatus.labelOf(status),
-      color: _statusColor(status),
-      bg: _statusBg(status),
+      color: palette.fg,
+      bg: palette.bg,
     );
-  }
-
-  Color _statusColor(String status) {
-    switch (status) {
-      case 'open':
-        return const Color(0xFF6B38D4);
-      case 'in-Game':
-        return AppColors.warningDark;
-      case 'ended':
-        return AppColors.neutralDark;
-      case 'waiting':
-        return AppColors.muted;
-      default:
-        return AppColors.brandDeep;
-    }
-  }
-
-  Color _statusBg(String status) {
-    switch (status) {
-      case 'open':
-        return const Color(0xFFE9DDFF);
-      case 'in-Game':
-        return AppColors.warningBg;
-      case 'ended':
-        return AppColors.neutralBg;
-      case 'waiting':
-        return AppColors.softBg;
-      default:
-        return const Color(0xFFE1E0FF);
-    }
   }
 }

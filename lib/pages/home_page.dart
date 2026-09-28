@@ -13,6 +13,7 @@ import '../utils/format.dart';
 import '../widgets/app_header_bar_with_actions.dart';
 import '../widgets/app_pill_button.dart';
 import '../widgets/app_snackbar.dart';
+import '../widgets/cache_info_bar.dart';
 import '../widgets/empty_state_view.dart';
 import '../widgets/error_state_view.dart';
 import '../widgets/quiz_card.dart';
@@ -264,32 +265,11 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildCacheInfo() {
-    final savedAt = _index?.savedAt;
-    if (savedAt == null) return const SizedBox.shrink();
-
     return Padding(
       padding: const EdgeInsets.only(top: 20),
-      child: Row(
-        children: [
-          const Icon(
-            Icons.offline_bolt_outlined,
-            size: 12,
-            color: AppColors.neutral,
-          ),
-          const SizedBox(width: 4),
-          Expanded(
-            child: Text(
-              'Daftar ini dari cache perangkat. Terakhir diperbarui '
-              '${relativeTime(savedAt.toIso8601String())}.',
-              style: GoogleFonts.plusJakartaSans(
-                color: AppColors.neutral,
-                fontSize: 11,
-                fontWeight: FontWeight.w500,
-                height: 1.36,
-              ),
-            ),
-          ),
-        ],
+      child: CacheInfoBar(
+        savedAt: _index?.savedAt,
+        savedAtLabel: 'Daftar ini dari cache perangkat. Terakhir diperbarui',
       ),
     );
   }
@@ -433,25 +413,14 @@ class _HomePageState extends State<HomePage> {
   Widget _buildError() {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 48),
-      child: ErrorStateView(
-        message: _error!,
-        onRetry: _sync,
-        buttonColor: AppColors.highlight,
-        messageStyle: GoogleFonts.plusJakartaSans(
-          fontSize: 14,
-          color: AppColors.muted,
-        ),
-      ),
+      child: ErrorStateView(message: _error!, onRetry: _sync),
     );
   }
 
   Widget _buildEmpty() {
     return const Padding(
       padding: EdgeInsets.symmetric(vertical: 48),
-      child: EmptyStateView(
-        icon: Icons.quiz_outlined,
-        message: 'Belum ada quiz untukmu.',
-      ),
+      child: EmptyStateView.empty(message: 'Belum ada quiz untukmu.'),
     );
   }
 }

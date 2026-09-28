@@ -10,13 +10,12 @@ import '../../services/quiz_index.dart';
 import '../../services/quiz_service.dart';
 import '../../services/session_service.dart';
 import '../../theme/app_theme.dart';
-import '../../theme/quiz_status.dart';
-import '../../utils/format.dart';
+import '../../widgets/cache_info_bar.dart';
 import '../../widgets/empty_state_view.dart';
 import '../../widgets/error_state_view.dart';
 import '../../widgets/quiz_card.dart';
 import '../../widgets/section_header.dart';
-import '../../widgets/status_filter_chip.dart';
+import '../../widgets/status_filter_row.dart';
 import '../login_page.dart';
 import 'detail_quiz_room_page.dart';
 
@@ -229,22 +228,19 @@ class _QuizPageState extends State<QuizPage> {
             const SizedBox(height: 8),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: _buildCacheInfo(),
+              child: CacheInfoBar(
+                savedAt: _index?.savedAt,
+                pinProgress: _pinProgress,
+              ),
             ),
             const SizedBox(height: 8),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Row(
-                children: [
-                  for (final status in _statuses) ...[
-                    if (status != _statuses.first) const SizedBox(width: 8),
-                    StatusFilterChip(
-                      label: QuizStatus.labelOf(status),
-                      selected: _selectedStatus == status,
-                      onTap: () => setState(() => _selectedStatus = status),
-                    ),
-                  ],
-                ],
+              child: StatusFilterRow(
+                statuses: _statuses,
+                selected: _selectedStatus,
+                onChanged: (status) =>
+                    setState(() => _selectedStatus = status),
               ),
             ),
             const SizedBox(height: 8),
@@ -252,58 +248,6 @@ class _QuizPageState extends State<QuizPage> {
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildCacheInfo() {
-    final progress = _pinProgress;
-    if (progress != null) {
-      return Row(
-        children: [
-          const Icon(Icons.pin_outlined, size: 12, color: AppColors.neutral),
-          const SizedBox(width: 4),
-          Expanded(
-            child: Text(
-              'PIN room: $progress dari 6 digit.',
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: GoogleFonts.plusJakartaSans(
-                color: AppColors.neutral,
-                fontSize: 11,
-                fontWeight: FontWeight.w500,
-                height: 1.36,
-              ),
-            ),
-          ),
-        ],
-      );
-    }
-
-    final savedAt = _index?.savedAt;
-    if (savedAt == null) return const SizedBox.shrink();
-
-    return Row(
-      children: [
-        const Icon(
-          Icons.offline_bolt_outlined,
-          size: 12,
-          color: AppColors.neutral,
-        ),
-        const SizedBox(width: 4),
-        Expanded(
-          child: Text(
-            'Dari cache perangkat. Terakhir diperbarui ${relativeTime(savedAt.toIso8601String())}.',
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: GoogleFonts.plusJakartaSans(
-              color: AppColors.neutral,
-              fontSize: 11,
-              fontWeight: FontWeight.w500,
-              height: 1.36,
-            ),
-          ),
-        ),
-      ],
     );
   }
 
@@ -379,20 +323,16 @@ class _QuizPageState extends State<QuizPage> {
       return ErrorStateView(message: _error!, onRetry: _sync);
     }
 
-    if (_notFound) return _buildNotFound();
+    if (_notFound) return const EmptyStateView.notFound();
     final progress = _pinProgress;
-    if (progress != null) return _buildSearching(progress);
+    if (progress != null) return EmptyStateView.searching(progress);
 
     final quizzes = _selectedQuizzes;
 
     if (quizzes.isEmpty) {
       final query = _searchController.text.trim();
-      return EmptyStateView(
-        icon: query.isEmpty ? Icons.quiz_outlined : Icons.search_off,
-        message: query.isEmpty
-            ? 'Belum ada quiz.'
-            : 'Tidak ada hasil untuk "$query".',
-      );
+      if (query.isEmpty) return const EmptyStateView.empty();
+      return EmptyStateView.noResult(query);
     }
 
     return ListView(
@@ -403,54 +343,6 @@ class _QuizPageState extends State<QuizPage> {
           QuizCard(quiz: quizzes[i], onTap: () => _openRooms(quizzes[i])),
         ],
       ],
-    );
-  }
-
-  /// Muncul selama PIN belum lengkap, jadi daftar tidak ikut terfilter angka.
-  Widget _buildSearching(int progress) {
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const SizedBox(
-            width: 22,
-            height: 22,
-            child: CircularProgressIndicator(strokeWidth: 2.4),
-          ),
-          const SizedBox(height: 14),
-          Text(
-            'Sedang mencari room',
-            style: GoogleFonts.plusJakartaSans(
-              color: AppColors.ink,
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            '$progress dari 6 digit',
-            style: GoogleFonts.plusJakartaSans(
-              color: AppColors.neutral,
-              fontSize: 11,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildNotFound() {
-    return EmptyStateView(
-      icon: Icons.pin_outlined,
-      iconColor: AppColors.neutral,
-      message: 'Room tidak ditemukan.\nTekan refresh bila room baru dibuat.',
-      messageStyle: GoogleFonts.plusJakartaSans(
-        color: AppColors.ink,
-        fontSize: 14,
-        fontWeight: FontWeight.w600,
-        height: 1.5,
-      ),
     );
   }
 }
