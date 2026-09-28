@@ -95,7 +95,7 @@ class RoomCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   // Tombol Test
-                  GestureDetector(
+                  if (room.status == "waiting" || room.status == "ended") GestureDetector(
                     onTap: onTestPressed,
                     child: Container(
                       padding: const EdgeInsets.symmetric(
