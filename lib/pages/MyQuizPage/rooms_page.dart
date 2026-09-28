@@ -1,0 +1,201 @@
+import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+
+import '../../models/quiz.dart';
+import '../../models/room.dart' show PublishResult;
+import '../../services/quiz_feed.dart';
+import '../../theme/app_theme.dart';
+import '../../utils/format.dart';
+import '../../widgets/app_header_bar_with_actions.dart';
+import '../../widgets/empty_state_view.dart';
+import '../../widgets/error_state_view.dart';
+import '../../widgets/status_badge.dart';
+import '../login_redirect.dart';
+import 'detail_room_page.dart' show RoomDetailPage;
+
+/// Daftar room milik satu kuis. Data dibaca dari cache; tombol refresh yang
+/// mengisi ulang cache dari server.
+class RoomsPage extends StatefulWidget {
+  final String quizId;
+
+  const RoomsPage({super.key, required this.quizId});
+
+  @override
+  State<RoomsPage> createState() => _RoomsPageState();
+}
+
+class _RoomsPageState extends State<RoomsPage> {
+  Quizes? _quiz;
+  bool _loading = true;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  /// Cache dulu; kalau belum pernah diisi, baru hubungi server.
+  Future<void> _load() async {
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+
+    final cached = await QuizFeed.readCachedQuizById(widget.quizId);
+    if (!mounted) return;
+    if (cached == null) {
+      await _sync();
+      return;
+    }
+    setState(() {
+      _quiz = cached;
+      _loading = false;
+    });
+  }
+
+  Future<void> _sync() async {
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+
+    final result = await QuizFeed.syncMine();
+    if (!mounted) return;
+
+    if (result.needsAuth) {
+      LoginRedirect.go(context);
+      return;
+    }
+
+    final index = result.index;
+    setState(() {
+      _quiz = index?.quizById(widget.quizId);
+      _error = result.error;
+      _loading = false;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final title = _quiz?.title;
+    return Scaffold(
+      appBar: AppHeaderBarWithActions(
+        title: title == null || title.isEmpty ? 'Rooms' : title,
+        actions: [
+          IconButton(
+            tooltip: 'Refresh dari server',
+            onPressed: _loading ? null : _sync,
+            icon: const Icon(Icons.refresh),
+          ),
+        ],
+      ),
+      body: _buildBody(),
+    );
+  }
+
+  Widget _buildBody() {
+    final quiz = _quiz;
+
+    if (quiz == null && _loading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (quiz == null && _error != null) {
+      return ErrorStateView(message: _error!, onRetry: _load);
+    }
+
+    if (quiz == null) {
+      return const EmptyStateView(
+        icon: Icons.quiz_outlined,
+        message: 'Quiz tidak ditemukan.',
+      );
+    }
+
+    final rooms = quiz.rooms;
+
+    if (rooms.isEmpty) {
+      return const EmptyStateView(
+        icon: Icons.meeting_room_outlined,
+        message: 'Belum ada room untuk quiz ini.',
+      );
+    }
+
+    return ListView.separated(
+      padding: const EdgeInsets.all(16),
+      itemCount: rooms.length,
+      separatorBuilder: (_, _) => const SizedBox(height: 8),
+      itemBuilder: (context, index) {
+        final room = rooms[index];
+        return Card(
+          child: InkWell(
+            borderRadius: BorderRadius.circular(12),
+            onTap: () => _openRoom(room),
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      CircleAvatar(
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: Colors.white,
+                        child: Text('${index + 1}'),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          room.kode,
+                          style: GoogleFonts.plusJakartaSans(
+                            color: AppColors.ink,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                            height: 1.33,
+                          ),
+                        ),
+                      ),
+                      if (room.status.isNotEmpty)
+                        StatusBadge(status: room.status, dense: true),
+                    ],
+                  ),
+                  if (quiz.title.isNotEmpty) ...[
+                    const SizedBox(height: 6),
+                    Text(quiz.title, style: AppTextStyles.bodyMeta),
+                  ],
+                  if (room.createdAt.isNotEmpty) ...[
+                    const SizedBox(height: 6),
+                    Text(
+                      relativeTime(room.createdAt),
+                      style: GoogleFonts.plusJakartaSans(
+                        color: AppColors.neutral,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                        height: 1.36,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _openRoom(RoomSummary room) async {
+    final navigator = Navigator.of(context);
+    final result = await navigator.push<PublishResult>(
+      MaterialPageRoute<PublishResult>(
+        builder: (_) => RoomDetailPage(quizId: widget.quizId, room: room),
+      ),
+    );
+    if (!mounted) return;
+    if (result == null) {
+      _load();
+    } else {
+      navigator.pop(result);
+    }
+  }
+}

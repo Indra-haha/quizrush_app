@@ -1,5 +1,10 @@
 import 'quiz.dart';
 
+/// Status room sebelum dan sesudah aksi publish. Dikembalikan dari halaman
+/// detail room ke halaman daftar room supaya pemanggil tahu apa yang berubah,
+/// tanpa harus melakukan request kedua kali.
+typedef PublishResult = ({String previous, String next});
+
 class Room {
   final String id;
   final String quizId;
