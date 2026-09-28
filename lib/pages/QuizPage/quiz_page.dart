@@ -4,11 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../models/quiz.dart';
-import '../../services/api_client.dart';
-import '../../services/quiz_cache_service.dart';
+import '../../services/quiz_feed.dart';
 import '../../services/quiz_index.dart';
-import '../../services/quiz_service.dart';
-import '../../services/session_service.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/cache_info_bar.dart';
 import '../../widgets/empty_state_view.dart';
@@ -16,7 +13,7 @@ import '../../widgets/error_state_view.dart';
 import '../../widgets/quiz_card.dart';
 import '../../widgets/section_header.dart';
 import '../../widgets/status_filter_row.dart';
-import '../login_page.dart';
+import '../login_redirect.dart';
 import 'detail_quiz_room_page.dart';
 
 class QuizPage extends StatefulWidget {
@@ -65,82 +62,35 @@ class _QuizPageState extends State<QuizPage> {
 
   /// Daftar quiz dibaca dari cache lokal; server hanya dihubungi kalau cache
   /// belum pernah diisi.
-  Future<void> _load() async {
-    setState(() {
-      _loading = true;
-      _error = null;
-    });
-
-    final cached = await QuizCacheService.instance.readAll();
-    if (!mounted) return;
-
-    if (cached == null) {
-      await _sync();
-      return;
-    }
-
-    setState(() {
-      _index = QuizIndex.fromCache(cached);
-      _loading = false;
-      _ensureSelectedStatus();
-    });
-  }
+  Future<void> _load() => _run(QuizFeed.loadAll);
 
   /// Dipakai oleh tombol refresh, tombol "Muat dari Server", dan setelah ada
   /// data yang berubah di server.
-  Future<void> _sync() async {
+  Future<void> _sync() => _run(QuizFeed.syncAll);
+
+  Future<void> _run(Future<QuizFeedResult> Function() feed) async {
     if (_syncing) return;
     setState(() {
-      _syncing = true;
       _loading = true;
+      _syncing = true;
       _error = null;
     });
 
-    final token = await SessionService.instance.getToken();
-    if (token == null) {
-      _syncing = false;
-      _goToLogin();
+    final result = await feed();
+    if (!mounted) return;
+
+    if (result.needsAuth) {
+      LoginRedirect.go(context);
       return;
     }
 
-    try {
-      final data = await QuizService.instance.getQuizzes(token);
-      final cache = await QuizCacheService.instance.saveAllQuizzes(data);
-      if (!mounted) return;
-      setState(() {
-        _index = QuizIndex.fromCache(cache);
-        _loading = false;
-        _ensureSelectedStatus();
-      });
-    } on ApiException catch (e) {
-      if (e.statusCode == 401) {
-        await SessionService.instance.clear();
-        _goToLogin();
-        return;
-      }
-      if (!mounted) return;
-      setState(() {
-        _error = e.message;
-        _loading = false;
-      });
-    } catch (e) {
-      debugPrint('Quizzes sync error: $e');
-      if (!mounted) return;
-      setState(() {
-        _error = 'Tidak dapat terhubung ke server. ($e)';
-        _loading = false;
-      });
-    } finally {
-      if (mounted) setState(() => _syncing = false);
-    }
-  }
-
-  void _goToLogin() {
-    if (!mounted) return;
-    Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(builder: (_) => const LoginPage()),
-      (route) => false,
-    );
+    setState(() {
+      _index = result.index ?? _index;
+      _error = result.error;
+      _loading = false;
+      _syncing = false;
+      _ensureSelectedStatus();
+    });
   }
 
   void _ensureSelectedStatus() {

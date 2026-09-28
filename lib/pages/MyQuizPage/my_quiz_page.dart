@@ -4,13 +4,9 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../../models/quiz.dart';
 import '../../models/room.dart';
-import '../../services/api_client.dart';
-import '../../services/quiz_cache_service.dart';
+import '../../services/quiz_feed.dart';
 import '../../services/quiz_index.dart';
-import '../../services/quiz_service.dart';
-import '../../services/session_service.dart';
 import '../../theme/app_theme.dart';
-import '../../theme/quiz_status.dart';
 import '../../utils/format.dart';
 import '../../widgets/app_header_bar_with_actions.dart';
 import '../../widgets/app_pill_button.dart';
@@ -18,11 +14,12 @@ import '../../widgets/app_snackbar.dart';
 import '../../widgets/empty_state_view.dart';
 import '../../widgets/quarantine_card.dart';
 import '../../widgets/room_card.dart';
-import '../../widgets/status_filter_chip.dart';
-import '../login_page.dart';
+import '../../widgets/status_filter_row.dart';
+import '../login_redirect.dart';
 import 'create_room_sheet.dart';
 import 'detail_room_page.dart';
 import 'quiz_test_page.dart';
+import 'rooms_page.dart';
 
 const _statusFilters = ['waiting', 'open', 'in-Game', 'ended'];
 
@@ -156,46 +153,30 @@ class _MyQuizPageState extends State<MyQuizPage> {
     if (_syncing) return;
     setState(() => _syncing = true);
 
-    final token = await SessionService.instance.getToken();
-    if (token == null) {
-      if (mounted) setState(() => _syncing = false);
-      _goToLogin();
+    final result = await QuizFeed.syncMine();
+    if (!mounted) return;
+
+    if (result.needsAuth) {
+      LoginRedirect.go(context);
       return;
     }
-    try {
-      final data = await QuizService.instance.getMyQuizzes(token);
-      final cache = await QuizCacheService.instance.saveMyQuizzes(data);
-      if (!mounted) return;
-      setState(() => _index = QuizIndex.fromCache(cache));
-    } on ApiException catch (e) {
-      if (e.statusCode == 401) {
-        await SessionService.instance.clear();
-        _goToLogin();
-        return;
-      }
-      if (!mounted) return;
-      AppSnackBar.error(context, e.message);
-    } catch (e) {
-      debugPrint('MyQuiz sync error: $e');
-      if (!mounted) return;
-      AppSnackBar.error(context, 'Gagal memuat ulang data.');
-    } finally {
-      if (mounted) setState(() => _syncing = false);
-    }
-  }
 
-  void _goToLogin() {
-    if (!mounted) return;
-    Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(builder: (_) => const LoginPage()),
-      (route) => false,
-    );
+    final index = result.index;
+    if (index != null) {
+      setState(() {
+        _syncing = false;
+        _index = index;
+      });
+      return;
+    }
+    setState(() => _syncing = false);
+    AppSnackBar.error(context, result.error ?? 'Gagal memuat ulang data.');
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF9F9FF),
+      backgroundColor: AppColors.cardBg,
       appBar: AppHeaderBarWithActions(
         title: 'Quiz Saya',
         leading: IconButton(
@@ -235,17 +216,10 @@ class _MyQuizPageState extends State<MyQuizPage> {
             ),
           const SizedBox(height: 12),
         ],
-        Row(
-          children: [
-            for (final status in _statusFilters) ...[
-              if (status != _statusFilters.first) const SizedBox(width: 8),
-              StatusFilterChip(
-                label: QuizStatus.labelOf(status),
-                selected: _selectedStatus == status,
-                onTap: () => setState(() => _selectedStatus = status),
-              ),
-            ],
-          ],
+        StatusFilterRow(
+          statuses: _statusFilters,
+          selected: _selectedStatus,
+          onChanged: (status) => setState(() => _selectedStatus = status),
         ),
         const SizedBox(height: 12),
         _buildRoomList(_selectedStatus),
