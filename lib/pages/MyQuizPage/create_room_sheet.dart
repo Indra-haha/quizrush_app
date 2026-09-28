@@ -10,7 +10,7 @@ import '../../services/room_service.dart';
 import '../../services/session_service.dart';
 import '../../theme/app_theme.dart';
 
-Future<Room?> showCreateRoomSheet(BuildContext context, MyQuizzes data) {
+Future<Room?> showCreateRoomSheet(BuildContext context, List<Quizes> quarantine) {
   return showModalBottomSheet<Room>(
     context: context,
     isScrollControlled: true,
@@ -23,16 +23,16 @@ Future<Room?> showCreateRoomSheet(BuildContext context, MyQuizzes data) {
       padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
-        child: CreateRoomSheet(data: data),
+        child: CreateRoomSheet(quarantine: quarantine),
       ),
     ),
   );
 }
 
 class CreateRoomSheet extends StatefulWidget {
-  final MyQuizzes data;
+  final List<Quizes> quarantine;
 
-  const CreateRoomSheet({super.key, required this.data});
+  const CreateRoomSheet({super.key, required this.quarantine});
 
   @override
   State<CreateRoomSheet> createState() => _CreateRoomSheetState();
@@ -45,7 +45,7 @@ class _CreateRoomSheetState extends State<CreateRoomSheet> {
   bool _submitting = false;
   String? _error;
 
-  List<Quizes> get _quarantine => widget.data.quarantine;
+  List<Quizes> get _quarantine => widget.quarantine;
 
   @override
   void dispose() {

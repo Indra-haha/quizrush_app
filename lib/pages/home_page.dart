@@ -5,6 +5,7 @@ import '../models/quiz.dart';
 import '../services/api_client.dart';
 import '../services/auth_service.dart';
 import '../services/quiz_cache_service.dart';
+import '../services/quiz_index.dart';
 import '../services/quiz_service.dart';
 import '../services/session_service.dart';
 import '../theme/app_theme.dart';
@@ -33,8 +34,9 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   Map<String, dynamic>? _user;
   bool _loggingOut = false;
-  MyQuizzes _myQuizzes = const MyQuizzes();
+  QuizIndex? _index;
   bool _loading = true;
+  bool _syncing = false;
   String? _error;
 
   @override
@@ -42,7 +44,7 @@ class _HomePageState extends State<HomePage> {
     super.initState();
     _user = widget.user;
     _loadUser();
-    _loadData();
+    _load();
   }
 
   Future<void> _loadUser() async {
@@ -52,24 +54,50 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  Future<void> _loadData() async {
+  /// Daftar quiz dibaca dari cache lokal; server hanya dihubungi kalau cache
+  /// belum pernah diisi.
+  Future<void> _load() async {
     setState(() {
+      _loading = true;
+      _error = null;
+    });
+
+    final cached = await QuizCacheService.instance.readMine();
+    if (!mounted) return;
+
+    if (cached == null) {
+      await _sync();
+      return;
+    }
+
+    setState(() {
+      _index = QuizIndex.fromCache(cached);
+      _loading = false;
+    });
+  }
+
+  /// Dipakai oleh tombol refresh dan setelah quiz/room dibuat.
+  Future<void> _sync() async {
+    if (_syncing) return;
+    setState(() {
+      _syncing = true;
       _loading = true;
       _error = null;
     });
 
     final token = await SessionService.instance.getToken();
     if (token == null) {
+      _syncing = false;
       _goToLogin();
       return;
     }
 
     try {
       final data = await QuizService.instance.getMyQuizzes(token);
-      await QuizCacheService.instance.saveMyQuizzes(data);
+      final cache = await QuizCacheService.instance.saveMyQuizzes(data);
       if (!mounted) return;
       setState(() {
-        _myQuizzes = data;
+        _index = QuizIndex.fromCache(cache);
         _loading = false;
       });
     } on ApiException catch (e) {
@@ -84,12 +112,14 @@ class _HomePageState extends State<HomePage> {
         _loading = false;
       });
     } catch (e) {
-      debugPrint('Quiz load error: $e');
+      debugPrint('Quiz sync error: $e');
       if (!mounted) return;
       setState(() {
         _error = 'Tidak dapat terhubung ke server. ($e)';
         _loading = false;
       });
+    } finally {
+      if (mounted) setState(() => _syncing = false);
     }
   }
 
@@ -129,20 +159,21 @@ class _HomePageState extends State<HomePage> {
   }
 
   void _openAll() {
+    final index = _index;
+    if (index == null) return;
     Navigator.of(
       context,
-    ).push(MaterialPageRoute(builder: (_) => MyQuizPage(data: _myQuizzes)));
+    ).push(MaterialPageRoute(builder: (_) => MyQuizPage(index: index)));
   }
 
   ({String status, Quizes quiz})? _currentSection() {
     const priority = ['waiting', 'open', 'in-Game', 'ended', 'quarantine'];
-    final groups = {
-      for (final group in _myQuizzes.groups) group.status: group.quizzes,
-    };
+    final index = _index;
+    if (index == null) return null;
 
     for (final status in priority) {
-      final quizzes = groups[status];
-      if (quizzes == null || quizzes.isEmpty) continue;
+      final quizzes = index.group(status);
+      if (quizzes.isEmpty) continue;
       final sorted = [...quizzes]
         ..sort((a, b) => _latestTime(b).compareTo(_latestTime(a)));
       return (status: status, quiz: sorted.first);
@@ -165,12 +196,10 @@ class _HomePageState extends State<HomePage> {
     ).push<bool>(MaterialPageRoute(builder: (_) => const CreateQuizPage()));
     if (created != true || !mounted) return;
 
-    await _loadData();
+    await _sync();
     if (!mounted) return;
     AppSnackBar.success(context, 'Quiz berhasil dibuat.');
-    Navigator.of(
-      context,
-    ).push(MaterialPageRoute(builder: (_) => MyQuizPage(data: _myQuizzes)));
+    _openAll();
   }
 
   @override
@@ -179,8 +208,8 @@ class _HomePageState extends State<HomePage> {
       appBar: AppHeaderBarWithActions(
         actions: [
           IconButton(
-            tooltip: 'Refresh',
-            onPressed: _loading ? null : _loadData,
+            tooltip: 'Refresh dari server',
+            onPressed: _loading ? null : _sync,
             icon: const Icon(Icons.refresh),
           ),
           IconButton(
@@ -229,7 +258,39 @@ class _HomePageState extends State<HomePage> {
           const SizedBox(height: 16),
           QuizCard(quiz: section.quiz, onTap: () => _openRooms(section.quiz)),
         ],
+        if (!_loading && _error == null) _buildCacheInfo(),
       ],
+    );
+  }
+
+  Widget _buildCacheInfo() {
+    final savedAt = _index?.savedAt;
+    if (savedAt == null) return const SizedBox.shrink();
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 20),
+      child: Row(
+        children: [
+          const Icon(
+            Icons.offline_bolt_outlined,
+            size: 12,
+            color: AppColors.neutral,
+          ),
+          const SizedBox(width: 4),
+          Expanded(
+            child: Text(
+              'Daftar ini dari cache perangkat. Terakhir diperbarui '
+              '${relativeTime(savedAt.toIso8601String())}.',
+              style: GoogleFonts.plusJakartaSans(
+                color: AppColors.neutral,
+                fontSize: 11,
+                fontWeight: FontWeight.w500,
+                height: 1.36,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -301,7 +362,7 @@ class _HomePageState extends State<HomePage> {
             Expanded(
               child: _buildStatCard(
                 label: 'Terakhir Update',
-                value: '2 Jam',
+                value: _savedAtLabel(),
                 icon: Icons.access_time,
               ),
             ),
@@ -309,6 +370,12 @@ class _HomePageState extends State<HomePage> {
         ),
       ],
     );
+  }
+
+  String _savedAtLabel() {
+    final savedAt = _index?.savedAt;
+    if (savedAt == null) return '-';
+    return relativeTime(savedAt.toIso8601String());
   }
 
   Widget _buildStatCard({
@@ -368,7 +435,7 @@ class _HomePageState extends State<HomePage> {
       padding: const EdgeInsets.symmetric(vertical: 48),
       child: ErrorStateView(
         message: _error!,
-        onRetry: _loadData,
+        onRetry: _sync,
         buttonColor: AppColors.highlight,
         messageStyle: GoogleFonts.plusJakartaSans(
           fontSize: 14,

@@ -11,7 +11,6 @@ import '../../theme/app_theme.dart';
 import '../../theme/quiz_option_theme.dart';
 import '../../theme/quiz_status.dart';
 import '../../utils/format.dart';
-import '../../widgets/app_header_bar.dart';
 import '../../widgets/app_header_bar_with_actions.dart';
 import '../../widgets/app_snackbar.dart';
 import '../../widgets/empty_state_view.dart';
@@ -54,6 +53,8 @@ class _RoomsPageState extends State<RoomsPage> {
     _load();
   }
 
+  /// Room list untuk satu kuis dibaca dari cache; tombol refresh yang mengisi
+  /// ulang cache dari server.
   Future<void> _load() async {
     setState(() {
       _loading = true;
@@ -61,9 +62,22 @@ class _RoomsPageState extends State<RoomsPage> {
     });
 
     final cached = await QuizCacheService.instance.getQuizById(widget.quizId);
-    if (cached != null && mounted) {
-      setState(() => _quiz = cached);
+    if (!mounted) return;
+    if (cached == null) {
+      await _sync();
+      return;
     }
+    setState(() {
+      _quiz = cached;
+      _loading = false;
+    });
+  }
+
+  Future<void> _sync() async {
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
 
     final token = await SessionService.instance.getToken();
     if (token == null) {
@@ -74,10 +88,9 @@ class _RoomsPageState extends State<RoomsPage> {
     try {
       final data = await QuizService.instance.getMyQuizzes(token);
       await QuizCacheService.instance.saveMyQuizzes(data);
-      final found = _findQuiz(data, widget.quizId);
       if (!mounted) return;
       setState(() {
-        _quiz = found;
+        _quiz = _findQuiz(data, widget.quizId);
         _loading = false;
       });
     } on ApiException catch (e) {
@@ -92,7 +105,7 @@ class _RoomsPageState extends State<RoomsPage> {
         _loading = false;
       });
     } catch (e) {
-      debugPrint('Rooms load error: $e');
+      debugPrint('Rooms sync error: $e');
       if (!mounted) return;
       setState(() {
         _error = 'Tidak dapat terhubung ke server. ($e)';
@@ -124,8 +137,8 @@ class _RoomsPageState extends State<RoomsPage> {
         title: title == null || title.isEmpty ? 'Rooms' : title,
         actions: [
           IconButton(
-            tooltip: 'Refresh',
-            onPressed: _loading ? null : _load,
+            tooltip: 'Refresh dari server',
+            onPressed: _loading ? null : _sync,
             icon: const Icon(Icons.refresh),
           ),
         ],
@@ -281,6 +294,8 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
     }
   }
 
+  /// Detail room dibaca dari cache; server hanya dihubungi lewat tombol
+  /// refresh atau setelah status room diubah.
   Future<void> _load() async {
     setState(() {
       _loading = true;
@@ -288,9 +303,28 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
     });
 
     final cached = await QuizCacheService.instance.getQuizById(widget.quizId);
-    if (cached != null && mounted) {
-      setState(() => _quiz = cached);
+    if (!mounted) return;
+    if (cached == null) {
+      await _sync();
+      return;
     }
+    setState(() {
+      _apply(cached);
+      _loading = false;
+    });
+  }
+
+  void _apply(Quizes quiz) {
+    _quiz = quiz;
+    final room = _findRoom(quiz, widget.room);
+    if (room != null) _room = room;
+  }
+
+  Future<void> _sync() async {
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
 
     final token = await SessionService.instance.getToken();
     if (token == null) {
@@ -301,12 +335,10 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
     try {
       final data = await QuizService.instance.getMyQuizzes(token);
       await QuizCacheService.instance.saveMyQuizzes(data);
-      final quiz = _findQuiz(data, widget.quizId);
       if (!mounted) return;
-      final room = quiz == null ? null : _findRoom(quiz, widget.room);
       setState(() {
-        _quiz = quiz;
-        if (room != null) _room = room;
+        final quiz = _findQuiz(data, widget.quizId);
+        if (quiz != null) _apply(quiz);
         _loading = false;
       });
     } on ApiException catch (e) {
@@ -321,7 +353,7 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
         _loading = false;
       });
     } catch (e) {
-      debugPrint('Room detail load error: $e');
+      debugPrint('Room detail sync error: $e');
       if (!mounted) return;
       setState(() {
         _error = 'Tidak dapat terhubung ke server. ($e)';
@@ -393,13 +425,20 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
     final title = _quiz?.title;
     return Scaffold(
       backgroundColor: AppColors.cardBg,
-      appBar: AppHeaderBar(
+      appBar: AppHeaderBarWithActions(
         title: title == null || title.isEmpty ? 'Detail Room' : title,
         leading: IconButton(
           tooltip: 'Kembali',
           onPressed: () => Navigator.of(context).pop(),
           icon: const Icon(Icons.arrow_back),
         ),
+        actions: [
+          IconButton(
+            tooltip: 'Refresh dari server',
+            onPressed: _loading ? null : _sync,
+            icon: const Icon(Icons.refresh),
+          ),
+        ],
       ),
       body: _buildBody(),
     );

@@ -6,12 +6,13 @@ import '../../models/quiz.dart';
 import '../../models/room.dart';
 import '../../services/api_client.dart';
 import '../../services/quiz_cache_service.dart';
+import '../../services/quiz_index.dart';
 import '../../services/quiz_service.dart';
 import '../../services/session_service.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/quiz_status.dart';
 import '../../utils/format.dart';
-import '../../widgets/app_header_bar.dart';
+import '../../widgets/app_header_bar_with_actions.dart';
 import '../../widgets/app_pill_button.dart';
 import '../../widgets/app_snackbar.dart';
 import '../../widgets/empty_state_view.dart';
@@ -26,9 +27,9 @@ import 'quiz_test_page.dart';
 const _statusFilters = ['waiting', 'open', 'in-Game', 'ended'];
 
 class MyQuizPage extends StatefulWidget {
-  final MyQuizzes data;
+  final QuizIndex index;
 
-  const MyQuizPage({super.key, required this.data});
+  const MyQuizPage({super.key, required this.index});
 
   @override
   State<MyQuizPage> createState() => _MyQuizPageState();
@@ -36,11 +37,12 @@ class MyQuizPage extends StatefulWidget {
 
 class _MyQuizPageState extends State<MyQuizPage> {
   String _selectedStatus = 'waiting';
-  late MyQuizzes _data = widget.data;
+  late QuizIndex _index = widget.index;
+  bool _syncing = false;
 
   List<({Quizes quiz, RoomSummary room})> _roomsFor(String status) {
     final entries = <({Quizes quiz, RoomSummary room})>[
-      for (final quiz in _data.all)
+      for (final quiz in _index.all)
         for (final room in quiz.rooms)
           if (room.status == status) (quiz: quiz, room: room),
     ];
@@ -61,7 +63,7 @@ class _MyQuizPageState extends State<MyQuizPage> {
     if (mounted && result != null) {
       setState(() => _selectedStatus = result.previous);
       AppSnackBar.show(context, 'Status room menjadi ${result.next}.');
-      await _refresh();
+      await _sync();
     }
   }
 
@@ -87,14 +89,14 @@ class _MyQuizPageState extends State<MyQuizPage> {
       setState(() => _selectedStatus = result.previous);
       AppSnackBar.show(context, 'Status room menjadi ${result.next}.');
     }
-    if (mounted) await _refresh();
+    if (mounted) await _sync();
   }
 
   Future<void> _openCreateRoom() async {
-    final room = await showCreateRoomSheet(context, _data);
+    final room = await showCreateRoomSheet(context, _index.group('quarantine'));
     if (room == null || !mounted) return;
     await _showKodeDialog(room);
-    await _refresh();
+    await _sync();
   }
 
   Future<void> _showKodeDialog(Room room) async {
@@ -148,17 +150,23 @@ class _MyQuizPageState extends State<MyQuizPage> {
     );
   }
 
-  Future<void> _refresh() async {
+  /// Server hanya dihubungi lewat tombol refresh atau setelah ada mutasi
+  /// (publish status, create room).
+  Future<void> _sync() async {
+    if (_syncing) return;
+    setState(() => _syncing = true);
+
     final token = await SessionService.instance.getToken();
     if (token == null) {
+      if (mounted) setState(() => _syncing = false);
       _goToLogin();
       return;
     }
     try {
       final data = await QuizService.instance.getMyQuizzes(token);
-      await QuizCacheService.instance.saveMyQuizzes(data);
+      final cache = await QuizCacheService.instance.saveMyQuizzes(data);
       if (!mounted) return;
-      setState(() => _data = data);
+      setState(() => _index = QuizIndex.fromCache(cache));
     } on ApiException catch (e) {
       if (e.statusCode == 401) {
         await SessionService.instance.clear();
@@ -168,9 +176,11 @@ class _MyQuizPageState extends State<MyQuizPage> {
       if (!mounted) return;
       AppSnackBar.error(context, e.message);
     } catch (e) {
-      debugPrint('MyQuiz reload error: $e');
+      debugPrint('MyQuiz sync error: $e');
       if (!mounted) return;
       AppSnackBar.error(context, 'Gagal memuat ulang data.');
+    } finally {
+      if (mounted) setState(() => _syncing = false);
     }
   }
 
@@ -186,13 +196,20 @@ class _MyQuizPageState extends State<MyQuizPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF9F9FF),
-      appBar: AppHeaderBar(
+      appBar: AppHeaderBarWithActions(
         title: 'Quiz Saya',
         leading: IconButton(
           tooltip: 'Kembali',
           onPressed: () => Navigator.of(context).pop(),
           icon: const Icon(Icons.arrow_back),
         ),
+        actions: [
+          IconButton(
+            tooltip: 'Refresh dari server',
+            onPressed: _syncing ? null : _sync,
+            icon: const Icon(Icons.refresh),
+          ),
+        ],
       ),
       body: _buildBody(),
       floatingActionButton: AppPillButton(
@@ -205,13 +222,13 @@ class _MyQuizPageState extends State<MyQuizPage> {
   }
 
   Widget _buildBody() {
-    if (_data.isEmpty) return _buildEmpty();
+    if (_index.isEmpty) return _buildEmpty();
 
     return ListView(
       padding: const EdgeInsets.only(left: 20, right: 20, top: 16, bottom: 112),
       children: [
-        if (_data.quarantine.isNotEmpty) ...[
-          for (final quiz in _data.quarantine)
+        if (_index.group('quarantine').isNotEmpty) ...[
+          for (final quiz in _index.group('quarantine'))
             Padding(
               padding: const EdgeInsets.only(bottom: 12),
               child: QuarantineCard(quiz: quiz, onTap: () => _openRooms(quiz)),
@@ -258,7 +275,7 @@ class _MyQuizPageState extends State<MyQuizPage> {
               quiz: entry.quiz,
               room: entry.room,
               onTap: () => _openRoomDetail(entry.quiz, entry.room),
-              onTestPressed: () => _testRoom(entry.quiz, entry.room),
+              onTestPressed: () =>  _testRoom(entry.quiz, entry.room),
             ),
           ),
       ],

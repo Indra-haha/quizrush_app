@@ -11,8 +11,13 @@ import '../../widgets/empty_state_view.dart';
 
 class DetailQuizRoomPage extends StatelessWidget {
   final Quizes quiz;
+  final String? focusKode;
 
-  const DetailQuizRoomPage({super.key, required this.quiz});
+  const DetailQuizRoomPage({
+    super.key,
+    required this.quiz,
+    this.focusKode,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -31,24 +36,24 @@ class DetailQuizRoomPage extends StatelessWidget {
   }
 
   Widget _buildBody(BuildContext context) {
+    final rooms = quiz.rooms
+        .where(
+          (room) => room.status != 'waiting' || room.kode == focusKode,
+        )
+        .toList();
+
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
       children: [
         _heroCard(quiz),
         const SizedBox(height: 24),
-        _roomSectionHeader(
-          quiz.rooms.where((room) => room.status != 'waiting').length,
-        ),
+        _roomSectionHeader(rooms.length),
         const SizedBox(height: 16),
-        if (quiz.rooms.isEmpty ||
-            quiz.rooms.every((room) => room.status == 'waiting'))
-          _emptyRooms()
-        else
-          for (var i = 0; i < quiz.rooms.length; i++) ...[
-            if (i > 0) const SizedBox(height: 16),
-            if (quiz.rooms[i].status != 'waiting')
-              _roomCard(context, quiz, quiz.rooms[i], i),
-          ],
+        if (rooms.isEmpty) _emptyRooms(),
+        for (var i = 0; i < rooms.length; i++) ...[
+          if (i > 0) const SizedBox(height: 16),
+          _roomCard(context, quiz, rooms[i], i),
+        ],
         const SizedBox(height: 24),
       ],
     );
@@ -255,6 +260,7 @@ class DetailQuizRoomPage extends StatelessWidget {
     int index,
   ) {
     final info = _statusInfo(room.status);
+    final isFocused = room.kode == focusKode && focusKode != null;
     final subtitle = room.createdAt.isNotEmpty
         ? 'Dibuat ${relativeTime(room.createdAt)}'
         : 'Room #${index + 1}';
@@ -265,6 +271,9 @@ class DetailQuizRoomPage extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(32),
+        border: isFocused
+            ? Border.all(color: AppColors.primary, width: 1.5)
+            : null,
         boxShadow: const [
           BoxShadow(
             color: Color(0x0F000000),
@@ -303,6 +312,10 @@ class DetailQuizRoomPage extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
+          if (isFocused) ...[
+            _focusBadge(),
+            const SizedBox(height: 12),
+          ],
           Text(
             room.judul,
             style: GoogleFonts.montserrat(
@@ -377,6 +390,32 @@ class DetailQuizRoomPage extends StatelessWidget {
                     ),
                   ),
               ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _focusBadge() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: const Color(0xFFE1E0FF),
+        borderRadius: BorderRadius.circular(9999),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.pin, size: 14, color: AppColors.primary),
+          const SizedBox(width: 4),
+          Text(
+            'Room dari PIN yang kamu masukkan',
+            style: GoogleFonts.plusJakartaSans(
+              color: const Color(0xFF07006C),
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              height: 1.33,
             ),
           ),
         ],
