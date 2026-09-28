@@ -16,6 +16,24 @@ class AppColors {
   static const background = Color(0xFFF0EFFF);
   static const lineLight = Color(0xFFF1F5F9);
 
+  static const inkStrong = Color(0xFF07006C);
+  static const accentPurple = Color(0xFF6B38D4);
+  static const badgePurple = Color(0xFF8455EF);
+  static const ptsInk = Color(0xFF825100);
+
+  static const softLavender = Color(0xFFE1E0FF);
+  static const softPurple = Color(0xFFE9DDFF);
+  static const heroBg = Color(0xFFE7EEFF);
+  static const optionBg = Color(0xFFF0F3FF);
+  static const warmSurface = Color(0xFFFFDDB8);
+
+  static const borderSoft = Color(0x4CC7C4D7);
+
+  static const shadowSoft = Color(0x0C000000);
+  static const shadowCard = Color(0x19000000);
+  static const shadowHairline = Color(0x0F000000);
+  static const shadowBrand = Color(0x144648D4);
+
   static const success = Color(0xFF10B981);
   static const successDark = Color(0xFF059669);
   static const successBg = Color(0xFFECFDF5);
