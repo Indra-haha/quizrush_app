@@ -44,7 +44,7 @@ String relativeTime(String raw) {
   return 'Baru saja';
 }
 
-String FormatTanggalLahir(String tanggalLahir) {
+String formatTanggalLahir(String tanggalLahir) {
   final parts = tanggalLahir.split('/');
   if (parts.length != 3) return tanggalLahir;
   final day = int.tryParse(parts[0]);

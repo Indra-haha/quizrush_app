@@ -50,7 +50,7 @@ class _RegisterPageState extends State<RegisterPage> {
     final nama = _namaController.text.trim();
     final nim = _nimController.text.trim();
     final kelas = _kelasController.text.trim();
-    final tanggalLahir = FormatTanggalLahir(
+    final tanggalLahir = formatTanggalLahir(
       _tanggalLahirController.text.trim(),
     );
     final password = _passwordController.text;
