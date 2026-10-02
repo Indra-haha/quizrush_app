@@ -12,13 +12,16 @@ import '../../widgets/app_field_decoration.dart';
 import '../../widgets/app_inline_error.dart';
 import '../../widgets/app_primary_button.dart';
 
-Future<Room?> showCreateRoomSheet(BuildContext context, List<Quizes> quarantine) {
+Future<Room?> showCreateRoomSheet(
+  BuildContext context,
+  List<Quizes> quarantine,
+) {
   return showModalBottomSheet<Room>(
     context: context,
     isScrollControlled: true,
     useSafeArea: true,
     backgroundColor: Colors.transparent,
-    barrierColor: Colors.black.withValues(alpha: 0.35),
+    barrierColor: AppColors.textPrimary.withValues(alpha: 0.35),
     builder: (context) => AnimatedPadding(
       duration: const Duration(milliseconds: 200),
       curve: Curves.easeOut,
@@ -106,9 +109,14 @@ class _CreateRoomSheetState extends State<CreateRoomSheet> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.space9,
+        AppSpacing.space6,
+        AppSpacing.space9,
+        AppSpacing.space9,
+      ),
       decoration: const BoxDecoration(
-        color: Colors.white,
+        color: AppColors.textOnPrimary,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       child: SingleChildScrollView(
@@ -121,14 +129,14 @@ class _CreateRoomSheetState extends State<CreateRoomSheet> {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: AppColors.neutralBorder,
-                  borderRadius: BorderRadius.circular(9999),
+                  color: AppColors.divider,
+                  borderRadius: AppRadius.md,
                 ),
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.space8),
             Text('Create Room', style: AppTextStyles.heading1),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.space8),
             DropdownButtonFormField<String>(
               initialValue: _selectedQuizId,
               isExpanded: true,
@@ -136,7 +144,9 @@ class _CreateRoomSheetState extends State<CreateRoomSheet> {
               menuMaxHeight: MediaQuery.sizeOf(context).height * 0.4,
               decoration: _inputDecoration('Pilih Kuis'),
               hint: Text(
-                _quarantine.isEmpty ? 'Tidak ada kuis tanpa room' : 'Pilih kuis...',
+                _quarantine.isEmpty
+                    ? 'Tidak ada kuis tanpa room'
+                    : 'Pilih kuis...',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
@@ -153,34 +163,41 @@ class _CreateRoomSheetState extends State<CreateRoomSheet> {
               ],
               onChanged: _submitting ? null : _onQuizChanged,
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.space6),
             TextField(
               controller: _titleController,
               enabled: !_submitting,
               textCapitalization: TextCapitalization.words,
-              scrollPadding: const EdgeInsets.only(bottom: 160),
+              scrollPadding: const EdgeInsets.only(
+                bottom: AppSpacing.scrollClearanceLarge,
+              ),
               onChanged: (_) => setState(() {}),
               decoration: _inputDecoration('Judul'),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.space6),
             TextField(
               controller: _descriptionController,
               enabled: !_submitting,
               maxLines: 2,
-              scrollPadding: const EdgeInsets.only(bottom: 160),
+              scrollPadding: const EdgeInsets.only(
+                bottom: AppSpacing.scrollClearanceLarge,
+              ),
               decoration: _inputDecoration('Deskripsi'),
             ),
             if (_error != null) ...[
-              const SizedBox(height: 12),
+              const SizedBox(height: AppSpacing.space6),
               AppInlineError(message: _error!),
             ],
-            const SizedBox(height: 20),
+            const SizedBox(height: AppSpacing.space9),
             AppPrimaryButton(
               label: 'Kirim',
               onPressed: _canSubmit ? _submit : null,
               loading: _submitting,
               radius: 9999,
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.space9,
+                vertical: AppSpacing.space15,
+              ),
             ),
           ],
         ),

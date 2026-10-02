@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../theme/app_theme.dart';
 
@@ -15,12 +14,7 @@ class SectionHeader extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Expanded(
-          child: Text(
-            title,
-            style: AppTextStyles.heading1,
-          ),
-        ),
+        Expanded(child: Text(title, style: AppTextStyles.heading1)),
         if (onSeeAll != null)
           TextButton(
             onPressed: onSeeAll,
@@ -35,15 +29,16 @@ class SectionHeader extends StatelessWidget {
               children: [
                 Text(
                   'Lihat Semua',
-                  style: GoogleFonts.plusJakartaSans(
+                  style: AppTextStyles.bodyLarge.copyWith(
                     color: AppColors.primary,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w400,
-                    height: 1.5,
                   ),
                 ),
-                const SizedBox(width: 4),
-                const Icon(Icons.arrow_forward, size: 18, color: AppColors.primary),
+                const SizedBox(width: AppSpacing.space2),
+                const Icon(
+                  Icons.arrow_forward,
+                  size: AppIconSize.body,
+                  color: AppColors.primary,
+                ),
               ],
             ),
           ),

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../theme/app_theme.dart';
+
 class AppLoadingIndicator extends StatelessWidget {
   final double strokeWidth;
   final Color color;
@@ -7,14 +9,11 @@ class AppLoadingIndicator extends StatelessWidget {
   const AppLoadingIndicator({
     super.key,
     this.strokeWidth = 2,
-    this.color = Colors.white,
+    this.color = AppColors.textOnPrimary,
   });
 
   @override
   Widget build(BuildContext context) {
-    return CircularProgressIndicator(
-      strokeWidth: strokeWidth,
-      color: color,
-    );
+    return CircularProgressIndicator(strokeWidth: strokeWidth, color: color);
   }
 }

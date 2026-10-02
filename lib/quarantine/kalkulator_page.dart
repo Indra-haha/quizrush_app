@@ -217,7 +217,7 @@ class KalkulatorPageState extends State<KalkulatorPage> {
         children: [
           Expanded(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.all(20.0),
+              padding: const EdgeInsets.all(AppSpacing.space9),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
@@ -226,35 +226,27 @@ class KalkulatorPageState extends State<KalkulatorPage> {
                     readOnly: true,
                     showCursor: true,
                     textAlign: TextAlign.right,
-                    style: const TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: AppTextStyles.calculatorDisplay,
                     decoration: InputDecoration(
                       labelText: _operation == 'deret'
                           ? 'Mode Deret (pisahkan koma)'
                           : _operation == 'ganjil_genap'
                           ? 'Mode Ganjil / Genap'
                           : 'Mode Kalkulator',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
+                      border: OutlineInputBorder(borderRadius: AppRadius.md),
                     ),
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: AppSpacing.space9),
                   Container(
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.all(AppSpacing.space8),
                     decoration: BoxDecoration(
                       color: AppColors.primary.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(10),
+                      borderRadius: AppRadius.md,
                     ),
                     child: Text(
                       _result,
                       textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                      ),
+                      style: AppTextStyles.calculatorDisplay,
                     ),
                   ),
                 ],
@@ -262,8 +254,8 @@ class KalkulatorPageState extends State<KalkulatorPage> {
             ),
           ),
           Container(
-            color: Colors.grey[200],
-            padding: const EdgeInsets.all(8.0),
+            color: AppColors.primarySoft,
+            padding: const EdgeInsets.all(AppSpacing.space4),
             child: GridView.builder(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
@@ -276,36 +268,28 @@ class KalkulatorPageState extends State<KalkulatorPage> {
               ),
               itemBuilder: (context, index) {
                 final btn = _gridButtons[index];
-                Color btnColor = Colors.white;
-                Color textColor = Colors.black;
+                Color btnColor = AppColors.textOnPrimary;
+                Color textColor = AppColors.textPrimary;
 
                 if (btn == '=') {
                   btnColor = AppColors.primary;
-                  textColor = Colors.white;
+                  textColor = AppColors.textOnPrimary;
                 } else if (btn == 'C' || btn == '⌫') {
-                  btnColor = Colors.redAccent;
-                  textColor = Colors.white;
+                  btnColor = AppStatus.danger;
+                  textColor = AppColors.textOnPrimary;
                 } else if (['+', '-', '×', '÷', 'G/G', 'Sn'].contains(btn)) {
-                  btnColor = AppColors.softBg;
-                  textColor = AppColors.ink;
+                  btnColor = AppColors.surfaceSoft;
+                  textColor = AppColors.textPrimary;
                 }
 
                 return ElevatedButton(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: btnColor,
                     foregroundColor: textColor,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
+                    shape: RoundedRectangleBorder(borderRadius: AppRadius.md),
                   ),
                   onPressed: () => _onGridButtonPressed(btn),
-                  child: Text(
-                    btn,
-                    style: const TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
+                  child: Text(btn, style: AppTextStyles.calculatorResult),
                 );
               },
             ),

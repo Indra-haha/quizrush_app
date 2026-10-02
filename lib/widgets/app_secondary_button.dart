@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../theme/app_theme.dart';
 
@@ -26,12 +25,18 @@ class AppSecondaryButton extends StatelessWidget {
     return OutlinedButton(
       onPressed: onPressed,
       style: OutlinedButton.styleFrom(
-        backgroundColor: AppColors.cardBg,
-        side: const BorderSide(color: AppColors.border, width: 4),
+        backgroundColor: AppColors.surface,
+        side: const BorderSide(
+          color: AppColors.divider,
+          width: AppBorderWidth.heavy,
+        ),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(radius),
         ),
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.space9,
+          vertical: AppSpacing.space8,
+        ),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -40,20 +45,18 @@ class AppSecondaryButton extends StatelessWidget {
             width: iconSize,
             height: iconSize,
             decoration: const BoxDecoration(
-              color: AppColors.highlight,
+              color: AppColors.primary,
               shape: BoxShape.circle,
             ),
-            child: Icon(icon, color: Colors.white),
+            child: Icon(icon, color: AppColors.textOnPrimary),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: AppSpacing.space6),
           Flexible(
             child: FittedBox(
               fit: BoxFit.scaleDown,
               child: Text(
                 label,
-                style: GoogleFonts.montserrat(
-                  fontSize: 24,
-                  fontWeight: FontWeight.w700,
+                style: AppTextStyles.display2.copyWith(
                   color: AppColors.primary,
                 ),
               ),

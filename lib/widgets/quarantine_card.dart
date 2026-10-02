@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../models/quiz.dart';
 import '../theme/app_theme.dart';
@@ -16,18 +15,12 @@ class QuarantineCard extends StatelessWidget {
       onTap: onTap,
       child: Container(
         width: double.infinity,
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppSpacing.space8),
         decoration: BoxDecoration(
-          color: const Color(0xFFEEF2FF),
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: const Color(0xFFC7D2FE)),
-          boxShadow: const [
-            BoxShadow(
-              color: Color(0x0C000000),
-              blurRadius: 2,
-              offset: Offset(0, 1),
-            ),
-          ],
+          color: AppColors.surfaceSoft,
+          borderRadius: AppRadius.xl,
+          border: Border.all(color: AppColors.primaryBorder),
+          boxShadow: AppShadows.hairlineTight,
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -39,26 +32,20 @@ class QuarantineCard extends StatelessWidget {
                   child: Align(
                     alignment: Alignment.centerRight,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.space5,
+                        vertical: AppSpacing.space1,
+                      ),
                       decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(9999),
-                        border: Border.all(color: const Color(0xFFC7D2FE)),
-                        boxShadow: const [
-                          BoxShadow(
-                            color: Color(0x0C000000),
-                            blurRadius: 2,
-                            offset: Offset(0, 1),
-                          ),
-                        ],
+                        color: AppColors.textOnPrimary,
+                        borderRadius: AppRadius.md,
+                        border: Border.all(color: AppColors.primaryBorder),
+                        boxShadow: AppShadows.hairlineTight,
                       ),
                       child: Text(
                         'Quarantine',
-                        style: GoogleFonts.plusJakartaSans(
-                          color: AppColors.brandDeep,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                          height: 1.50,
+                        style: AppTextStyles.labelStrongSmall.copyWith(
+                          color: AppColors.primaryDark,
                         ),
                       ),
                     ),
@@ -66,38 +53,34 @@ class QuarantineCard extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 6),
+            const SizedBox(height: AppSpacing.space3),
             if (quiz.title.isNotEmpty)
               SizedBox(
                 width: double.infinity,
-                child: Text(
-                  quiz.title,
-                  style: AppTextStyles.heading2,
-                ),
+                child: Text(quiz.title, style: AppTextStyles.heading2),
               ),
             if (quiz.description.isNotEmpty) ...[
-              const SizedBox(height: 2),
+              const SizedBox(height: AppSpacing.space1),
               SizedBox(
                 width: double.infinity,
-                child: Text(
-                  quiz.description,
-                  style: AppTextStyles.bodyMeta,
-                ),
+                child: Text(quiz.description, style: AppTextStyles.bodyMeta),
               ),
             ],
-            const SizedBox(height: 10),
+            const SizedBox(height: AppSpacing.space5),
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.only(top: 10),
-              decoration: const BoxDecoration(
+              padding: const EdgeInsets.only(top: AppSpacing.space5),
+              decoration: BoxDecoration(
                 border: Border(
-                  top: BorderSide(color: Color(0xCCC7D2FE)),
+                  top: BorderSide(
+                    color: AppColors.primaryBorder.withValues(alpha: 0.8),
+                  ),
                 ),
               ),
               child: Row(
                 children: [
                   _durationChip(),
-                  const SizedBox(width: 4),
+                  const SizedBox(width: AppSpacing.space2),
                   _gameChip(),
                 ],
               ),
@@ -114,36 +97,32 @@ class QuarantineCard extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(Icons.access_time, size: 14, color: AppColors.neutralDark),
-        const SizedBox(width: 4),
-        Text(
-          '$minutes menit',
-          style: GoogleFonts.plusJakartaSans(
-            color: AppColors.ink,
-            fontSize: 12,
-            fontWeight: FontWeight.w700,
-            height: 1.50,
-          ),
+        Icon(
+          Icons.access_time,
+          size: AppIconSize.xs,
+          color: AppColors.textSecondary,
         ),
+        const SizedBox(width: AppSpacing.space2),
+        Text('$minutes menit', style: AppTextStyles.labelStrongSmall),
       ],
     );
   }
 
   Widget _gameChip() {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.space4,
+        vertical: AppSpacing.space1,
+      ),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(9999),
-        border: Border.all(color: const Color(0xFFE0E7FF)),
+        color: AppColors.textOnPrimary,
+        borderRadius: AppRadius.md,
+        border: Border.all(color: AppColors.primarySoft),
       ),
       child: Text(
         '${quiz.rooms.length} Game',
-        style: GoogleFonts.plusJakartaSans(
-          color: AppColors.brandDeep,
-          fontSize: 12,
-          fontWeight: FontWeight.w700,
-          height: 1.50,
+        style: AppTextStyles.labelStrongSmall.copyWith(
+          color: AppColors.primaryDark,
         ),
       ),
     );

@@ -56,9 +56,7 @@ void main() {
     testWidgets('roomStatus memakai label dari QuizStatus', (
       WidgetTester tester,
     ) async {
-      await tester.pumpWidget(
-        _wrap(AppPill.roomStatus('in-Game')),
-      );
+      await tester.pumpWidget(_wrap(AppPill.roomStatus('in-Game')));
 
       expect(find.text(QuizStatus.labelOf('in-Game')), findsOneWidget);
     });
@@ -89,9 +87,7 @@ void main() {
 
   group('CacheInfoBar', () {
     testWidgets('mode progres PIN', (WidgetTester tester) async {
-      await tester.pumpWidget(
-        _wrap(const CacheInfoBar(pinProgress: 3)),
-      );
+      await tester.pumpWidget(_wrap(const CacheInfoBar(pinProgress: 3)));
 
       expect(find.text('PIN room: 3 dari 6 digit.'), findsOneWidget);
     });
@@ -127,14 +123,10 @@ void main() {
       expect(find.byType(CircularProgressIndicator), findsOneWidget);
     });
 
-    testWidgets('memanggil onPressed saat aktif', (
-      WidgetTester tester,
-    ) async {
+    testWidgets('memanggil onPressed saat aktif', (WidgetTester tester) async {
       var taps = 0;
       await tester.pumpWidget(
-        _wrap(
-          AppPrimaryButton(label: 'Kirim', onPressed: () => taps++),
-        ),
+        _wrap(AppPrimaryButton(label: 'Kirim', onPressed: () => taps++)),
       );
 
       await tester.tap(find.byType(FilledButton));
@@ -149,10 +141,7 @@ void main() {
       await tester.pumpWidget(_wrap(const EmptyStateView.notFound()));
 
       expect(find.text('Room tidak ditemukan'), findsOneWidget);
-      expect(
-        find.text('Tekan refresh bila room baru dibuat.'),
-        findsOneWidget,
-      );
+      expect(find.text('Tekan refresh bila room baru dibuat.'), findsOneWidget);
     });
   });
 
@@ -291,12 +280,14 @@ void main() {
 
     test('soal terakhir memanggil onFinished', () {
       var finished = false;
-      final session = QuizPlaySession(
-        questions: [_question()],
-        feedbackDelay: Duration.zero,
-      )..onFinished = () {
-        finished = true;
-      };
+      final session =
+          QuizPlaySession(
+              questions: [_question()],
+              feedbackDelay: Duration.zero,
+            )
+            ..onFinished = () {
+              finished = true;
+            };
       session.start();
 
       session.answer(0);
@@ -308,12 +299,14 @@ void main() {
 
     test('onChanged dipanggil saat timer dan jawaban berubah', () {
       var changes = 0;
-      final session = QuizPlaySession(
-        questions: [_question(duration: 5, skor: 50)],
-        feedbackDelay: Duration.zero,
-      )..onChanged = () {
-        changes++;
-      };
+      final session =
+          QuizPlaySession(
+              questions: [_question(duration: 5, skor: 50)],
+              feedbackDelay: Duration.zero,
+            )
+            ..onChanged = () {
+              changes++;
+            };
       session.start();
 
       expect(changes, 0, reason: 'start belum mengubah state');

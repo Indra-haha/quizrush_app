@@ -51,10 +51,7 @@ class QuizIndex {
       for (final room in quiz.rooms) {
         final kode = room.kode.trim();
         if (kode.isEmpty) continue;
-        byKode.putIfAbsent(
-          kode,
-          () => (quizId: quiz.id, roomId: room.id),
-        );
+        byKode.putIfAbsent(kode, () => (quizId: quiz.id, roomId: room.id));
       }
     }
 
@@ -80,8 +77,7 @@ class QuizIndex {
 
   bool get isEmpty => byId.isEmpty;
 
-  List<Quizes> group(String status) =>
-      byGroup[status] ?? const <Quizes>[];
+  List<Quizes> group(String status) => byGroup[status] ?? const <Quizes>[];
 
   Quizes? quizById(String id) => byId[id];
 

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../theme/app_theme.dart';
 
@@ -20,31 +19,23 @@ class StatusFilterChip extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.space7,
+          vertical: AppSpacing.space3,
+        ),
         decoration: BoxDecoration(
-          color: selected ? AppColors.brandDeep : Colors.white,
-          borderRadius: BorderRadius.circular(9999),
+          color: selected ? AppColors.primaryDark : AppColors.textOnPrimary,
+          borderRadius: AppRadius.md,
           border: Border.all(
-            color: selected ? AppColors.brandDeep : AppColors.neutralBorder,
+            color: selected ? AppColors.primaryDark : AppColors.divider,
           ),
-          boxShadow: selected
-              ? [
-                  BoxShadow(
-                    color: const Color(0x0C000000),
-                    blurRadius: 2,
-                    offset: const Offset(0, 1),
-                  ),
-                ]
-              : null,
+          boxShadow: selected ? AppShadows.hairlineTight : null,
         ),
         child: Text(
           label,
           textAlign: TextAlign.center,
-          style: GoogleFonts.plusJakartaSans(
-            color: selected ? Colors.white : AppColors.neutralDark,
-            fontSize: 14,
-            fontWeight: selected ? FontWeight.w500 : FontWeight.w600,
-            height: 1.6,
+          style: AppTextStyles.bodyMedium.copyWith(
+            color: selected ? AppColors.textOnPrimary : AppColors.textSecondary,
           ),
         ),
       ),

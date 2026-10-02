@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../theme/app_theme.dart';
 import '../utils/format.dart';
@@ -47,19 +46,14 @@ class CacheInfoBar extends StatelessWidget {
   Widget _row({required IconData icon, required String text}) {
     return Row(
       children: [
-        Icon(icon, size: 12, color: AppColors.neutral),
-        const SizedBox(width: 4),
+        Icon(icon, size: AppIconSize.micro, color: AppColors.info),
+        const SizedBox(width: AppSpacing.space2),
         Expanded(
           child: Text(
             text,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: GoogleFonts.plusJakartaSans(
-              color: AppColors.neutral,
-              fontSize: 11,
-              fontWeight: FontWeight.w500,
-              height: 1.36,
-            ),
+            style: AppTextStyles.bodyCaption.copyWith(color: AppColors.info),
           ),
         ),
       ],

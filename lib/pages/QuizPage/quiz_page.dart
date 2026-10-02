@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../../models/quiz.dart';
 import '../../services/quiz_feed.dart';
@@ -162,38 +161,48 @@ class _QuizPageState extends State<QuizPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.cardBg,
+      backgroundColor: AppColors.surface,
       body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Padding(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.space9,
+                AppSpacing.space8,
+                AppSpacing.space9,
+                AppSpacing.space6,
+              ),
               child: SectionHeader(title: 'Quiz'),
             ),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.space9,
+              ),
               child: _buildSearchField(),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppSpacing.space4),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.space9,
+              ),
               child: CacheInfoBar(
                 savedAt: _index?.savedAt,
                 pinProgress: _pinProgress,
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppSpacing.space4),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.space9,
+              ),
               child: StatusFilterRow(
                 statuses: _statuses,
                 selected: _selectedStatus,
-                onChanged: (status) =>
-                    setState(() => _selectedStatus = status),
+                onChanged: (status) => setState(() => _selectedStatus = status),
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppSpacing.space4),
             Expanded(child: _buildResults()),
           ],
         ),
@@ -206,35 +215,27 @@ class _QuizPageState extends State<QuizPage> {
       controller: _searchController,
       onChanged: _onSearchChanged,
       textInputAction: TextInputAction.search,
-      style: GoogleFonts.plusJakartaSans(
-        color: AppColors.ink,
-        fontSize: 12,
-        fontWeight: FontWeight.w500,
-      ),
+      style: AppTextStyles.bodySmall.copyWith(color: AppColors.textPrimary),
       decoration: InputDecoration(
         hintText: 'Ketik judul kuis atau 6 digit PIN...',
-        hintStyle: GoogleFonts.plusJakartaSans(
-          color: AppColors.neutral,
-          fontSize: 12,
-          fontWeight: FontWeight.w500,
-        ),
+        hintStyle: AppTextStyles.bodySmall.copyWith(color: AppColors.info),
         filled: true,
-        fillColor: Colors.white.withValues(alpha: 0.70),
+        fillColor: AppColors.textOnPrimary.withValues(alpha: 0.70),
         isDense: true,
         contentPadding: const EdgeInsets.symmetric(
-          horizontal: 16,
-          vertical: 12,
+          horizontal: AppSpacing.space8,
+          vertical: AppSpacing.space6,
         ),
         prefixIcon: const Icon(
           Icons.search,
-          size: 16,
-          color: AppColors.neutral,
+          size: AppIconSize.sm,
+          color: AppColors.info,
         ),
         suffixIcon: _syncing
             ? const Padding(
-                padding: EdgeInsets.all(14),
+                padding: EdgeInsets.all(AppSpacing.space7),
                 child: SizedBox(
-                  width: 14,
+                  width: AppSpacing.space7,
                   height: 14,
                   child: CircularProgressIndicator(strokeWidth: 2),
                 ),
@@ -244,21 +245,21 @@ class _QuizPageState extends State<QuizPage> {
                 onPressed: _loading ? null : _sync,
                 icon: const Icon(
                   Icons.refresh,
-                  size: 16,
-                  color: AppColors.neutral,
+                  size: AppIconSize.sm,
+                  color: AppColors.info,
                 ),
               ),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: AppColors.neutralBorder),
+          borderRadius: AppRadius.lg,
+          borderSide: const BorderSide(color: AppColors.divider),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: AppColors.neutralBorder),
+          borderRadius: AppRadius.lg,
+          borderSide: const BorderSide(color: AppColors.divider),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: AppColors.neutralBorder),
+          borderRadius: AppRadius.lg,
+          borderSide: const BorderSide(color: AppColors.divider),
         ),
       ),
     );
@@ -286,10 +287,15 @@ class _QuizPageState extends State<QuizPage> {
     }
 
     return ListView(
-      padding: const EdgeInsets.fromLTRB(20, 8, 20, 112),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.space9,
+        AppSpacing.space4,
+        AppSpacing.space9,
+        AppSpacing.scrollClearance,
+      ),
       children: [
         for (var i = 0; i < quizzes.length; i++) ...[
-          if (i > 0) const SizedBox(height: 20),
+          if (i > 0) const SizedBox(height: AppSpacing.space9),
           QuizCard(quiz: quizzes[i], onTap: () => _openRooms(quizzes[i])),
         ],
       ],

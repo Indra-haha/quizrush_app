@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../theme/app_theme.dart';
 
@@ -22,7 +21,10 @@ class AppPrimaryButton extends StatelessWidget {
     this.loading = false,
     this.icon,
     this.radius = 14,
-    this.padding = const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+    this.padding = const EdgeInsets.symmetric(
+      horizontal: AppSpacing.space9,
+      vertical: AppSpacing.space7,
+    ),
     this.loadingLabel,
   });
 
@@ -34,9 +36,9 @@ class AppPrimaryButton extends StatelessWidget {
       onPressed: enabled ? onPressed : null,
       style: FilledButton.styleFrom(
         backgroundColor: AppColors.primary,
-        foregroundColor: Colors.white,
-        disabledBackgroundColor: AppColors.neutralBorder,
-        disabledForegroundColor: Colors.white,
+        foregroundColor: AppColors.textOnPrimary,
+        disabledBackgroundColor: AppColors.divider,
+        disabledForegroundColor: AppColors.textOnPrimary,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(radius),
         ),
@@ -51,11 +53,11 @@ class AppPrimaryButton extends StatelessWidget {
                   height: 22,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
-                    color: Colors.white,
+                    color: AppColors.textOnPrimary,
                   ),
                 ),
                 if (loadingLabel != null) ...[
-                  const SizedBox(width: 10),
+                  const SizedBox(width: AppSpacing.space5),
                   Text(loadingLabel!, style: _labelStyle),
                 ],
               ],
@@ -64,8 +66,8 @@ class AppPrimaryButton extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 if (icon != null) ...[
-                  Icon(icon, size: 18),
-                  const SizedBox(width: 8),
+                  Icon(icon, size: AppIconSize.body),
+                  const SizedBox(width: AppSpacing.space4),
                 ],
                 Text(label, style: _labelStyle),
               ],
@@ -73,10 +75,6 @@ class AppPrimaryButton extends StatelessWidget {
     );
   }
 
-  TextStyle get _labelStyle => GoogleFonts.plusJakartaSans(
-    color: Colors.white,
-    fontSize: 14,
-    fontWeight: FontWeight.w700,
-    height: 1.43,
-  );
+  TextStyle get _labelStyle =>
+      AppTextStyles.labelStrong.copyWith(color: AppColors.textOnPrimary);
 }

@@ -1,7 +1,10 @@
+import '../theme/app_theme.dart';
 import 'package:flutter/material.dart';
 
 class AppHeaderBar extends StatelessWidget implements PreferredSizeWidget {
-  static const _contentPadding = EdgeInsets.symmetric(horizontal: 20);
+  static const _contentPadding = EdgeInsets.symmetric(
+    horizontal: AppSpacing.space9,
+  );
   static const _contentGap = 8.0;
 
   final String? title;
@@ -33,15 +36,12 @@ class AppHeaderBar extends StatelessWidget implements PreferredSizeWidget {
     // menempel di tepi layar dan title tidak terdorong terlalu jauh
     return Padding(
       padding: EdgeInsets.only(
-        left: hasLeading ? 0 : _contentPadding.left,
+        left: hasLeading ? AppSpacing.none : _contentPadding.left,
         right: _contentPadding.right,
       ),
       child: Row(
         children: [
-          if (hasLeading) ...[
-            leading!,
-            const SizedBox(width: _contentGap),
-          ],
+          if (hasLeading) ...[leading!, const SizedBox(width: _contentGap)],
           Expanded(
             child: Text(
               title ?? '',

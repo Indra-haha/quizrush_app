@@ -1,52 +1,45 @@
 import 'package:flutter/material.dart';
 
+import '../theme/app_theme.dart';
+
 class HelpPage extends StatelessWidget {
   const HelpPage({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Bantuan"),
-        centerTitle: true,
-      ),
+      appBar: AppBar(title: const Text("Bantuan"), centerTitle: true),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppSpacing.space8),
         child: Column(
           children: [
             const Icon(
               Icons.help_center,
-              size: 80,
-              color: Colors.blue,
+              size: AppIconSize.display,
+              color: AppColors.primary,
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.space6),
 
-            const Text(
+            Text(
               "Panduan Penggunaan Aplikasi",
               textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-              ),
+              style: AppTextStyles.heading1Strong,
             ),
 
-            const SizedBox(height: 8),
+            const SizedBox(height: AppSpacing.space4),
 
-            const Text(
+            Text(
               "Berikut adalah panduan singkat penggunaan setiap fitur yang tersedia pada aplikasi.",
               textAlign: TextAlign.center,
-              style: TextStyle(
-                color: Colors.grey,
-              ),
+              style: AppTextStyles.bodyMedium,
             ),
 
-            const SizedBox(height: 24),
+            const SizedBox(height: AppSpacing.space10),
 
             _buildHelpCard(
               icon: Icons.login,
               title: "Login / Registrasi",
-              description:
-                  "Masuk atau buat akun menggunakan NIM dan password.",
+              description: "Masuk atau buat akun menggunakan NIM dan password.",
             ),
 
             _buildHelpCard(
@@ -91,18 +84,16 @@ class HelpPage extends StatelessWidget {
                   "Keluar dari akun yang sedang digunakan dan kembali ke halaman login.",
             ),
 
-            const SizedBox(height: 20),
+            const SizedBox(height: AppSpacing.space9),
 
             const Divider(),
 
-            const SizedBox(height: 10),
+            const SizedBox(height: AppSpacing.space5),
 
-            const Text(
+            Text(
               "Jika mengalami kendala saat menggunakan aplikasi, silakan hubungi administrator atau pengembang aplikasi.",
               textAlign: TextAlign.center,
-              style: TextStyle(
-                color: Colors.grey,
-              ),
+              style: AppTextStyles.bodyMedium,
             ),
           ],
         ),
@@ -116,20 +107,13 @@ class HelpPage extends StatelessWidget {
     required String description,
   }) {
     return Card(
-      elevation: 3,
-      margin: const EdgeInsets.only(bottom: 12),
+      elevation: AppElevation.medium,
+      margin: const EdgeInsets.only(bottom: AppSpacing.space6),
       child: ListTile(
-        leading: CircleAvatar(
-          child: Icon(icon),
-        ),
-        title: Text(
-          title,
-          style: const TextStyle(
-            fontWeight: FontWeight.bold,
-          ),
-        ),
+        leading: CircleAvatar(child: Icon(icon)),
+        title: Text(title, style: AppTextStyles.cardTitle),
         subtitle: Padding(
-          padding: const EdgeInsets.only(top: 4),
+          padding: const EdgeInsets.only(top: AppSpacing.space2),
           child: Text(description),
         ),
       ),

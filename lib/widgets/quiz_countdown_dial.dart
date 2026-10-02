@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../theme/app_theme.dart';
 
@@ -19,37 +18,26 @@ class QuizCountdownDial extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final accent = _isUrgent ? Colors.red : AppColors.primary;
+    final accent = _isUrgent ? AppColors.error : AppColors.primary;
 
     return Container(
       width: 96,
       height: 96,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        border: Border.all(color: accent, width: 4),
+        border: Border.all(color: accent, width: AppBorderWidth.heavy),
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Text(
             '$seconds',
-            style: GoogleFonts.montserrat(
-              color: _isUrgent ? Colors.red : AppColors.ink,
-              fontSize: 28,
-              fontWeight: FontWeight.w800,
-              height: 1,
+            style: AppTextStyles.heading1.copyWith(
+              color: _isUrgent ? AppColors.error : AppColors.textPrimary,
             ),
           ),
-          const SizedBox(height: 4),
-          const Text(
-            'DETIK',
-            style: TextStyle(
-              color: AppColors.muted,
-              fontSize: 10,
-              fontWeight: FontWeight.w400,
-              letterSpacing: 1,
-            ),
-          ),
+          const SizedBox(height: AppSpacing.space2),
+          Text('DETIK', style: AppTextStyles.hintSmall),
         ],
       ),
     );

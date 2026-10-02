@@ -1,3 +1,4 @@
+import '../theme/app_theme.dart';
 import 'package:flutter/material.dart';
 
 import 'app_header_bar.dart';
@@ -22,7 +23,7 @@ class AppHeaderBarWithActions extends AppHeaderBar {
 
     final trailing = <Widget>[];
     if (actionList != null && actionList.isNotEmpty) {
-      trailing.add(const SizedBox(width: 8));
+      trailing.add(const SizedBox(width: AppSpacing.space4));
       for (var i = 0; i < actionList.length; i++) {
         if (i > 0) trailing.add(const SizedBox(width: _actionSpacing));
         trailing.add(actionList[i]);

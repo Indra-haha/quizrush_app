@@ -45,8 +45,6 @@ class _RegisterPageState extends State<RegisterPage> {
     }
   }
 
- 
-
   Future<void> _register() async {
     if (_isLoading) return;
     final nama = _namaController.text.trim();
@@ -122,16 +120,14 @@ class _RegisterPageState extends State<RegisterPage> {
       backgroundColor: AppColors.background,
       body: Center(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
+          padding: const EdgeInsets.all(AppSpacing.space10),
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 450),
             child: Card(
-              elevation: 8,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
+              elevation: AppElevation.raised,
+              shape: RoundedRectangleBorder(borderRadius: AppRadius.lg),
               child: Padding(
-                padding: const EdgeInsets.all(28),
+                padding: const EdgeInsets.all(AppSpacing.space11),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
@@ -140,19 +136,15 @@ class _RegisterPageState extends State<RegisterPage> {
                       width: 70,
                       height: 70,
                     ),
-                    const SizedBox(height: 10),
+                    const SizedBox(height: AppSpacing.space5),
 
-                    const Text(
+                    Text(
                       'Registrasi Akun',
                       textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.primary,
-                      ),
+                      style: AppTextStyles.heading2Strong,
                     ),
 
-                    const SizedBox(height: 25),
+                    const SizedBox(height: AppSpacing.space16),
 
                     AppTextField(
                       controller: _namaController,
@@ -160,7 +152,7 @@ class _RegisterPageState extends State<RegisterPage> {
                       icon: Icons.person,
                     ),
 
-                    const SizedBox(height: 16),
+                    const SizedBox(height: AppSpacing.space8),
 
                     AppTextField(
                       controller: _nimController,
@@ -169,7 +161,7 @@ class _RegisterPageState extends State<RegisterPage> {
                       keyboardType: TextInputType.number,
                     ),
 
-                    const SizedBox(height: 16),
+                    const SizedBox(height: AppSpacing.space8),
 
                     AppTextField(
                       controller: _kelasController,
@@ -177,7 +169,7 @@ class _RegisterPageState extends State<RegisterPage> {
                       icon: Icons.class_,
                     ),
 
-                    const SizedBox(height: 16),
+                    const SizedBox(height: AppSpacing.space8),
 
                     AppTextField(
                       controller: _tanggalLahirController,
@@ -187,7 +179,7 @@ class _RegisterPageState extends State<RegisterPage> {
                       onTap: _pickDate,
                     ),
 
-                    const SizedBox(height: 16),
+                    const SizedBox(height: AppSpacing.space8),
 
                     AppTextField(
                       controller: _passwordController,
@@ -208,7 +200,7 @@ class _RegisterPageState extends State<RegisterPage> {
                       ),
                     ),
 
-                    const SizedBox(height: 16),
+                    const SizedBox(height: AppSpacing.space8),
 
                     AppTextField(
                       controller: _confirmPasswordController,
@@ -229,16 +221,18 @@ class _RegisterPageState extends State<RegisterPage> {
                       ),
                     ),
 
-                    const SizedBox(height: 24),
+                    const SizedBox(height: AppSpacing.space10),
 
                     ElevatedButton(
                       onPressed: _isLoading ? null : _register,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primary,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        foregroundColor: AppColors.textOnPrimary,
+                        padding: const EdgeInsets.symmetric(
+                          vertical: AppSpacing.space7,
+                        ),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
+                          borderRadius: AppRadius.md,
                         ),
                       ),
                       child: _isLoading
@@ -247,21 +241,18 @@ class _RegisterPageState extends State<RegisterPage> {
                               height: 22,
                               child: AppLoadingIndicator(),
                             )
-                          : const Text(
-                              'Daftar',
-                              style: TextStyle(fontSize: 16),
-                            ),
+                          : Text('Daftar', style: AppTextStyles.button),
                     ),
 
-                    const SizedBox(height: 12),
+                    const SizedBox(height: AppSpacing.space6),
 
                     TextButton(
                       onPressed: () {
                         Navigator.pop(context);
                       },
-                      child: const Text(
+                      child: Text(
                         'Sudah punya akun? Login',
-                        style: TextStyle(color: AppColors.primary),
+                        style: AppTextStyles.buttonSmall,
                       ),
                     ),
                   ],

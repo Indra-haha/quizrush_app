@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../../models/quiz.dart';
 import '../../models/room.dart';
@@ -106,23 +105,13 @@ class _MyQuizPageState extends State<MyQuizPage> {
           children: [
             Text(
               'Kode Room',
-              style: GoogleFonts.plusJakartaSans(
-                color: AppColors.muted,
-                fontSize: 12,
-                height: 1.33,
+              style: AppTextStyles.statLabelOnPrimary.copyWith(
+                color: AppColors.textSecondary,
               ),
             ),
-            const SizedBox(height: 8),
-            Text(
-              room.kode,
-              style: const TextStyle(
-                fontFamily: 'monospace',
-                fontSize: 36,
-                fontWeight: FontWeight.w900,
-                letterSpacing: 4,
-              ),
-            ),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.space4),
+            Text(room.kode, style: AppTextStyles.code),
+            const SizedBox(height: AppSpacing.space8),
             TextButton.icon(
               onPressed: () {
                 Clipboard.setData(ClipboardData(text: room.kode));
@@ -132,7 +121,7 @@ class _MyQuizPageState extends State<MyQuizPage> {
                   duration: const Duration(seconds: 1),
                 );
               },
-              icon: const Icon(Icons.copy, size: 16),
+              icon: const Icon(Icons.copy, size: AppIconSize.sm),
               label: const Text('Salin'),
             ),
           ],
@@ -176,7 +165,7 @@ class _MyQuizPageState extends State<MyQuizPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.cardBg,
+      backgroundColor: AppColors.surface,
       appBar: AppHeaderBarWithActions(
         title: 'Quiz Saya',
         leading: IconButton(
@@ -206,22 +195,27 @@ class _MyQuizPageState extends State<MyQuizPage> {
     if (_index.isEmpty) return _buildEmpty();
 
     return ListView(
-      padding: const EdgeInsets.only(left: 20, right: 20, top: 16, bottom: 112),
+      padding: const EdgeInsets.only(
+        left: AppSpacing.space9,
+        right: AppSpacing.space9,
+        top: AppSpacing.space8,
+        bottom: AppSpacing.scrollClearance,
+      ),
       children: [
         if (_index.group('quarantine').isNotEmpty) ...[
           for (final quiz in _index.group('quarantine'))
             Padding(
-              padding: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.only(bottom: AppSpacing.space6),
               child: QuarantineCard(quiz: quiz, onTap: () => _openRooms(quiz)),
             ),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpacing.space6),
         ],
         StatusFilterRow(
           statuses: _statusFilters,
           selected: _selectedStatus,
           onChanged: (status) => setState(() => _selectedStatus = status),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: AppSpacing.space6),
         _buildRoomList(_selectedStatus),
       ],
     );
@@ -232,7 +226,7 @@ class _MyQuizPageState extends State<MyQuizPage> {
 
     if (entries.isEmpty) {
       return Padding(
-        padding: const EdgeInsets.symmetric(vertical: 48),
+        padding: const EdgeInsets.symmetric(vertical: AppSpacing.space14),
         child: EmptyStateView(
           icon: Icons.meeting_room_outlined,
           message: 'Tidak ada room dengan status "$status".',
@@ -244,12 +238,12 @@ class _MyQuizPageState extends State<MyQuizPage> {
       children: [
         for (final entry in entries)
           Padding(
-            padding: const EdgeInsets.only(bottom: 12),
+            padding: const EdgeInsets.only(bottom: AppSpacing.space6),
             child: RoomCard(
               quiz: entry.quiz,
               room: entry.room,
               onTap: () => _openRoomDetail(entry.quiz, entry.room),
-              onTestPressed: () =>  _testRoom(entry.quiz, entry.room),
+              onTestPressed: () => _testRoom(entry.quiz, entry.room),
             ),
           ),
       ],

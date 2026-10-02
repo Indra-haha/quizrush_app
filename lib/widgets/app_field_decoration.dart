@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../theme/app_theme.dart';
 
@@ -38,11 +37,9 @@ class AppFieldDecoration {
       hintText: hint,
       hintStyle: hintStyle,
       filled: true,
-      fillColor: AppColors.lineLight,
-      labelStyle: GoogleFonts.plusJakartaSans(
-        color: AppColors.muted,
-        fontSize: 12,
-        fontWeight: FontWeight.w600,
+      fillColor: AppColors.divider,
+      labelStyle: AppTextStyles.statLabelOnPrimary.copyWith(
+        color: AppColors.textSecondary,
       ),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(radius),
@@ -57,16 +54,15 @@ class AppFieldDecoration {
       hintText: hint,
       hintStyle:
           hintStyle ??
-          GoogleFonts.montserrat(
-            fontSize: 16,
-            fontWeight: FontWeight.w700,
-            color: AppColors.placeholder,
-          ),
+          AppTextStyles.heading5.copyWith(color: AppColors.textMuted),
       filled: true,
-      fillColor: AppColors.formFieldBg,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
-      border: _outline(AppColors.border),
-      enabledBorder: _outline(AppColors.border),
+      fillColor: AppColors.surface,
+      contentPadding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.space10,
+        vertical: AppSpacing.space9,
+      ),
+      border: _outline(AppColors.divider),
+      enabledBorder: _outline(AppColors.divider),
       focusedBorder: _outline(AppColors.primary),
     );
   }
@@ -74,7 +70,7 @@ class AppFieldDecoration {
   OutlineInputBorder _outline(Color color) {
     return OutlineInputBorder(
       borderRadius: BorderRadius.circular(radius),
-      borderSide: BorderSide(color: color, width: 2),
+      borderSide: BorderSide(color: color, width: AppBorderWidth.regular),
     );
   }
 }

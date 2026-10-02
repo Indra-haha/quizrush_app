@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../../models/quiz.dart';
 import '../../theme/app_theme.dart';
@@ -17,16 +16,12 @@ class DetailQuizRoomPage extends StatelessWidget {
   final Quizes quiz;
   final String? focusKode;
 
-  const DetailQuizRoomPage({
-    super.key,
-    required this.quiz,
-    this.focusKode,
-  });
+  const DetailQuizRoomPage({super.key, required this.quiz, this.focusKode});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.cardBg,
+      backgroundColor: AppColors.surface,
       appBar: AppHeaderBar(
         title: 'Detail Quiz',
         leading: IconButton(
@@ -41,24 +36,27 @@ class DetailQuizRoomPage extends StatelessWidget {
 
   Widget _buildBody(BuildContext context) {
     final rooms = quiz.rooms
-        .where(
-          (room) => room.status != 'waiting' || room.kode == focusKode,
-        )
+        .where((room) => room.status != 'waiting' || room.kode == focusKode)
         .toList();
 
     return ListView(
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.space9,
+        AppSpacing.space8,
+        AppSpacing.space9,
+        AppSpacing.space12,
+      ),
       children: [
         _heroCard(quiz),
-        const SizedBox(height: 24),
+        const SizedBox(height: AppSpacing.space10),
         _roomSectionHeader(rooms.length),
-        const SizedBox(height: 16),
+        const SizedBox(height: AppSpacing.space8),
         if (rooms.isEmpty) _emptyRooms(),
         for (var i = 0; i < rooms.length; i++) ...[
-          if (i > 0) const SizedBox(height: 16),
+          if (i > 0) const SizedBox(height: AppSpacing.space8),
           _roomCard(context, quiz, rooms[i], i),
         ],
-        const SizedBox(height: 24),
+        const SizedBox(height: AppSpacing.space10),
       ],
     );
   }
@@ -68,7 +66,7 @@ class DetailQuizRoomPage extends StatelessWidget {
     final info = _statusInfo(status);
 
     return AppHeroCard(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(AppSpacing.space10),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -76,23 +74,25 @@ class DetailQuizRoomPage extends StatelessWidget {
             children: [
               AppPill(
                 text: info.label,
-                background: Colors.white.withValues(alpha: 0.90),
+                background: AppColors.textOnPrimary.withValues(alpha: 0.90),
                 foreground: AppColors.primary,
                 dot: info.color,
-                fontWeight: FontWeight.w600,
+                fontWeight: AppFontWeight.semibold,
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.space8),
           Text(
             quiz.title,
-            style: AppTextStyles.heading1.copyWith(color: Colors.white),
+            style: AppTextStyles.heading1.copyWith(
+              color: AppColors.textOnPrimary,
+            ),
           ),
           if (quiz.description.isNotEmpty) ...[
-            const SizedBox(height: 8),
-            AppHeroSubtitle(quiz.description, fontSize: 14),
+            const SizedBox(height: AppSpacing.space4),
+            AppHeroSubtitle(quiz.description, fontSize: AppFontSize.bodyLarge),
           ],
-          const SizedBox(height: 20),
+          const SizedBox(height: AppSpacing.space9),
           IntrinsicHeight(
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -104,7 +104,7 @@ class DetailQuizRoomPage extends StatelessWidget {
                     label: 'Durasi',
                   ),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: AppSpacing.space4),
                 Expanded(
                   child: AppStatTile.stacked(
                     icon: Icons.list_alt,
@@ -112,7 +112,7 @@ class DetailQuizRoomPage extends StatelessWidget {
                     label: 'Pertanyaan',
                   ),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: AppSpacing.space4),
                 Expanded(
                   child: AppStatTile.stacked(
                     icon: Icons.checklist_rtl,
@@ -134,20 +134,20 @@ class DetailQuizRoomPage extends StatelessWidget {
       children: [
         Row(
           children: [
-            Text(
-              'Daftar Room',
-              style: AppTextStyles.heading1.copyWith(fontSize: 24),
-            ),
-            const SizedBox(width: 8),
+            Text('Daftar Room', style: AppTextStyles.display2),
+            const SizedBox(width: AppSpacing.space4),
             AppPill(
               text: '$count Room',
-              background: AppColors.softLavender,
-              foreground: AppColors.inkStrong,
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              background: AppColors.primarySoft,
+              foreground: AppColors.textPrimary,
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.space4,
+                vertical: AppSpacing.space2,
+              ),
             ),
           ],
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: AppSpacing.space2),
         Text(
           'Pilih room untuk langsung bergabung ke server kuis',
           style: AppTextStyles.bodyMeta,
@@ -170,20 +170,14 @@ class DetailQuizRoomPage extends StatelessWidget {
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppSpacing.space8),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(32),
+        color: AppColors.textOnPrimary,
+        borderRadius: AppRadius.md,
         border: isFocused
-            ? Border.all(color: AppColors.primary, width: 1.5)
+            ? Border.all(color: AppColors.primary, width: AppBorderWidth.thin)
             : null,
-        boxShadow: const [
-          BoxShadow(
-            color: AppColors.shadowHairline,
-            blurRadius: 20,
-            offset: Offset(0, 8),
-          ),
-        ],
+        boxShadow: AppShadows.hairlineWide,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -198,59 +192,48 @@ class DetailQuizRoomPage extends StatelessWidget {
                   shape: BoxShape.circle,
                 ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: AppSpacing.space4),
               Expanded(
                 child: Text(
                   info.label,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.plusJakartaSans(
+                  style: AppTextStyles.statLabelOnPrimary.copyWith(
                     color: info.color,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    height: 1.33,
                   ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpacing.space6),
           if (isFocused) ...[
             const AppPill(
               text: 'Room dari PIN yang kamu masukkan',
-              background: AppColors.softLavender,
-              foreground: AppColors.inkStrong,
+              background: AppColors.primarySoft,
+              foreground: AppColors.textPrimary,
               icon: Icons.pin,
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.space6),
           ],
-          Text(
-            room.judul,
-            style: GoogleFonts.montserrat(
-              color: AppColors.ink,
-              fontSize: 20,
-              fontWeight: FontWeight.w700,
-              height: 1.33,
-            ),
-          ),
-          const SizedBox(height: 6),
+          Text(room.judul, style: AppTextStyles.heading6),
+          const SizedBox(height: AppSpacing.space3),
           Text(
             subtitle,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
-            style: GoogleFonts.plusJakartaSans(
-              color: AppColors.muted,
-              fontSize: 14,
-              fontWeight: FontWeight.w400,
-              height: 1.50,
-            ),
+            style: AppTextStyles.body.copyWith(color: AppColors.textSecondary),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.space8),
           Container(
-            padding: const EdgeInsets.fromLTRB(12, 16, 12, 12),
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.space6,
+              AppSpacing.space8,
+              AppSpacing.space6,
+              AppSpacing.space6,
+            ),
             decoration: BoxDecoration(
-              color: AppColors.optionBg,
-              borderRadius: BorderRadius.circular(16),
+              color: AppColors.surface,
+              borderRadius: AppRadius.lg,
             ),
             child: Row(
               children: [
@@ -258,15 +241,11 @@ class DetailQuizRoomPage extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text('PIN SERVER', style: AppTextStyles.bodyMeta),
-                    const SizedBox(height: 2),
+                    const SizedBox(height: AppSpacing.space1),
                     Text(
                       formatKode(room.kode),
-                      style: GoogleFonts.montserrat(
+                      style: AppTextStyles.display2.copyWith(
                         color: AppColors.primary,
-                        fontSize: 24,
-                        fontWeight: FontWeight.w700,
-                        height: 1.33,
-                        letterSpacing: 1.20,
                       ),
                     ),
                   ],
@@ -278,7 +257,9 @@ class DetailQuizRoomPage extends StatelessWidget {
                     child: AppPrimaryButton(
                       label: 'Masuk',
                       radius: 12,
-                      padding: const EdgeInsets.symmetric(horizontal: 24),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.space10,
+                      ),
                       onPressed: () => AppSnackBar.show(
                         context,
                         'Join Room ${room.kode} — fitur join menyusul.',
@@ -295,7 +276,7 @@ class DetailQuizRoomPage extends StatelessWidget {
 
   Widget _emptyRooms() {
     return const Padding(
-      padding: EdgeInsets.symmetric(vertical: 32),
+      padding: EdgeInsets.symmetric(vertical: AppSpacing.space12),
       child: EmptyStateView(
         icon: Icons.meeting_room_outlined,
         message: 'Belum ada room untuk kuis ini.',

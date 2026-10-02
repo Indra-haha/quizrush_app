@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../theme/app_theme.dart';
 
@@ -14,12 +13,7 @@ class AppInlineError extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text(
       message,
-      style: GoogleFonts.plusJakartaSans(
-        color: AppColors.dangerInk,
-        fontSize: 12,
-        fontWeight: FontWeight.w500,
-        height: 1.50,
-      ),
+      style: AppTextStyles.bodySmall.copyWith(color: AppColors.error),
     );
   }
 }

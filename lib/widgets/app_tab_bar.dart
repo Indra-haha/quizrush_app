@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../theme/app_theme.dart';
 
@@ -13,26 +12,20 @@ class AppTabBar extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
-    final labelStyle = GoogleFonts.plusJakartaSans(
-      fontSize: 13,
-      fontWeight: FontWeight.w600,
-    );
+    final labelStyle = AppTextStyles.metric.copyWith(color: null);
 
     return TabBar(
       isScrollable: false,
       indicatorSize: TabBarIndicatorSize.tab,
-      labelColor: AppColors.brandDeep,
-      unselectedLabelColor: AppColors.neutralDark,
-      indicatorColor: AppColors.brandDeep,
+      labelColor: AppColors.primaryDark,
+      unselectedLabelColor: AppColors.textSecondary,
+      indicatorColor: AppColors.primaryDark,
       labelStyle: labelStyle,
       unselectedLabelStyle: labelStyle,
       tabs: [
         for (final tab in tabs)
           Tab(
-            child: FittedBox(
-              fit: BoxFit.scaleDown,
-              child: Text(tab),
-            ),
+            child: FittedBox(fit: BoxFit.scaleDown, child: Text(tab)),
           ),
       ],
     );

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../theme/app_theme.dart';
 
@@ -20,57 +19,47 @@ class AppPillButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 48,
+      height: AppSpacing.space14,
       child: DecoratedBox(
         decoration: BoxDecoration(
           color: AppColors.primary,
-          borderRadius: BorderRadius.circular(9999),
-          boxShadow: [
-            BoxShadow(
-              color: const Color(0x19000000),
-              blurRadius: 10,
-              offset: const Offset(0, 8),
-              spreadRadius: -6,
-            ),
-            BoxShadow(
-              color: const Color(0x19000000),
-              blurRadius: 25,
-              offset: const Offset(0, 20),
-              spreadRadius: -5,
-            ),
-          ],
+          borderRadius: AppRadius.md,
+          boxShadow: AppShadows.pillButton,
         ),
         child: Material(
           color: Colors.transparent,
           child: InkWell(
-            borderRadius: BorderRadius.circular(9999),
+            borderRadius: AppRadius.md,
             onTap: showProgress ? null : onPressed,
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.space8,
+              ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   if (showProgress)
                     const SizedBox(
-                      width: 20,
+                      width: AppSpacing.space9,
                       height: 20,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        color: Colors.white,
+                        color: AppColors.textOnPrimary,
                       ),
                     )
                   else if (icon != null) ...[
-                    Icon(icon, size: 16, color: Colors.white),
-                    const SizedBox(width: 4),
+                    Icon(
+                      icon,
+                      size: AppIconSize.sm,
+                      color: AppColors.textOnPrimary,
+                    ),
+                    const SizedBox(width: AppSpacing.space2),
                   ],
                   Text(
                     label,
                     textAlign: TextAlign.center,
-                    style: GoogleFonts.plusJakartaSans(
+                    style: AppTextStyles.bodyLarge.copyWith(
                       color: AppColors.background,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w400,
-                      height: 1.5,
                     ),
                   ),
                 ],

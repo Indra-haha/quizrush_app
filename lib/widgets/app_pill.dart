@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../theme/app_theme.dart';
 import '../theme/quiz_status.dart';
@@ -34,8 +33,8 @@ class AppPill extends StatelessWidget {
     this.icon,
     this.elevated = false,
     this.padding,
-    this.fontSize = 12,
-    this.fontWeight = FontWeight.w600,
+    this.fontSize = AppFontSize.small,
+    this.fontWeight = AppFontWeight.semibold,
   });
 
   /// Pill status room; warna titik diambil dari palet status yang sama dengan
@@ -44,8 +43,8 @@ class AppPill extends StatelessWidget {
     return AppPill(
       key: key,
       text: QuizStatus.labelOf(status),
-      background: Colors.white,
-      foreground: AppColors.neutralDark,
+      background: AppColors.textOnPrimary,
+      foreground: AppColors.textSecondary,
       dot: QuizStatus.dotColor(status),
       elevated: elevated,
     );
@@ -55,20 +54,15 @@ class AppPill extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding:
-          padding ?? const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          padding ??
+          const EdgeInsets.symmetric(
+            horizontal: AppSpacing.space6,
+            vertical: AppSpacing.space4,
+          ),
       decoration: BoxDecoration(
         color: background,
-        borderRadius: BorderRadius.circular(9999),
+        borderRadius: AppRadius.md,
         border: border == null ? null : Border.all(color: border!),
-        boxShadow: elevated
-            ? const [
-                BoxShadow(
-                  color: AppColors.shadowSoft,
-                  blurRadius: 2,
-                  offset: Offset(0, 1),
-                ),
-              ]
-            : null,
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -79,22 +73,19 @@ class AppPill extends StatelessWidget {
               height: 6,
               decoration: BoxDecoration(color: dot, shape: BoxShape.circle),
             ),
-            const SizedBox(width: 6),
+            const SizedBox(width: AppSpacing.space3),
           ],
           if (icon != null) ...[
-            Icon(icon, size: 14, color: foreground),
-            const SizedBox(width: 4),
+            Icon(icon, size: AppIconSize.xs, color: foreground),
+            const SizedBox(width: AppSpacing.space2),
           ],
           Flexible(
             child: Text(
               text,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: GoogleFonts.plusJakartaSans(
+              style: AppTextStyles.statLabelOnPrimary.copyWith(
                 color: foreground,
-                fontSize: fontSize,
-                fontWeight: fontWeight,
-                height: 1.33,
               ),
             ),
           ),
@@ -103,11 +94,8 @@ class AppPill extends StatelessWidget {
               trailingText!,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: GoogleFonts.plusJakartaSans(
+              style: AppTextStyles.statLabelOnPrimary.copyWith(
                 color: trailingColor ?? foreground,
-                fontSize: fontSize,
-                fontWeight: fontWeight,
-                height: 1.33,
               ),
             ),
         ],

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../../models/quiz.dart';
 import '../../services/api_client.dart';
@@ -169,7 +168,7 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
   Widget build(BuildContext context) {
     final title = _quiz?.title;
     return Scaffold(
-      backgroundColor: AppColors.cardBg,
+      backgroundColor: AppColors.surface,
       appBar: AppHeaderBarWithActions(
         title: title == null || title.isEmpty ? 'Detail Room' : title,
         leading: IconButton(
@@ -212,21 +211,26 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
     final remaining = total - preview.length;
 
     return ListView(
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.space9,
+        AppSpacing.space8,
+        AppSpacing.space9,
+        AppSpacing.space12,
+      ),
       children: [
         _heroCard(quiz),
-        const SizedBox(height: 24),
+        const SizedBox(height: AppSpacing.space10),
         const SectionHeader(title: 'Jumlah Pertanyaan'),
-        const SizedBox(height: 16),
+        const SizedBox(height: AppSpacing.space8),
         for (final (i, q) in preview.indexed) ...[
           _questionCard(q, i),
-          if (i < preview.length - 1) const SizedBox(height: 16),
+          if (i < preview.length - 1) const SizedBox(height: AppSpacing.space8),
         ],
         if (remaining > 0) ...[
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.space8),
           _loadMoreButton(total, remaining),
         ],
-        const SizedBox(height: 24),
+        const SizedBox(height: AppSpacing.space10),
         _publishButton(),
       ],
     );
@@ -235,68 +239,52 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
   Widget _heroCard(Quizes quiz) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(AppSpacing.space10),
       decoration: BoxDecoration(
-        color: AppColors.heroBg,
-        borderRadius: BorderRadius.circular(32),
-        boxShadow: const [
-          BoxShadow(
-            color: AppColors.shadowCard,
-            blurRadius: 4,
-            offset: Offset(0, 2),
-            spreadRadius: -2,
-          ),
-          BoxShadow(
-            color: AppColors.shadowCard,
-            blurRadius: 6,
-            offset: Offset(0, 4),
-            spreadRadius: -1,
-          ),
-        ],
+        color: AppColors.surfaceSoft,
+        borderRadius: AppRadius.md,
+        boxShadow: AppShadows.layeredCard,
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Wrap(
-            spacing: 8,
-            runSpacing: 8,
+            spacing: AppSpacing.space4,
+            runSpacing: AppSpacing.space4,
             crossAxisAlignment: WrapCrossAlignment.center,
             children: [
               if (_room.kode.isNotEmpty)
                 _pill(
-                  color: AppColors.badgePurple,
-                  textColor: Colors.white,
+                  color: AppColors.primary,
+                  textColor: AppColors.textOnPrimary,
                   text: _room.kode,
                 ),
               _statusPill(),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.space8),
           Text(_room.kode, style: AppTextStyles.heading1),
           if (quiz.description.isNotEmpty) ...[
-            const SizedBox(height: 8),
+            const SizedBox(height: AppSpacing.space4),
             Text(
               quiz.description,
-              style: GoogleFonts.plusJakartaSans(
-                color: AppColors.muted,
-                fontSize: 16,
-                fontWeight: FontWeight.w400,
-                height: 1.50,
+              style: AppTextStyles.bodyLarge.copyWith(
+                color: AppColors.textSecondary,
               ),
             ),
           ],
-          const SizedBox(height: 20),
+          const SizedBox(height: AppSpacing.space9),
           AppStatTile.detailed(
             icon: Icons.list_alt,
-            iconBg: AppColors.softLavender,
+            iconBg: AppColors.primarySoft,
             value: '${quiz.questions.length}',
             label: 'Total Pertanyaan',
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSpacing.space4),
           AppStatTile.detailed(
             icon: Icons.timer_outlined,
-            iconBg: AppColors.warmSurface,
+            iconBg: AppColors.surface,
             value: formatDuration(totalDuration(quiz)),
             label: 'Durasi Kuis',
           ),
@@ -325,24 +313,11 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
   Widget _questionCard(QuizQuestion q, int index) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppSpacing.space8),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(32),
-        boxShadow: const [
-          BoxShadow(
-            color: AppColors.shadowCard,
-            blurRadius: 4,
-            offset: Offset(0, 2),
-            spreadRadius: -2,
-          ),
-          BoxShadow(
-            color: AppColors.shadowCard,
-            blurRadius: 6,
-            offset: Offset(0, 4),
-            spreadRadius: -1,
-          ),
-        ],
+        color: AppColors.textOnPrimary,
+        borderRadius: AppRadius.md,
+        boxShadow: AppShadows.layeredCard,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -350,42 +325,37 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
           Row(
             children: [
               _pill(
-                color: AppColors.highlight,
-                textColor: Colors.white,
+                color: AppColors.primary,
+                textColor: AppColors.textOnPrimary,
                 text: 'Soal ${index + 1}',
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: AppSpacing.space4),
               _pill(
-                color: AppColors.heroBg,
-                textColor: AppColors.muted,
+                color: AppColors.surfaceSoft,
+                textColor: AppColors.textSecondary,
                 text: formatQDuration(q.duration),
               ),
               const Spacer(),
               Text(
                 '${q.skor} Pts',
-                style: GoogleFonts.plusJakartaSans(
-                  color: AppColors.ptsInk,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  height: 1.33,
+                style: AppTextStyles.statLabelOnPrimary.copyWith(
+                  color: AppColors.textPrimary,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpacing.space6),
           Text(
             q.question,
-            style: GoogleFonts.plusJakartaSans(
-              color: AppColors.ink,
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-              height: 1.56,
+            style: AppTextStyles.buttonLarge.copyWith(
+              color: AppColors.textPrimary,
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpacing.space6),
           for (final (i, option) in q.options.indexed) ...[
             _optionTile(option, i),
-            if (i < q.options.length - 1) const SizedBox(height: 8),
+            if (i < q.options.length - 1)
+              const SizedBox(height: AppSpacing.space4),
           ],
         ],
       ),
@@ -395,16 +365,10 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
   Widget _optionTile(String option, int index) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(AppSpacing.space6),
       decoration: BoxDecoration(
-        color: AppColors.optionBg,
-        boxShadow: const [
-          BoxShadow(
-            color: AppColors.shadowSoft,
-            blurRadius: 2,
-            offset: Offset(0, 1),
-          ),
-        ],
+        color: AppColors.surface,
+        boxShadow: AppShadows.hairlineTight,
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -415,31 +379,20 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
             alignment: Alignment.center,
             decoration: BoxDecoration(
               color: _optionColors[index % _optionColors.length],
-              borderRadius: BorderRadius.circular(6),
+              borderRadius: AppRadius.md,
             ),
             child: Text(
               String.fromCharCode(65 + index),
-              style: GoogleFonts.plusJakartaSans(
-                color: Colors.white,
-                fontSize: 12,
-                fontWeight: FontWeight.w700,
-                height: 1.33,
+              style: AppTextStyles.labelStrongSmall.copyWith(
+                color: AppColors.textOnPrimary,
               ),
             ),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: AppSpacing.space4),
           Expanded(
             child: Padding(
-              padding: const EdgeInsets.only(top: 2),
-              child: Text(
-                option,
-                style: GoogleFonts.plusJakartaSans(
-                  color: AppColors.ink,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w400,
-                  height: 1.50,
-                ),
-              ),
+              padding: const EdgeInsets.only(top: AppSpacing.space1),
+              child: Text(option, style: AppTextStyles.bodyLarge),
             ),
           ),
         ],
@@ -449,33 +402,25 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
 
   Widget _loadMoreButton(int total, int remaining) {
     return Material(
-      color: AppColors.heroBg,
-      borderRadius: BorderRadius.circular(32),
+      color: AppColors.surfaceSoft,
+      borderRadius: AppRadius.md,
       child: InkWell(
-        borderRadius: BorderRadius.circular(32),
+        borderRadius: AppRadius.md,
         onTap: () => setState(() => _visibleCount = total),
         child: Container(
           width: double.infinity,
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.space10,
+            vertical: AppSpacing.space8,
+          ),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(32),
-            boxShadow: const [
-              BoxShadow(
-                color: AppColors.shadowSoft,
-                blurRadius: 2,
-                offset: Offset(0, 1),
-              ),
-            ],
+            borderRadius: AppRadius.md,
+            boxShadow: AppShadows.hairlineTight,
           ),
           child: Text(
             'Muat $remaining Soal Lainnya (Total $total Soal)',
             textAlign: TextAlign.center,
-            style: GoogleFonts.plusJakartaSans(
-              color: AppColors.primary,
-              fontSize: 14,
-              fontWeight: FontWeight.w700,
-              height: 1.43,
-            ),
+            style: AppTextStyles.labelStrong.copyWith(color: AppColors.primary),
           ),
         ),
       ),
@@ -492,7 +437,7 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
         icon: meta.$2,
         loading: _publishing,
         radius: 14,
-        padding: const EdgeInsets.symmetric(vertical: 14),
+        padding: const EdgeInsets.symmetric(vertical: AppSpacing.space7),
         onPressed: disabled ? null : _publish,
       ),
     );

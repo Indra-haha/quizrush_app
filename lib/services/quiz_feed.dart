@@ -12,11 +12,7 @@ import 'session_service.dart';
 ///
 /// [needsAuth] terpisah dari [error] supaya halaman tidak perlu menangkap
 /// [ApiException] hanya untuk memeriksa `statusCode == 401`.
-typedef QuizFeedResult = ({
-  QuizIndex? index,
-  String? error,
-  bool needsAuth,
-});
+typedef QuizFeedResult = ({QuizIndex? index, String? error, bool needsAuth});
 
 /// Pembacaan daftar quiz yang dipakai semua halaman: baca cache dulu, hubungi
 /// server hanya kalau perlu, lalu simpan hasilnya kembali ke cache.

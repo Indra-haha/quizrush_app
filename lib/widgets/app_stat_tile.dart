@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../theme/app_theme.dart';
 
@@ -69,30 +68,17 @@ class AppStatTile extends StatelessWidget {
     if (compact) {
       return Container(
         height: 40,
-        padding: const EdgeInsets.symmetric(horizontal: 12),
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.space6),
         decoration: BoxDecoration(
           color: background,
-          borderRadius: BorderRadius.circular(8),
-          border: borderColor == null
-              ? null
-              : Border.all(color: borderColor!),
-          boxShadow: const [
-            BoxShadow(
-              color: AppColors.shadowSoft,
-              blurRadius: 2,
-              offset: Offset(0, 1),
-            ),
-          ],
+          borderRadius: AppRadius.sm,
+          border: borderColor == null ? null : Border.all(color: borderColor!),
+          boxShadow: AppShadows.hairlineTight,
         ),
         child: Center(
           child: Text(
             value,
-            style: GoogleFonts.montserrat(
-              color: foreground,
-              fontSize: fontSize,
-              fontWeight: FontWeight.w700,
-              height: 1,
-            ),
+            style: AppTextStyles.display1.copyWith(color: foreground),
           ),
         ),
       );
@@ -100,22 +86,17 @@ class AppStatTile extends StatelessWidget {
 
     return Container(
       padding: onDarkSurface
-          ? const EdgeInsets.symmetric(vertical: 12, horizontal: 8)
-          : const EdgeInsets.all(12),
+          ? const EdgeInsets.symmetric(
+              vertical: AppSpacing.space6,
+              horizontal: AppSpacing.space4,
+            )
+          : const EdgeInsets.all(AppSpacing.space6),
       decoration: BoxDecoration(
         color: onDarkSurface
-            ? Colors.white.withValues(alpha: 0.16)
-            : Colors.white,
-        borderRadius: onDarkSurface ? BorderRadius.circular(16) : null,
-        boxShadow: onDarkSurface
-            ? null
-            : const [
-                BoxShadow(
-                  color: AppColors.shadowSoft,
-                  blurRadius: 2,
-                  offset: Offset(0, 1),
-                ),
-              ],
+            ? AppColors.textOnPrimary.withValues(alpha: 0.16)
+            : AppColors.textOnPrimary,
+        borderRadius: onDarkSurface ? AppRadius.lg : null,
+        boxShadow: onDarkSurface ? null : AppShadows.hairlineTight,
       ),
       child: onDarkSurface ? _buildStacked() : _buildDetailed(),
     );
@@ -125,29 +106,23 @@ class AppStatTile extends StatelessWidget {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, color: Colors.white, size: 18),
-        const SizedBox(height: 6),
+        Icon(icon, color: AppColors.textOnPrimary, size: AppIconSize.body),
+        const SizedBox(height: AppSpacing.space3),
         Text(
           value,
           textAlign: TextAlign.center,
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
-          style: GoogleFonts.montserrat(
-            color: Colors.white,
-            fontSize: 14,
-            fontWeight: FontWeight.w700,
-            height: 1.20,
+          style: AppTextStyles.heading5.copyWith(
+            color: AppColors.textOnPrimary,
           ),
         ),
-        const SizedBox(height: 2),
+        const SizedBox(height: AppSpacing.space1),
         Text(
           label,
           textAlign: TextAlign.center,
-          style: GoogleFonts.plusJakartaSans(
-            color: Colors.white.withValues(alpha: 0.80),
-            fontSize: 10,
-            fontWeight: FontWeight.w600,
-            height: 1.33,
+          style: AppTextStyles.bodyCaption.copyWith(
+            color: AppColors.textOnPrimary.withValues(alpha: 0.80),
           ),
         ),
       ],
@@ -162,23 +137,15 @@ class AppStatTile extends StatelessWidget {
           height: 40,
           decoration: BoxDecoration(
             color: iconBackground,
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: AppRadius.sm,
           ),
-          child: Icon(icon, size: 20, color: AppColors.ink),
+          child: Icon(icon, size: AppIconSize.md, color: AppColors.textPrimary),
         ),
-        const SizedBox(width: 12),
+        const SizedBox(width: AppSpacing.space6),
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              value,
-              style: GoogleFonts.montserrat(
-                color: AppColors.ink,
-                fontSize: 18,
-                fontWeight: FontWeight.w700,
-                height: 1.33,
-              ),
-            ),
+            Text(value, style: AppTextStyles.heading3),
             Text(label, style: AppTextStyles.bodyMeta),
           ],
         ),

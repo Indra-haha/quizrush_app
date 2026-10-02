@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../theme/app_theme.dart';
 
@@ -17,33 +16,29 @@ class QuizAnswerBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final accent = isCorrect ? AppColors.successInk : AppColors.dangerInk;
+    final accent = isCorrect ? AppColors.success : AppColors.error;
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+      padding: const EdgeInsets.symmetric(
+        vertical: AppSpacing.space7,
+        horizontal: AppSpacing.space8,
+      ),
       decoration: BoxDecoration(
-        color: isCorrect ? AppColors.successSoft : AppColors.dangerSoft,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: accent, width: 2),
+        color: isCorrect ? AppColors.success : AppColors.errorSoft,
+        borderRadius: AppRadius.lg,
+        border: Border.all(color: accent, width: AppBorderWidth.regular),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            isCorrect ? Icons.check_circle : Icons.cancel,
-            color: accent,
-          ),
-          const SizedBox(width: 8),
+          Icon(isCorrect ? Icons.check_circle : Icons.cancel, color: accent),
+          const SizedBox(width: AppSpacing.space4),
           Text(
             isCorrect
                 ? 'Kamu Benar! (+$gainedScore Poin)'
                 : 'Kamu Salah! (+0 Poin)',
-            style: GoogleFonts.montserrat(
-              color: accent,
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-            ),
+            style: AppTextStyles.heading5.copyWith(color: accent),
           ),
         ],
       ),

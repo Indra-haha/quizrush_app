@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../models/quiz.dart';
 import '../theme/app_theme.dart';
@@ -16,16 +15,10 @@ class QuizCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.cardBg,
-        borderRadius: BorderRadius.circular(32),
-        border: Border.all(color: AppColors.border),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x0F000000),
-            blurRadius: 0,
-            offset: Offset(0, 8),
-          ),
-        ],
+        color: AppColors.surface,
+        borderRadius: AppRadius.lg,
+        border: Border.all(color: AppColors.primaryBorder),
+        boxShadow: AppShadows.softLift,
       ),
       clipBehavior: Clip.antiAlias,
       child: Material(
@@ -37,12 +30,12 @@ class QuizCard extends StatelessWidget {
             children: [
               _buildCover(),
               Padding(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(AppSpacing.space8),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(quiz.title, style: AppTextStyles.heading2),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: AppSpacing.space4),
                     Row(
                       children: [
                         _buildMeta(
@@ -50,7 +43,7 @@ class QuizCard extends StatelessWidget {
                           '${quiz.rooms.length} Main',
                         ),
                         if (quiz.createdAt.isNotEmpty) ...[
-                          const SizedBox(width: 12),
+                          const SizedBox(width: AppSpacing.space6),
                           _buildMeta(
                             Icons.access_time,
                             relativeTime(quiz.createdAt),
@@ -76,15 +69,13 @@ class QuizCard extends StatelessWidget {
         fit: StackFit.expand,
         children: [
           const DecoratedBox(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [Color(0xFF6063EE), Color(0xFF4648D4)],
-              ),
-            ),
+            decoration: BoxDecoration(gradient: AppGradients.heroGradient),
             child: Center(
-              child: Icon(Icons.quiz, size: 56, color: Colors.white24),
+              child: Icon(
+                Icons.quiz,
+                size: AppIconSize.illustration,
+                color: AppStatus.onLightAlpha,
+              ),
             ),
           ),
           Positioned(
@@ -95,7 +86,7 @@ class QuizCard extends StatelessWidget {
               children: [
                 if (quiz.status.isNotEmpty)
                   _buildBadge(QuizStatus.labelOf(quiz.status), 16),
-                const SizedBox(height: 4),
+                const SizedBox(height: AppSpacing.space2),
                 _buildBadge('${quiz.questions.length} Soal', 12),
               ],
             ),
@@ -107,20 +98,15 @@ class QuizCard extends StatelessWidget {
 
   Widget _buildBadge(String text, double fontSize) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.space6,
+        vertical: AppSpacing.space2,
+      ),
       decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.50),
-        borderRadius: BorderRadius.circular(9999),
+        color: AppColors.textPrimary.withValues(alpha: 0.50),
+        borderRadius: AppRadius.md,
       ),
-      child: Text(
-        text,
-        style: GoogleFonts.plusJakartaSans(
-          color: Colors.white,
-          fontSize: fontSize,
-          fontWeight: FontWeight.w600,
-          height: 1.25,
-        ),
-      ),
+      child: Text(text, style: AppTextStyles.statLabelOnPrimary),
     );
   }
 
@@ -128,8 +114,8 @@ class QuizCard extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 14, color: AppColors.muted),
-        const SizedBox(width: 4),
+        Icon(icon, size: AppIconSize.xs, color: AppColors.textSecondary),
+        const SizedBox(width: AppSpacing.space2),
         Text(text, style: AppTextStyles.bodyMeta),
       ],
     );

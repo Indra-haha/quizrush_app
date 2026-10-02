@@ -62,7 +62,9 @@ void main() {
     test('AllQuizzes hanya menyimpan tiga grup', () async {
       final data = AllQuizzes.fromJson({
         'waiting': [
-          quizJson('q1', 'Kuis Menunggu', [roomJson('r1', '111111', 'waiting')]),
+          quizJson('q1', 'Kuis Menunggu', [
+            roomJson('r1', '111111', 'waiting'),
+          ]),
         ],
         'open': [quizJson('q2', 'Kuis Matematika', [])],
         'in-Game': [quizJson('q3', 'Kuis Fisika', [])],
@@ -79,9 +81,15 @@ void main() {
 
     test('tiga grup AllQuizzes tersimpan utuh setelah round-trip', () async {
       final data = AllQuizzes.fromJson({
-        'open': [quizJson('q2', 'Kuis Matematika', [roomJson('r2', '482913', 'open')])],
-        'in-Game': [quizJson('q3', 'Kuis Fisika', [roomJson('r3', '222222', 'in-Game')])],
-        'ended': [quizJson('q4', 'Kuis Kimia', [roomJson('r4', '333333', 'ended')])],
+        'open': [
+          quizJson('q2', 'Kuis Matematika', [roomJson('r2', '482913', 'open')]),
+        ],
+        'in-Game': [
+          quizJson('q3', 'Kuis Fisika', [roomJson('r3', '222222', 'in-Game')]),
+        ],
+        'ended': [
+          quizJson('q4', 'Kuis Kimia', [roomJson('r4', '333333', 'ended')]),
+        ],
       });
       await QuizCacheService.instance.saveAllQuizzes(data);
 
@@ -96,10 +104,20 @@ void main() {
 
     test('lima grup MyQuizzes tersimpan utuh setelah round-trip', () async {
       final data = MyQuizzes.fromJson({
-        'waiting': [quizJson('q1', 'Kuis Menunggu', [roomJson('r1', '111111', 'waiting')])],
-        'open': [quizJson('q2', 'Kuis Matematika', [roomJson('r2', '482913', 'open')])],
-        'in-Game': [quizJson('q3', 'Kuis Fisika', [roomJson('r3', '222222', 'in-Game')])],
-        'ended': [quizJson('q4', 'Kuis Kimia', [roomJson('r4', '333333', 'ended')])],
+        'waiting': [
+          quizJson('q1', 'Kuis Menunggu', [
+            roomJson('r1', '111111', 'waiting'),
+          ]),
+        ],
+        'open': [
+          quizJson('q2', 'Kuis Matematika', [roomJson('r2', '482913', 'open')]),
+        ],
+        'in-Game': [
+          quizJson('q3', 'Kuis Fisika', [roomJson('r3', '222222', 'in-Game')]),
+        ],
+        'ended': [
+          quizJson('q4', 'Kuis Kimia', [roomJson('r4', '333333', 'ended')]),
+        ],
         'quarantine': [quizJson('q5', 'Kuis Baru', [])],
       });
       await QuizCacheService.instance.saveMyQuizzes(data);

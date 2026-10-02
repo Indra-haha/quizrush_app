@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../../models/quiz.dart';
 import '../../models/room.dart' show PublishResult;
@@ -122,17 +121,17 @@ class _RoomsPageState extends State<RoomsPage> {
     }
 
     return ListView.separated(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppSpacing.space8),
       itemCount: rooms.length,
-      separatorBuilder: (_, _) => const SizedBox(height: 8),
+      separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.space4),
       itemBuilder: (context, index) {
         final room = rooms[index];
         return Card(
           child: InkWell(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: AppRadius.md,
             onTap: () => _openRoom(room),
             child: Padding(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(AppSpacing.space6),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -140,18 +139,15 @@ class _RoomsPageState extends State<RoomsPage> {
                     children: [
                       CircleAvatar(
                         backgroundColor: AppColors.primary,
-                        foregroundColor: Colors.white,
+                        foregroundColor: AppColors.textOnPrimary,
                         child: Text('${index + 1}'),
                       ),
-                      const SizedBox(width: 12),
+                      const SizedBox(width: AppSpacing.space6),
                       Expanded(
                         child: Text(
                           room.kode,
-                          style: GoogleFonts.plusJakartaSans(
-                            color: AppColors.ink,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w700,
-                            height: 1.33,
+                          style: AppTextStyles.metricStrong.copyWith(
+                            color: AppColors.textPrimary,
                           ),
                         ),
                       ),
@@ -160,19 +156,14 @@ class _RoomsPageState extends State<RoomsPage> {
                     ],
                   ),
                   if (quiz.title.isNotEmpty) ...[
-                    const SizedBox(height: 6),
+                    const SizedBox(height: AppSpacing.space3),
                     Text(quiz.title, style: AppTextStyles.bodyMeta),
                   ],
                   if (room.createdAt.isNotEmpty) ...[
-                    const SizedBox(height: 6),
+                    const SizedBox(height: AppSpacing.space3),
                     Text(
                       relativeTime(room.createdAt),
-                      style: GoogleFonts.plusJakartaSans(
-                        color: AppColors.neutral,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w500,
-                        height: 1.36,
-                      ),
+                      style: AppTextStyles.metric,
                     ),
                   ],
                 ],

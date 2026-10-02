@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../theme/app_theme.dart';
 import 'home_page.dart';
-import '../quarantine/kalkulator_page.dart';
 import 'QuizPage/quiz_page.dart';
 import 'konversi_page.dart';
 import 'help_page.dart';
@@ -33,13 +32,19 @@ class _MainShellState extends State<MainShell> {
         type: BottomNavigationBarType.fixed,
         currentIndex: _index,
         selectedItemColor: AppColors.primary,
-        unselectedItemColor: Colors.grey,
+        unselectedItemColor: AppColors.textSecondary,
         onTap: (i) => setState(() => _index = i),
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
           BottomNavigationBarItem(icon: Icon(Icons.quiz), label: 'Quiz'),
-          BottomNavigationBarItem(icon: Icon(Icons.swap_horiz), label: 'Konversi'),
-          BottomNavigationBarItem(icon: Icon(Icons.help_outline), label: 'Bantuan'),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.swap_horiz),
+            label: 'Konversi',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.help_outline),
+            label: 'Bantuan',
+          ),
         ],
       ),
     );

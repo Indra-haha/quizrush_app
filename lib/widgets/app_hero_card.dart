@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../theme/app_theme.dart';
 
@@ -14,7 +13,7 @@ class AppHeroCard extends StatelessWidget {
   const AppHeroCard({
     super.key,
     required this.child,
-    this.padding = const EdgeInsets.all(20),
+    this.padding = const EdgeInsets.all(AppSpacing.space9),
     this.margin,
     this.radius = 32,
     this.elevated = true,
@@ -26,21 +25,9 @@ class AppHeroCard extends StatelessWidget {
       margin: margin,
       padding: padding,
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [AppColors.highlight, AppColors.primary],
-        ),
+        gradient: AppGradients.solidHero,
         borderRadius: BorderRadius.circular(radius),
-        boxShadow: elevated
-            ? const [
-                BoxShadow(
-                  color: AppColors.shadowBrand,
-                  blurRadius: 24,
-                  offset: Offset(0, 10),
-                ),
-              ]
-            : null,
+        boxShadow: elevated ? AppShadows.brandGlow : null,
       ),
       child: child,
     );
@@ -58,12 +45,7 @@ class AppHeroTitle extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text(
       text,
-      style: GoogleFonts.montserrat(
-        color: Colors.white,
-        fontSize: fontSize,
-        fontWeight: FontWeight.w700,
-        height: 1.21,
-      ),
+      style: AppTextStyles.display1.copyWith(color: AppColors.textOnPrimary),
     );
   }
 }
@@ -73,17 +55,18 @@ class AppHeroSubtitle extends StatelessWidget {
   final String text;
   final double fontSize;
 
-  const AppHeroSubtitle(this.text, {super.key, this.fontSize = 12});
+  const AppHeroSubtitle(
+    this.text, {
+    super.key,
+    this.fontSize = AppFontSize.small,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Text(
       text,
-      style: GoogleFonts.plusJakartaSans(
-        color: Colors.white.withValues(alpha: 0.80),
-        fontSize: fontSize,
-        fontWeight: FontWeight.w500,
-        height: 1.36,
+      style: AppTextStyles.statLabelOnPrimary.copyWith(
+        color: AppColors.textOnPrimary.withValues(alpha: 0.80),
       ),
     );
   }

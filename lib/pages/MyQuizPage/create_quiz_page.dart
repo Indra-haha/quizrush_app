@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../../models/quiz.dart';
 import '../../services/api_client.dart';
@@ -159,7 +158,10 @@ class _CreateQuizPageState extends State<CreateQuizPage> {
             onPressed: _save,
             loading: _saving,
             radius: 9999,
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.space9,
+              vertical: AppSpacing.space6,
+            ),
           ),
         ],
       ),
@@ -167,19 +169,24 @@ class _CreateQuizPageState extends State<CreateQuizPage> {
         children: [
           Expanded(
             child: ListView(
-              padding: const EdgeInsets.fromLTRB(20, 24, 20, 40),
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.space9,
+                AppSpacing.space10,
+                AppSpacing.space9,
+                AppSpacing.space13,
+              ),
               children: [
                 _buildLabel('Judul Quiz'),
-                const SizedBox(height: 8),
+                const SizedBox(height: AppSpacing.space4),
                 _buildTitleField(),
-                const SizedBox(height: 20),
+                const SizedBox(height: AppSpacing.space9),
                 _buildLabel('Deskripsi'),
-                const SizedBox(height: 8),
+                const SizedBox(height: AppSpacing.space4),
                 _buildDescriptionField(),
-                const SizedBox(height: 24),
+                const SizedBox(height: AppSpacing.space10),
                 for (var i = 0; i < _questions.length; i++) ...[
                   _buildQuestionCard(i),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: AppSpacing.space9),
                 ],
                 _buildAddQuestionButton(),
               ],
@@ -191,24 +198,13 @@ class _CreateQuizPageState extends State<CreateQuizPage> {
   }
 
   Widget _buildLabel(String text) {
-    return Text(
-      text,
-      style: GoogleFonts.plusJakartaSans(
-        fontSize: 14,
-        fontWeight: FontWeight.w700,
-        color: AppColors.ink,
-      ),
-    );
+    return Text(text, style: AppTextStyles.labelStrong);
   }
 
   Widget _buildTitleField() {
     return TextField(
       controller: _titleController,
-      style: GoogleFonts.montserrat(
-        fontSize: 16,
-        fontWeight: FontWeight.w700,
-        color: AppColors.ink,
-      ),
+      style: AppTextStyles.heading5,
       decoration: const AppFieldDecoration.bordered(
         hint: 'Masukkan judul yang menarik...',
         radius: 32,
@@ -221,11 +217,7 @@ class _CreateQuizPageState extends State<CreateQuizPage> {
       controller: _descriptionController,
       maxLines: null,
       minLines: 2,
-      style: GoogleFonts.plusJakartaSans(
-        fontSize: 16,
-        fontWeight: FontWeight.w500,
-        color: AppColors.ink,
-      ),
+      style: AppTextStyles.bodyLarge,
       decoration: const AppFieldDecoration.bordered(
         hint: 'Masukkan deskripsi yang menarik...',
       ).build(),
@@ -236,11 +228,14 @@ class _CreateQuizPageState extends State<CreateQuizPage> {
     final question = _questions[index];
 
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(AppSpacing.space9),
       decoration: BoxDecoration(
-        color: AppColors.heroBg,
-        borderRadius: BorderRadius.circular(32),
-        border: Border.all(color: Colors.white, width: 2),
+        color: AppColors.surfaceSoft,
+        borderRadius: AppRadius.md,
+        border: Border.all(
+          color: AppColors.textOnPrimary,
+          width: AppBorderWidth.regular,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -249,19 +244,17 @@ class _CreateQuizPageState extends State<CreateQuizPage> {
             children: [
               Container(
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 8,
+                  horizontal: AppSpacing.space8,
+                  vertical: AppSpacing.space4,
                 ),
                 decoration: BoxDecoration(
-                  color: AppColors.highlight,
-                  borderRadius: BorderRadius.circular(9999),
+                  color: AppColors.primary,
+                  borderRadius: AppRadius.md,
                 ),
                 child: Text(
                   'Pertanyaan ${index + 1}',
-                  style: GoogleFonts.plusJakartaSans(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.onHighlight,
+                  style: AppTextStyles.labelStrong.copyWith(
+                    color: AppColors.textOnPrimary,
                   ),
                 ),
               ),
@@ -272,40 +265,33 @@ class _CreateQuizPageState extends State<CreateQuizPage> {
                     : () => _removeQuestion(index),
                 child: Text(
                   'Hapus',
-                  style: GoogleFonts.plusJakartaSans(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.dangerAction,
+                  style: AppTextStyles.labelStrong.copyWith(
+                    color: AppColors.error,
                   ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpacing.space6),
           TextField(
             controller: question.question,
             maxLines: null,
             minLines: 3,
-            style: GoogleFonts.plusJakartaSans(
-              fontSize: 18,
-              fontWeight: FontWeight.w500,
-              color: AppColors.ink,
+            style: AppTextStyles.buttonLarge.copyWith(
+              color: AppColors.textPrimary,
             ),
-            decoration: const AppFieldDecoration.bordered(
+            decoration: AppFieldDecoration.bordered(
               hint: 'Tuliskan pertanyaan Anda di sini...',
-              hintStyle: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w500,
-                color: AppColors.placeholderMuted,
-              ),
+              hintStyle: AppTextStyles.hintLarge,
             ).build(),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.space8),
           for (var i = 0; i < optionThemes.length; i++) ...[
             _buildAnswerField(question, i),
-            if (i < optionThemes.length - 1) const SizedBox(height: 12),
+            if (i < optionThemes.length - 1)
+              const SizedBox(height: AppSpacing.space6),
           ],
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.space8),
           _buildDurationAndSkor(question),
         ],
       ),
@@ -317,11 +303,14 @@ class _CreateQuizPageState extends State<CreateQuizPage> {
     final selected = question.correctIdx == index;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.space6,
+        vertical: AppSpacing.space3,
+      ),
       decoration: BoxDecoration(
         color: style.bg,
-        borderRadius: BorderRadius.circular(32),
-        border: Border.all(color: style.border, width: 4),
+        borderRadius: AppRadius.md,
+        border: Border.all(color: style.border, width: AppBorderWidth.heavy),
       ),
       child: Row(
         children: [
@@ -330,29 +319,27 @@ class _CreateQuizPageState extends State<CreateQuizPage> {
             height: 20,
             decoration: BoxDecoration(color: style.dot, shape: BoxShape.circle),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: AppSpacing.space6),
           Expanded(
             child: TextField(
               controller: question.options[index],
-              style: GoogleFonts.plusJakartaSans(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: AppColors.ink,
+              style: AppTextStyles.button.copyWith(
+                color: AppColors.textPrimary,
               ),
               decoration: InputDecoration(
                 hintText: style.hint,
-                hintStyle: GoogleFonts.plusJakartaSans(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.ink.withValues(alpha: 0.5),
+                hintStyle: AppTextStyles.button.copyWith(
+                  color: AppColors.textPrimary.withValues(alpha: 0.5),
                 ),
                 border: InputBorder.none,
                 isDense: true,
-                contentPadding: const EdgeInsets.symmetric(vertical: 14),
+                contentPadding: const EdgeInsets.symmetric(
+                  vertical: AppSpacing.space7,
+                ),
               ),
             ),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: AppSpacing.space4),
           GestureDetector(
             onTap: () => setState(() => question.correctIdx = index),
             child: Container(
@@ -361,10 +348,14 @@ class _CreateQuizPageState extends State<CreateQuizPage> {
               alignment: Alignment.center,
               decoration: BoxDecoration(
                 color: selected ? style.dot : style.dot.withValues(alpha: 0.3),
-                borderRadius: BorderRadius.circular(9999),
+                borderRadius: AppRadius.md,
               ),
               child: selected
-                  ? const Icon(Icons.check, size: 16, color: Colors.white)
+                  ? const Icon(
+                      Icons.check,
+                      size: AppIconSize.sm,
+                      color: AppColors.textOnPrimary,
+                    )
                   : null,
             ),
           ),
@@ -382,23 +373,26 @@ class _CreateQuizPageState extends State<CreateQuizPage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _buildLabel('Durasi'),
-              const SizedBox(height: 6),
+              const SizedBox(height: AppSpacing.space3),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.space8,
+                ),
                 decoration: BoxDecoration(
-                  color: AppColors.formFieldBg,
-                  borderRadius: BorderRadius.circular(19),
-                  border: Border.all(color: AppColors.border, width: 2),
+                  color: AppColors.surface,
+                  borderRadius: AppRadius.md,
+                  border: Border.all(
+                    color: AppColors.divider,
+                    width: AppBorderWidth.regular,
+                  ),
                 ),
                 child: DropdownButtonHideUnderline(
                   child: DropdownButton<double>(
                     value: question.duration,
                     isExpanded: true,
-                    borderRadius: BorderRadius.circular(19),
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.ink,
+                    borderRadius: AppRadius.md,
+                    style: AppTextStyles.button.copyWith(
+                      color: AppColors.textPrimary,
                     ),
                     items: [
                       for (final duration in _durations)
@@ -417,28 +411,22 @@ class _CreateQuizPageState extends State<CreateQuizPage> {
             ],
           ),
         ),
-        const SizedBox(width: 16),
+        const SizedBox(width: AppSpacing.space8),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _buildLabel('Poin (1-50)'),
-              const SizedBox(height: 6),
+              const SizedBox(height: AppSpacing.space3),
               TextField(
                 controller: question.skor,
                 keyboardType: TextInputType.number,
-                style: GoogleFonts.plusJakartaSans(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.ink,
+                style: AppTextStyles.button.copyWith(
+                  color: AppColors.textPrimary,
                 ),
-                decoration: const AppFieldDecoration.bordered(
+                decoration: AppFieldDecoration.bordered(
                   hint: '20',
-                  hintStyle: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.placeholder,
-                  ),
+                  hintStyle: AppTextStyles.hint,
                 ).build(),
               ),
             ],

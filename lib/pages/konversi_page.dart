@@ -83,7 +83,7 @@ class _TanggalTabState extends State<_TanggalTab> {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(AppSpacing.space9),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -96,17 +96,17 @@ class _TanggalTabState extends State<_TanggalTab> {
                   : '${tanggal!.day}/${tanggal!.month}/${tanggal!.year}',
             ),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: AppSpacing.space10),
           if (hasil != null)
             Card(
-              color: AppColors.softBg,
+              color: AppColors.surfaceSoft,
               child: Padding(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(AppSpacing.space8),
                 child: Text(
                   widget.labelHasil.isEmpty
                       ? hasil!
                       : '${widget.labelHasil}:\n$hasil',
-                  style: const TextStyle(fontSize: 18),
+                  style: AppTextStyles.heading3,
                   textAlign: TextAlign.center,
                 ),
               ),
@@ -153,7 +153,7 @@ class _UmurTabState extends State<_UmurTab> {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(AppSpacing.space9),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -166,12 +166,12 @@ class _UmurTabState extends State<_UmurTab> {
                   : '${lahir!.day}/${lahir!.month}/${lahir!.year}',
             ),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: AppSpacing.space10),
           if (umur != null)
             Card(
-              color: AppColors.softBg,
+              color: AppColors.surfaceSoft,
               child: Padding(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(AppSpacing.space8),
                 child: Text(
                   'Umur kamu:\n'
                   '${umur!['tahun']} tahun, '
@@ -180,7 +180,7 @@ class _UmurTabState extends State<_UmurTab> {
                   '${umur!['jam']} jam, '
                   '${umur!['menit']} menit, '
                   '${umur!['detik']} detik',
-                  style: const TextStyle(fontSize: 16),
+                  style: AppTextStyles.bodyLarge,
                   textAlign: TextAlign.center,
                 ),
               ),

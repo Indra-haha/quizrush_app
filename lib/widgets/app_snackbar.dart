@@ -41,11 +41,11 @@ class AppSnackBar {
   }
 
   static void error(BuildContext context, String message) {
-    show(context, message, backgroundColor: Colors.red);
+    show(context, message, backgroundColor: AppColors.error);
   }
 
   static void success(BuildContext context, String message) {
-    show(context, message, backgroundColor: Colors.green);
+    show(context, message, backgroundColor: AppColors.success);
   }
 }
 
@@ -120,21 +120,18 @@ class _TopNotificationState extends State<_TopNotification>
           child: Material(
             color: Colors.transparent,
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.space8,
+                vertical: AppSpacing.space6,
+              ),
               decoration: BoxDecoration(
-                color: widget.backgroundColor ?? AppColors.ink,
-                borderRadius: BorderRadius.circular(10),
-                boxShadow: const [
-                  BoxShadow(
-                    color: Color(0x33000000),
-                    blurRadius: 12,
-                    offset: Offset(0, 4),
-                  ),
-                ],
+                color: widget.backgroundColor ?? AppColors.textPrimary,
+                borderRadius: AppRadius.md,
+                boxShadow: AppShadows.floating,
               ),
               child: Text(
                 widget.message,
-                style: const TextStyle(color: Colors.white),
+                style: AppTextStyles.bodyMediumOnPrimary,
               ),
             ),
           ),

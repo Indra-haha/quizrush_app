@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../theme/app_theme.dart';
 
@@ -29,11 +28,7 @@ class AppTextField extends StatelessWidget {
     this.onSubmitted,
   });
 
-  static final _textStyle = GoogleFonts.plusJakartaSans(
-    color: AppColors.ink,
-    fontSize: 16,
-    fontWeight: FontWeight.w500,
-  );
+  static final _textStyle = AppTextStyles.bodyLarge;
 
   @override
   Widget build(BuildContext context) {
@@ -50,7 +45,7 @@ class AppTextField extends StatelessWidget {
         labelText: label,
         labelStyle: _textStyle,
         hintStyle: _textStyle,
-        prefixIcon: Icon(icon, color: AppColors.neutral),
+        prefixIcon: Icon(icon, color: AppColors.info),
         border: const OutlineInputBorder(),
         suffixIcon: suffixIcon,
       ),

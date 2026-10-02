@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'app_theme.dart';
+
 class QuizOptionTheme {
   final Color bg;
   final Color border;
@@ -16,27 +18,27 @@ class QuizOptionTheme {
 
 const List<QuizOptionTheme> optionThemes = [
   QuizOptionTheme(
-    bg: Color(0xFFFFDAD6),
-    border: Color(0xFF93000A),
-    dot: Color(0xFFBA1A1A),
+    bg: AppColors.answerRedSoft,
+    border: AppColors.answerRedBorder,
+    dot: AppColors.answerRed,
     hint: 'Jawaban merah...',
   ),
   QuizOptionTheme(
-    bg: Color(0xFFDBE1FF),
-    border: Color(0xFF001453),
-    dot: Color(0xFF4648D4),
+    bg: AppColors.answerBlueSoft,
+    border: AppColors.answerBlueBorder,
+    dot: AppColors.answerBlue,
     hint: 'Jawaban biru...',
   ),
   QuizOptionTheme(
-    bg: Color(0xFFFFF9C4),
-    border: Color(0xFF825100),
-    dot: Color(0xFFA36700),
+    bg: AppColors.answerYellowSoft,
+    border: AppColors.answerYellowBorder,
+    dot: AppColors.answerYellow,
     hint: 'Jawaban kuning...',
   ),
   QuizOptionTheme(
-    bg: Color(0xFFC8E6C9),
-    border: Color(0xFF1B5E20),
-    dot: Color(0xFF2E7D32),
+    bg: AppColors.answerGreenSoft,
+    border: AppColors.answerGreenBorder,
+    dot: AppColors.answerGreen,
     hint: 'Jawaban hijau...',
   ),
 ];

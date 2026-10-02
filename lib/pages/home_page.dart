@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../models/quiz.dart';
 import '../services/auth_service.dart';
@@ -168,7 +167,7 @@ class _HomePageState extends State<HomePage> {
             onPressed: _loggingOut ? null : _logout,
             icon: _loggingOut
                 ? const SizedBox(
-                    width: 20,
+                    width: AppSpacing.space9,
                     height: 20,
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
@@ -189,14 +188,19 @@ class _HomePageState extends State<HomePage> {
     final section = _currentSection();
 
     return ListView(
-      padding: const EdgeInsets.only(top: 24, left: 20, right: 20, bottom: 96),
+      padding: const EdgeInsets.only(
+        top: AppSpacing.space10,
+        left: AppSpacing.space9,
+        right: AppSpacing.space9,
+        bottom: AppSpacing.fabClearance,
+      ),
       children: [
         _buildGreeting(),
-        const SizedBox(height: 16),
+        const SizedBox(height: AppSpacing.space8),
         _buildStats(),
         if (_loading)
           const Padding(
-            padding: EdgeInsets.symmetric(vertical: 48),
+            padding: EdgeInsets.symmetric(vertical: AppSpacing.space14),
             child: Center(child: CircularProgressIndicator()),
           )
         else if (_error != null)
@@ -204,9 +208,9 @@ class _HomePageState extends State<HomePage> {
         else if (section == null)
           _buildEmpty()
         else ...[
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.space8),
           SectionHeader(title: 'Quiz saya', onSeeAll: _openAll),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.space8),
           QuizCard(quiz: section.quiz, onTap: () => _openRooms(section.quiz)),
         ],
         if (!_loading && _error == null) _buildCacheInfo(),
@@ -216,7 +220,7 @@ class _HomePageState extends State<HomePage> {
 
   Widget _buildCacheInfo() {
     return Padding(
-      padding: const EdgeInsets.only(top: 20),
+      padding: const EdgeInsets.only(top: AppSpacing.space9),
       child: CacheInfoBar(
         savedAt: _index?.savedAt,
         savedAtLabel: 'Daftar ini dari cache perangkat. Terakhir diperbarui',
@@ -224,33 +228,10 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildGreeting() {
-    final nama = (_user?['nama'] as String?) ?? '';
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Selamat Datang,',
-          style: GoogleFonts.plusJakartaSans(
-            color: AppColors.primary,
-            fontSize: 14,
-            fontWeight: FontWeight.w700,
-            height: 1.43,
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          nama.isEmpty ? 'Halo! 👋' : 'Halo, $nama! 👋',
-          style: GoogleFonts.montserrat(
-            color: AppColors.ink,
-            fontSize: 40,
-            fontWeight: FontWeight.w800,
-            height: 1.2,
-            letterSpacing: -0.8,
-          ),
-        ),
-      ],
-    );
+  String _savedAtLabel() {
+    final savedAt = _index?.savedAt;
+    if (savedAt == null) return '-';
+    return relativeTime(savedAt.toIso8601String());
   }
 
   Widget _buildStats() {
@@ -266,7 +247,7 @@ class _HomePageState extends State<HomePage> {
                 icon: Icons.sports_esports,
               ),
             ),
-            const SizedBox(width: 16),
+            const SizedBox(width: AppSpacing.md),
             Expanded(
               child: _buildStatCard(
                 label: 'Rating Rata-rata',
@@ -277,7 +258,7 @@ class _HomePageState extends State<HomePage> {
             ),
           ],
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: AppSpacing.md),
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -288,7 +269,7 @@ class _HomePageState extends State<HomePage> {
                 icon: Icons.person,
               ),
             ),
-            const SizedBox(width: 16),
+            const SizedBox(width: AppSpacing.md),
             Expanded(
               child: _buildStatCard(
                 label: 'Terakhir Update',
@@ -302,56 +283,43 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  String _savedAtLabel() {
-    final savedAt = _index?.savedAt;
-    if (savedAt == null) return '-';
-    return relativeTime(savedAt.toIso8601String());
-  }
-
   Widget _buildStatCard({
     required String label,
     required String value,
     required IconData icon,
     bool highlight = false,
   }) {
-    final fg = highlight ? AppColors.onHighlight : AppColors.ink;
-    final subFg = highlight ? AppColors.onHighlight : AppColors.muted;
-
     return Container(
       width: double.infinity,
       height: 128,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: highlight ? AppColors.highlight : AppColors.softBg,
-        borderRadius: BorderRadius.circular(32),
-        border: highlight ? null : Border.all(color: const Color(0x4CC7C4D7)),
-      ),
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: highlight
+          ? AppDecorations.statTileActive
+          : AppDecorations.statTile,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Icon(icon, color: fg, size: 28),
+          Icon(
+            icon,
+            size: AppIconSize.xl,
+            color: highlight ? AppColors.textOnPrimary : AppColors.textPrimary,
+          ),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 label,
-                style: GoogleFonts.plusJakartaSans(
-                  color: subFg,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  height: 1.33,
-                ),
+                style: highlight
+                    ? AppTextStyles.statLabelOnPrimary
+                    : AppTextStyles.bodyMeta,
               ),
-              const SizedBox(height: 2),
+              const SizedBox(height: AppSpacing.xxs),
               Text(
                 value,
-                style: GoogleFonts.montserrat(
-                  color: fg,
-                  fontSize: 24,
-                  fontWeight: FontWeight.w700,
-                  height: 1.33,
-                ),
+                style: highlight
+                    ? AppTextStyles.statValueOnPrimary
+                    : AppTextStyles.statValue,
               ),
             ],
           ),
@@ -360,16 +328,31 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  Widget _buildGreeting() {
+    final nama = (_user?['nama'] as String?) ?? '';
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Selamat Datang,', style: AppTextStyles.accentLabel),
+        const SizedBox(height: AppSpacing.xxs),
+        Text(
+          nama.isEmpty ? 'Halo!' : 'Halo, $nama!',
+          style: AppTextStyles.display1,
+        ),
+      ],
+    );
+  }
+
   Widget _buildError() {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 48),
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.space14),
       child: ErrorStateView(message: _error!, onRetry: _sync),
     );
   }
 
   Widget _buildEmpty() {
     return const Padding(
-      padding: EdgeInsets.symmetric(vertical: 48),
+      padding: EdgeInsets.symmetric(vertical: AppSpacing.space14),
       child: EmptyStateView.empty(message: 'Belum ada quiz untukmu.'),
     );
   }

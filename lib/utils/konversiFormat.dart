@@ -9,17 +9,13 @@ class CalendarUtils {
     l = l - 10631 * n + 354;
 
     int j =
-        (((10985 - l) / 5316).floor()) *
-            ((50 * l / 17719).floor()) +
-        ((l / 5670).floor()) *
-            ((43 * l / 15238).floor());
+        (((10985 - l) / 5316).floor()) * ((50 * l / 17719).floor()) +
+        ((l / 5670).floor()) * ((43 * l / 15238).floor());
 
     l =
         l -
-        ((30 - j) / 15).floor() *
-            ((17719 * j) / 50).floor() -
-        (j / 16).floor() *
-            ((15238 * j) / 43).floor() +
+        ((30 - j) / 15).floor() * ((17719 * j) / 50).floor() -
+        (j / 16).floor() * ((15238 * j) / 43).floor() +
         29;
 
     int bulan = ((24 * l) / 709).floor();
@@ -46,21 +42,14 @@ class CalendarUtils {
 
   // ================= UMUR =================
 
-  static Map<String, int> hitungUmur(
-    DateTime lahir,
-    DateTime sekarang,
-  ) {
+  static Map<String, int> hitungUmur(DateTime lahir, DateTime sekarang) {
     int tahun = sekarang.year - lahir.year;
     int bulan = sekarang.month - lahir.month;
     int hari = sekarang.day - lahir.day;
 
     if (hari < 0) {
       bulan--;
-      final hariSebelumnya = DateTime(
-        sekarang.year,
-        sekarang.month,
-        0,
-      );
+      final hariSebelumnya = DateTime(sekarang.year, sekarang.month, 0);
       hari += hariSebelumnya.day;
     }
 
@@ -98,13 +87,7 @@ class CalendarUtils {
       'Minggu',
     ];
 
-    const pasaran = [
-      'Legi',
-      'Pahing',
-      'Pon',
-      'Wage',
-      'Kliwon',
-    ];
+    const pasaran = ['Legi', 'Pahing', 'Pon', 'Wage', 'Kliwon'];
 
     final namaHari = hari[tanggal.weekday - 1];
 

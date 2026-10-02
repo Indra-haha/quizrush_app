@@ -202,18 +202,23 @@ class MyQuizzes {
     );
   }
 
-  List<Quizes> get all =>
-      [...waiting, ...open, ...inGame, ...ended, ...quarantine];
+  List<Quizes> get all => [
+    ...waiting,
+    ...open,
+    ...inGame,
+    ...ended,
+    ...quarantine,
+  ];
 
   bool get isEmpty => all.isEmpty;
 
   List<({String status, List<Quizes> quizzes})> get groups => [
-        (status: 'waiting', quizzes: waiting),
-        (status: 'open', quizzes: open),
-        (status: 'in-Game', quizzes: inGame),
-        (status: 'ended', quizzes: ended),
-        (status: 'quarantine', quizzes: quarantine),
-      ];
+    (status: 'waiting', quizzes: waiting),
+    (status: 'open', quizzes: open),
+    (status: 'in-Game', quizzes: inGame),
+    (status: 'ended', quizzes: ended),
+    (status: 'quarantine', quizzes: quarantine),
+  ];
 }
 
 class AllQuizzes {
@@ -244,8 +249,8 @@ class AllQuizzes {
   List<Quizes> get all => [...open, ...inGame, ...ended];
 
   List<({String status, List<Quizes> quizzes})> get groups => [
-        (status: 'open', quizzes: open),
-        (status: 'in-Game', quizzes: inGame),
-        (status: 'ended', quizzes: ended),
-      ];
+    (status: 'open', quizzes: open),
+    (status: 'in-Game', quizzes: inGame),
+    (status: 'ended', quizzes: ended),
+  ];
 }

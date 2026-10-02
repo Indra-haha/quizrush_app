@@ -50,9 +50,6 @@ class ResultEntry {
   }
 
   Map<String, dynamic> toJson() {
-    return {
-      'nama': nama,
-      'skor': skor,
-    };
+    return {'nama': nama, 'skor': skor};
   }
 }

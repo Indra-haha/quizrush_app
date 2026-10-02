@@ -72,7 +72,10 @@ class _LoginPageState extends State<LoginPage> {
         MaterialPageRoute(builder: (_) => MainShell(user: result.user)),
       );
     } on TimeoutException {
-      AppSnackBar.error(context, 'Server tidak merespons. Pastikan backend berjalan.');
+      AppSnackBar.error(
+        context,
+        'Server tidak merespons. Pastikan backend berjalan.',
+      );
     } on ApiException catch (e) {
       AppSnackBar.error(context, e.message);
     } catch (_) {
@@ -95,16 +98,14 @@ class _LoginPageState extends State<LoginPage> {
       backgroundColor: AppColors.background,
       body: Center(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24.0),
+          padding: const EdgeInsets.all(AppSpacing.space10),
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 400),
             child: Card(
-              elevation: 8,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
+              elevation: AppElevation.raised,
+              shape: RoundedRectangleBorder(borderRadius: AppRadius.lg),
               child: Padding(
-                padding: const EdgeInsets.all(28.0),
+                padding: const EdgeInsets.all(AppSpacing.space11),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -115,24 +116,20 @@ class _LoginPageState extends State<LoginPage> {
                       height: 64,
                       fit: BoxFit.contain,
                     ),
-                    const SizedBox(height: 8),
-                    const Text(
+                    const SizedBox(height: AppSpacing.space4),
+                    Text(
                       'Everything about Numbers',
                       textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.primary,
-                      ),
+                      style: AppTextStyles.heading1StrongAccent,
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: AppSpacing.space10),
                     AppTextField(
                       controller: _nimController,
                       label: 'NIM',
                       icon: Icons.person_outline,
                       enabled: !_isLoading,
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: AppSpacing.space8),
                     AppTextField(
                       controller: _passwordController,
                       label: 'Password',
@@ -153,15 +150,17 @@ class _LoginPageState extends State<LoginPage> {
                         },
                       ),
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: AppSpacing.space10),
                     ElevatedButton(
                       onPressed: _isLoading ? null : _login,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primary,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        foregroundColor: AppColors.textOnPrimary,
+                        padding: const EdgeInsets.symmetric(
+                          vertical: AppSpacing.space7,
+                        ),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
+                          borderRadius: AppRadius.md,
                         ),
                       ),
                       child: _isLoading
@@ -172,7 +171,7 @@ class _LoginPageState extends State<LoginPage> {
                             )
                           : const Text('Login'),
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: AppSpacing.space6),
 
                     TextButton(
                       onPressed: () {
@@ -183,12 +182,9 @@ class _LoginPageState extends State<LoginPage> {
                           ),
                         );
                       },
-                      child: const Text(
+                      child: Text(
                         'Belum punya akun? Registrasi',
-                        style: TextStyle(
-                          color: AppColors.primary,
-                          fontWeight: FontWeight.w600,
-                        ),
+                        style: AppTextStyles.buttonSmall,
                       ),
                     ),
                   ],

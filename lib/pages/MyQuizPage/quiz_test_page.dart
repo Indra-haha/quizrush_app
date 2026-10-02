@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../../helpers/quiz_play_session.dart';
 import '../../models/quiz.dart';
@@ -24,11 +23,10 @@ class QuizTestPage extends StatefulWidget {
 }
 
 class _QuizTestPageState extends State<QuizTestPage> {
-  late final QuizPlaySession _session = QuizPlaySession(
-    questions: widget.quiz.questions,
-  )
-    ..onChanged = _onSessionChanged
-    ..onFinished = _onSessionFinished;
+  late final QuizPlaySession _session =
+      QuizPlaySession(questions: widget.quiz.questions)
+        ..onChanged = _onSessionChanged
+        ..onFinished = _onSessionFinished;
 
   @override
   void initState() {
@@ -95,7 +93,12 @@ class _QuizTestPageState extends State<QuizTestPage> {
       appBar: AppBar(title: const Text('Testing (Modular Engine)')),
       body: SingleChildScrollView(
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.space9,
+            AppSpacing.none,
+            AppSpacing.space9,
+            AppSpacing.space10,
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -103,10 +106,10 @@ class _QuizTestPageState extends State<QuizTestPage> {
               _buildHeader(),
               _buildTimer(),
               _buildQuestionCard(),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.space8),
               _buildOptions(),
               if (_session.isAnswered && _session.isUserCorrect != null) ...[
-                const SizedBox(height: 8),
+                const SizedBox(height: AppSpacing.space4),
                 QuizAnswerBanner(
                   isCorrect: _session.isUserCorrect!,
                   gainedScore: _session.gainedScore,
@@ -121,7 +124,10 @@ class _QuizTestPageState extends State<QuizTestPage> {
 
   Widget _buildHeader() {
     return Padding(
-      padding: const EdgeInsets.only(top: 4, bottom: 12),
+      padding: const EdgeInsets.only(
+        top: AppSpacing.space2,
+        bottom: AppSpacing.space6,
+      ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         crossAxisAlignment: CrossAxisAlignment.center,
@@ -131,25 +137,24 @@ class _QuizTestPageState extends State<QuizTestPage> {
             children: [
               Text(
                 widget.quiz.title.toUpperCase(),
-                style: GoogleFonts.plusJakartaSans(
+                style: AppTextStyles.labelStrongSmall.copyWith(
                   color: AppColors.primary,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                  height: 1.33,
-                  letterSpacing: 0.60,
                 ),
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: AppSpacing.space2),
               AppPill(
                 text: 'Soal ${_session.currentIndex + 1}',
                 trailingText: '/ ${_session.totalQuestions}',
-                trailingColor: AppColors.muted,
-                background: AppColors.heroBg,
-                foreground: AppColors.ink,
+                trailingColor: AppColors.textSecondary,
+                background: AppColors.surfaceSoft,
+                foreground: AppColors.textPrimary,
                 dot: AppColors.primary,
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                fontSize: 14,
-                fontWeight: FontWeight.w700,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.space6,
+                  vertical: AppSpacing.space2,
+                ),
+                fontSize: AppFontSize.bodyLarge,
+                fontWeight: AppFontWeight.bold,
               ),
             ],
           ),
@@ -157,16 +162,16 @@ class _QuizTestPageState extends State<QuizTestPage> {
             children: [
               AppStatTile.compact(
                 value: 'Max ${_session.currentMaxScore} pts',
-                bg: AppColors.neutralBg,
-                fg: AppColors.neutralDark,
-                fontSize: 12,
-                borderColor: AppColors.borderSlate,
+                bg: AppColors.surfaceSoft,
+                fg: AppColors.textSecondary,
+                fontSize: AppFontSize.small,
+                borderColor: AppColors.divider,
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: AppSpacing.space4),
               AppStatTile.compact(
                 value: '${_session.totalScore}',
-                bg: AppColors.warmSurface,
-                fg: AppColors.warmInk,
+                bg: AppColors.surface,
+                fg: AppColors.textPrimary,
               ),
             ],
           ),
@@ -177,7 +182,7 @@ class _QuizTestPageState extends State<QuizTestPage> {
 
   Widget _buildTimer() {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.space4),
       child: Center(child: QuizCountdownDial(seconds: _session.timeLeft)),
     );
   }
@@ -185,28 +190,17 @@ class _QuizTestPageState extends State<QuizTestPage> {
   Widget _buildQuestionCard() {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppSpacing.space8),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: const [
-          BoxShadow(
-            color: AppColors.shadowHairline,
-            blurRadius: 20,
-            offset: Offset(0, 8),
-          ),
-        ],
+        color: AppColors.textOnPrimary,
+        borderRadius: AppRadius.lg,
+        boxShadow: AppShadows.hairlineWide,
       ),
       child: Center(
         child: Text(
           _session.currentQuestion.question,
           textAlign: TextAlign.center,
-          style: GoogleFonts.montserrat(
-            color: AppColors.ink,
-            fontSize: 20,
-            fontWeight: FontWeight.w700,
-            height: 1.38,
-          ),
+          style: AppTextStyles.heading6,
         ),
       ),
     );

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../theme/app_theme.dart';
 
@@ -59,12 +58,8 @@ class EmptyStateView extends StatelessWidget {
   Widget build(BuildContext context) {
     final style = switch (kind) {
       EmptyStateKind.searching || EmptyStateKind.notFound =>
-        GoogleFonts.plusJakartaSans(
-          color: AppColors.ink,
-          fontSize: 14,
-          fontWeight: FontWeight.w600,
-        ),
-      _ => GoogleFonts.plusJakartaSans(color: AppColors.muted, fontSize: 14),
+        AppTextStyles.buttonSmall.copyWith(color: AppColors.textPrimary),
+      _ => AppTextStyles.body.copyWith(color: AppColors.textSecondary),
     };
 
     return Center(
@@ -78,16 +73,18 @@ class EmptyStateView extends StatelessWidget {
               child: CircularProgressIndicator(strokeWidth: 2.4),
             )
           else
-            Icon(icon, size: 48, color: AppColors.neutral),
-          const SizedBox(height: 12),
+            Icon(icon, size: AppIconSize.hero, color: AppColors.info),
+          const SizedBox(height: AppSpacing.space6),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.space10),
             child: Text(message, textAlign: TextAlign.center, style: style),
           ),
           if (caption != null) ...[
-            const SizedBox(height: 6),
+            const SizedBox(height: AppSpacing.space3),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.space10,
+              ),
               child: Text(
                 caption!,
                 textAlign: TextAlign.center,
