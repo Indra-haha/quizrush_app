@@ -1,9 +1,9 @@
 import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:numerus/models/quiz.dart';
-import 'package:numerus/services/quiz_cache_service.dart';
-import 'package:numerus/services/quiz_index.dart';
+import 'package:quizrush/models/quiz.dart';
+import 'package:quizrush/services/quiz_cache_service.dart';
+import 'package:quizrush/services/quiz_index.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 Map<String, dynamic> quizJson(

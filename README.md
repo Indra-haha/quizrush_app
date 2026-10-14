@@ -1,8 +1,8 @@
-# Numerus
+# Quiz Rush
 
 Aplikasi Flutter yang menggabungkan **(1)** platform kuis kelas daring lengkap dengan autentikasi NIM serta manajemen kuis dan room, dan **(2)** konversi kalender (Hijriah, Umur, Weton, Saka Bali).
 
-> Nama paket: `numerus` · Root widget: `KalkulatorApp` · Judul aplikasi: `Aplikasi Kalkulator` · Android label: `Numerus`
+> Nama paket: `quizrush` · Root widget: `KalkulatorApp` · Judul aplikasi: `Aplikasi Kalkulator` · Android label: `Quiz Rush`
 
 ![Screenshot](lib/assets/demo.jpeg)
 

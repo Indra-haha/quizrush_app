@@ -1,17 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:numerus/helpers/quiz_play_session.dart';
-import 'package:numerus/models/quiz.dart';
-import 'package:numerus/theme/quiz_status.dart';
-import 'package:numerus/widgets/app_pill.dart';
-import 'package:numerus/widgets/app_primary_button.dart';
-import 'package:numerus/widgets/app_stat_tile.dart';
-import 'package:numerus/widgets/cache_info_bar.dart';
-import 'package:numerus/widgets/empty_state_view.dart';
-import 'package:numerus/widgets/quiz_answer_banner.dart';
-import 'package:numerus/widgets/quiz_countdown_dial.dart';
-import 'package:numerus/widgets/status_filter_row.dart';
+import 'package:quizrush/helpers/quiz_play_session.dart';
+import 'package:quizrush/models/quiz.dart';
+import 'package:quizrush/theme/quiz_status.dart';
+import 'package:quizrush/widgets/app_pill.dart';
+import 'package:quizrush/widgets/app_primary_button.dart';
+import 'package:quizrush/widgets/app_stat_tile.dart';
+import 'package:quizrush/widgets/cache_info_bar.dart';
+import 'package:quizrush/widgets/empty_state_view.dart';
+import 'package:quizrush/widgets/quiz_answer_banner.dart';
+import 'package:quizrush/widgets/quiz_countdown_dial.dart';
+import 'package:quizrush/widgets/status_filter_row.dart';
 
 Widget _wrap(Widget child) {
   return MaterialApp(

@@ -1,4 +1,4 @@
-package com.example.Numerus
+package com.example.quizrush
 
 import io.flutter.embedding.android.FlutterActivity
 
