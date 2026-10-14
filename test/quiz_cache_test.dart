@@ -139,9 +139,9 @@ void main() {
         }),
       );
 
-      // Login sebagai NIM berbeda: cache sebelumnya tidak boleh terlihat.
+      // Login sebagai username berbeda: cache sebelumnya tidak boleh terlihat.
       SharedPreferences.setMockInitialValues({
-        'auth_user': jsonEncode({'nim': '999', 'nama': 'Budi'}),
+        'auth_user': jsonEncode({'username': '999', 'nama': 'Budi'}),
       });
       expect(await QuizCacheService.instance.readAll(), isNull);
     });

@@ -18,7 +18,7 @@ class RegisterPage extends StatefulWidget {
 
 class _RegisterPageState extends State<RegisterPage> {
   final TextEditingController _namaController = TextEditingController();
-  final TextEditingController _nimController = TextEditingController();
+  final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _kelasController = TextEditingController();
   final TextEditingController _tanggalLahirController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
@@ -48,7 +48,7 @@ class _RegisterPageState extends State<RegisterPage> {
   Future<void> _register() async {
     if (_isLoading) return;
     final nama = _namaController.text.trim();
-    final nim = _nimController.text.trim();
+    final username = _usernameController.text.trim();
     final kelas = _kelasController.text.trim();
     final tanggalLahir = formatTanggalLahir(
       _tanggalLahirController.text.trim(),
@@ -57,7 +57,7 @@ class _RegisterPageState extends State<RegisterPage> {
     final confirmPassword = _confirmPasswordController.text;
 
     if (nama.isEmpty ||
-        nim.isEmpty ||
+        username.isEmpty ||
         kelas.isEmpty ||
         tanggalLahir.isEmpty ||
         password.isEmpty ||
@@ -75,7 +75,7 @@ class _RegisterPageState extends State<RegisterPage> {
     try {
       final user = await AuthService.instance.register(
         nama: nama,
-        nim: nim,
+        username: username,
         kelas: kelas,
         tanggalLahir: tanggalLahir,
         password: password,
@@ -83,7 +83,7 @@ class _RegisterPageState extends State<RegisterPage> {
       if (!mounted) return;
       AppSnackBar.success(
         context,
-        'Registrasi berhasil, a/n ${user.nama} (NIM ${user.nim})',
+        'Registrasi berhasil, a/n ${user.nama} (${user.username})',
       );
       Future.delayed(const Duration(seconds: 1), () {
         if (!mounted) return;
@@ -106,7 +106,7 @@ class _RegisterPageState extends State<RegisterPage> {
   @override
   void dispose() {
     _namaController.dispose();
-    _nimController.dispose();
+    _usernameController.dispose();
     _kelasController.dispose();
     _tanggalLahirController.dispose();
     _passwordController.dispose();
@@ -155,10 +155,9 @@ class _RegisterPageState extends State<RegisterPage> {
                     const SizedBox(height: AppSpacing.space8),
 
                     AppTextField(
-                      controller: _nimController,
-                      label: 'NIM',
+                      controller: _usernameController,
+                      label: 'Username',
                       icon: Icons.badge,
-                      keyboardType: TextInputType.number,
                     ),
 
                     const SizedBox(height: AppSpacing.space8),

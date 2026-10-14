@@ -20,7 +20,7 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  final TextEditingController _nimController = TextEditingController();
+  final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   bool _obscurePassword = true;
   bool _isLoading = false;
@@ -52,18 +52,18 @@ class _LoginPageState extends State<LoginPage> {
 
   Future<void> _login() async {
     if (_isLoading) return;
-    final String nim = _nimController.text.trim();
+    final String username = _usernameController.text.trim();
     final String password = _passwordController.text;
 
-    if (nim.isEmpty || password.isEmpty) {
-      AppSnackBar.error(context, 'NIM dan password wajib diisi');
+    if (username.isEmpty || password.isEmpty) {
+      AppSnackBar.error(context, 'Username dan password wajib diisi');
       return;
     }
 
     setState(() => _isLoading = true);
     try {
       final result = await AuthService.instance.login(
-        nim: nim,
+        username: username,
         password: password,
       );
       await SessionService.instance.saveSession(result.token, result.user);
@@ -87,7 +87,7 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   void dispose() {
-    _nimController.dispose();
+    _usernameController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
@@ -124,8 +124,8 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                     const SizedBox(height: AppSpacing.space10),
                     AppTextField(
-                      controller: _nimController,
-                      label: 'NIM',
+                      controller: _usernameController,
+                      label: 'Username',
                       icon: Icons.person_outline,
                       enabled: !_isLoading,
                     ),

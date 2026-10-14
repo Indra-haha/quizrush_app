@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 import 'api_client.dart';
+import 'device_service.dart';
 import '../models/user.dart';
 
 class LoginResult {
@@ -18,14 +19,18 @@ class AuthService {
   static final AuthService instance = AuthService._();
 
   Future<LoginResult> login({
-    required String nim,
+    required String username,
     required String password,
   }) async {
     final response = await http
         .post(
           Uri.parse('${ApiClient.baseUrl}/api/login'),
           headers: ApiClient.headers(body: true),
-          body: jsonEncode({'nim': nim, 'password': password}),
+          body: jsonEncode({
+            'username': username,
+            'password': password,
+            'device_id': DeviceService.instance.getId(),
+          }),
         )
         .timeout(const Duration(seconds: 10));
 
@@ -44,7 +49,7 @@ class AuthService {
 
   Future<User> register({
     required String nama,
-    required String nim,
+    required String username,
     required String kelas,
     required String tanggalLahir,
     required String password,
@@ -55,10 +60,11 @@ class AuthService {
           headers: ApiClient.headers(body: true),
           body: jsonEncode({
             'nama': nama,
-            'nim': nim,
+            'username': username,
             'kelas': kelas,
             'tanggal_lahir': tanggalLahir,
             'password': password,
+            'device_id': DeviceService.instance.getId(),
           }),
         )
         .timeout(const Duration(seconds: 10));

@@ -2,6 +2,8 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
+import 'device_service.dart';
+
 class ApiException implements Exception {
   final String message;
   final int statusCode;
@@ -23,6 +25,7 @@ class ApiClient {
   static Map<String, String> headers({String? token, bool body = false}) => {
     if (body) 'Content-Type': 'application/json',
     if (token != null) 'Authorization': 'Bearer $token',
+    'User-Agent': DeviceService.instance.userAgent,
   };
 
   static dynamic decode(http.Response response) {

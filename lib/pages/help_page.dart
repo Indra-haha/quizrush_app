@@ -39,7 +39,7 @@ class HelpPage extends StatelessWidget {
             _buildHelpCard(
               icon: Icons.login,
               title: "Login / Registrasi",
-              description: "Masuk atau buat akun menggunakan NIM dan password.",
+              description: "Masuk atau buat akun menggunakan username dan password.",
             ),
 
             _buildHelpCard(

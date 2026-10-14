@@ -9,7 +9,7 @@ void main() {
     SharedPreferences.setMockInitialValues(<String, Object>{});
   });
 
-  testWidgets('Login page menampilkan field NIM dan password', (
+  testWidgets('Login page menampilkan field username dan password', (
     WidgetTester tester,
   ) async {
     await tester.pumpWidget(const KalkulatorApp());
@@ -26,6 +26,6 @@ void main() {
     await tester.tap(find.byType(ElevatedButton));
     await tester.pump();
 
-    expect(find.text('NIM dan password wajib diisi'), findsOneWidget);
+    expect(find.text('Username dan password wajib diisi'), findsOneWidget);
   });
 }

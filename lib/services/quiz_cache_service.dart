@@ -17,12 +17,12 @@ class QuizCacheService {
   static const _allKey = 'all';
   static const _mineKey = 'mine';
 
-  /// Cache disimpan per-NIM supaya data user lain di perangkat yang sama tidak
-  /// ikut terbaca.
+  /// Cache disimpan per-username supaya data user lain di perangkat yang sama
+  /// tidak ikut terbaca.
   Future<String> _scope() async {
     final user = await SessionService.instance.getUser();
-    final nim = (user?['nim'] as String?)?.trim() ?? '';
-    return nim.isEmpty ? 'guest' : nim;
+    final username = (user?['username'] as String?)?.trim() ?? '';
+    return username.isEmpty ? 'guest' : username;
   }
 
   String _key(String kind, String scope) => '$_prefix$kind-$scope';
