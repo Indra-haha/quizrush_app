@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../models/quiz.dart';
+import '../../services/active_room_service.dart';
 import '../../services/api_client.dart';
 import '../../services/quiz_feed.dart';
 import '../../services/room_service.dart';
@@ -149,6 +150,7 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
     } on ApiException catch (e) {
       if (e.statusCode == 401) {
         await SessionService.instance.clear();
+        ActiveRoomService.instance.clear();
         if (!mounted) return;
         LoginRedirect.go(context);
         return;

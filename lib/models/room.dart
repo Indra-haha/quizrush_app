@@ -40,4 +40,13 @@ class Room {
           : QuizSummary.fromJson((json['quiz'] as Map).cast<String, dynamic>()),
     );
   }
+
+  /// Judul yang ditampilkan ke pengguna: `judul` room, jatuh ke judul kuis,
+  /// lalu default generik.
+  String get displayTitle {
+    if (judul?.isNotEmpty ?? false) return judul!;
+    final quizTitle = quiz?.title;
+    if (quizTitle != null && quizTitle.isNotEmpty) return quizTitle;
+    return 'Room Kuis';
+  }
 }

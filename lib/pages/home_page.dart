@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../models/quiz.dart';
+import '../services/active_room_service.dart';
 import '../services/auth_service.dart';
 import '../services/quiz_cache_service.dart';
 import '../services/quiz_feed.dart';
@@ -98,6 +99,7 @@ class _HomePageState extends State<HomePage> {
     }
     await SessionService.instance.clear();
     await QuizCacheService.instance.clear();
+    ActiveRoomService.instance.clear();
     if (!mounted) return;
     LoginRedirect.go(context);
   }

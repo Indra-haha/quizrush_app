@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../services/active_room_service.dart';
 import '../services/api_client.dart';
 import '../services/auth_service.dart';
 import '../services/session_service.dart';
@@ -45,6 +46,7 @@ class _LoginPageState extends State<LoginPage> {
       );
     } catch (_) {
       await SessionService.instance.clear();
+      ActiveRoomService.instance.clear();
       if (!mounted) return;
       setState(() => _isLoading = false);
     }
