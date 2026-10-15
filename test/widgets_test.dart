@@ -11,6 +11,8 @@ import 'package:quizrush/widgets/app_primary_button.dart';
 import 'package:quizrush/widgets/app_stat_tile.dart';
 import 'package:quizrush/widgets/cache_info_bar.dart';
 import 'package:quizrush/widgets/empty_state_view.dart';
+import 'package:quizrush/widgets/home_greeting.dart';
+import 'package:quizrush/widgets/home_stat_card.dart';
 import 'package:quizrush/widgets/load_more_button.dart';
 import 'package:quizrush/widgets/quiz_answer_banner.dart';
 import 'package:quizrush/widgets/quiz_countdown_dial.dart';
@@ -637,6 +639,41 @@ void main() {
         ),
       );
       expect(find.byType(CircularProgressIndicator), findsOneWidget);
+    });
+  });
+
+  group('Widget beranda', () {
+    testWidgets('HomeStatCard menampilkan label dan nilai', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(
+        _wrap(
+          const HomeStatCard(
+            label: 'Total Main',
+            value: '1.2k',
+            icon: Icons.sports_esports,
+          ),
+        ),
+      );
+
+      expect(find.text('Total Main'), findsOneWidget);
+      expect(find.text('1.2k'), findsOneWidget);
+    });
+
+    testWidgets('HomeGreeting menyapa dengan nama', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(_wrap(const HomeGreeting(name: 'Budi')));
+
+      expect(find.text('Halo, Budi!'), findsOneWidget);
+    });
+
+    testWidgets('HomeGreeting tanpa nama memakai sapaan umum', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(_wrap(const HomeGreeting(name: '')));
+
+      expect(find.text('Halo!'), findsOneWidget);
     });
   });
 }

@@ -15,6 +15,8 @@ import '../widgets/app_snackbar.dart';
 import '../widgets/cache_info_bar.dart';
 import '../widgets/empty_state_view.dart';
 import '../widgets/error_state_view.dart';
+import '../widgets/home_greeting.dart';
+import '../widgets/home_stat_card.dart';
 import '../widgets/quiz_card.dart';
 import '../widgets/section_header.dart';
 import 'MyQuizPage/create_quiz_page.dart';
@@ -197,7 +199,7 @@ class _HomePageState extends State<HomePage> {
         bottom: AppSpacing.fabClearance,
       ),
       children: [
-        _buildGreeting(),
+        HomeGreeting(name: (_user?['nama'] as String?) ?? ''),
         const SizedBox(height: AppSpacing.space8),
         _buildStats(),
         if (_loading)
@@ -243,7 +245,7 @@ class _HomePageState extends State<HomePage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Expanded(
-              child: _buildStatCard(
+              child: HomeStatCard(
                 label: 'Total Main',
                 value: '1.2k',
                 icon: Icons.sports_esports,
@@ -251,7 +253,7 @@ class _HomePageState extends State<HomePage> {
             ),
             const SizedBox(width: AppSpacing.md),
             Expanded(
-              child: _buildStatCard(
+              child: HomeStatCard(
                 label: 'Rating Rata-rata',
                 value: '4.8',
                 icon: Icons.star,
@@ -265,7 +267,7 @@ class _HomePageState extends State<HomePage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Expanded(
-              child: _buildStatCard(
+              child: HomeStatCard(
                 label: 'Host Aktif',
                 value: '12',
                 icon: Icons.person,
@@ -273,73 +275,13 @@ class _HomePageState extends State<HomePage> {
             ),
             const SizedBox(width: AppSpacing.md),
             Expanded(
-              child: _buildStatCard(
+              child: HomeStatCard(
                 label: 'Terakhir Update',
                 value: _savedAtLabel(),
                 icon: Icons.access_time,
               ),
             ),
           ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildStatCard({
-    required String label,
-    required String value,
-    required IconData icon,
-    bool highlight = false,
-  }) {
-    return Container(
-      width: double.infinity,
-      height: 128,
-      padding: const EdgeInsets.all(AppSpacing.md),
-      decoration: highlight
-          ? AppDecorations.statTileActive
-          : AppDecorations.statTile,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Icon(
-            icon,
-            size: AppIconSize.xl,
-            color: highlight ? AppColors.textOnPrimary : AppColors.textPrimary,
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                label,
-                style: highlight
-                    ? AppTextStyles.statLabelOnPrimary
-                    : AppTextStyles.bodyMeta,
-              ),
-              const SizedBox(height: AppSpacing.xxs),
-              Text(
-                value,
-                style: highlight
-                    ? AppTextStyles.statValueOnPrimary
-                    : AppTextStyles.statValue,
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildGreeting() {
-    final nama = (_user?['nama'] as String?) ?? '';
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text('Selamat Datang,', style: AppTextStyles.accentLabel),
-        const SizedBox(height: AppSpacing.xxs),
-        Text(
-          nama.isEmpty ? 'Halo!' : 'Halo, $nama!',
-          style: AppTextStyles.display1,
         ),
       ],
     );
