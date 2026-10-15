@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -11,6 +13,8 @@ import 'package:quizrush/widgets/cache_info_bar.dart';
 import 'package:quizrush/widgets/empty_state_view.dart';
 import 'package:quizrush/widgets/quiz_answer_banner.dart';
 import 'package:quizrush/widgets/quiz_countdown_dial.dart';
+import 'package:quizrush/widgets/quiz_image_picker.dart';
+import 'package:quizrush/widgets/quiz_question_editor.dart';
 import 'package:quizrush/widgets/status_filter_row.dart';
 
 Widget _wrap(Widget child) {
@@ -314,6 +318,136 @@ void main() {
       session.answer(0);
       expect(changes, 1);
       session.dispose();
+    });
+  });
+
+  group('QuizImagePicker', () {
+    testWidgets('placeholder memanggil onPick saat ditekan', (
+      WidgetTester tester,
+    ) async {
+      var picks = 0;
+      await tester.pumpWidget(
+        _wrap(
+          QuizImagePicker(bytes: null, onPick: () => picks++, onRemove: () {}),
+        ),
+      );
+
+      expect(
+        find.text('Pilih Gambar (jpg, png, webp · maks 5 MB)'),
+        findsOneWidget,
+      );
+
+      await tester.tap(find.byType(QuizImagePicker));
+      expect(picks, 1);
+    });
+
+    testWidgets('mode picking menampilkan progres', (WidgetTester tester) async {
+      await tester.pumpWidget(
+        _wrap(
+          QuizImagePicker(
+            bytes: null,
+            picking: true,
+            onPick: () {},
+            onRemove: () {},
+          ),
+        ),
+      );
+
+      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+    });
+
+    testWidgets('pratinjau menampilkan tombol hapus yang memanggil onRemove', (
+      WidgetTester tester,
+    ) async {
+      final bytes = base64Decode(
+        'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=',
+      );
+      var removes = 0;
+      await tester.pumpWidget(
+        _wrap(
+          QuizImagePicker(
+            bytes: bytes,
+            onPick: () {},
+            onRemove: () => removes++,
+          ),
+        ),
+      );
+
+      expect(find.byIcon(Icons.close), findsOneWidget);
+      await tester.tap(find.byIcon(Icons.close));
+      expect(removes, 1);
+    });
+  });
+
+  group('QuizQuestionEditor', () {
+    void useTallView(WidgetTester tester) {
+      tester.view.physicalSize = const Size(1200, 3000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+    }
+
+    QuizQuestionEditor build({
+      int? correctIdx,
+      VoidCallback? onRemove,
+      ValueChanged<int>? onCorrect,
+    }) {
+      return QuizQuestionEditor(
+        index: 0,
+        questionController: TextEditingController(),
+        optionControllers: List.generate(4, (_) => TextEditingController()),
+        skorController: TextEditingController(),
+        correctIdx: correctIdx,
+        duration: 2,
+        onCorrectChanged: onCorrect ?? (_) {},
+        onDurationChanged: (_) {},
+        onRemove: onRemove,
+      );
+    }
+
+    testWidgets('menampilkan judul, durasi, dan poin', (
+      WidgetTester tester,
+    ) async {
+      useTallView(tester);
+      await tester.pumpWidget(_wrap(build()));
+
+      expect(find.text('Pertanyaan 1'), findsOneWidget);
+      expect(find.text('Durasi'), findsOneWidget);
+      expect(find.text('Poin (1-50)'), findsOneWidget);
+    });
+
+    testWidgets('menekan penanda jawaban meneruskan index', (
+      WidgetTester tester,
+    ) async {
+      useTallView(tester);
+      int? picked;
+      await tester.pumpWidget(
+        _wrap(build(correctIdx: 0, onCorrect: (index) => picked = index)),
+      );
+
+      await tester.tap(find.byIcon(Icons.check));
+      expect(picked, 0);
+    });
+
+    testWidgets('tombol Hapus nonaktif tanpa onRemove', (
+      WidgetTester tester,
+    ) async {
+      useTallView(tester);
+      await tester.pumpWidget(_wrap(build()));
+
+      final button = tester.widget<TextButton>(find.byType(TextButton));
+      expect(button.onPressed, isNull);
+    });
+
+    testWidgets('tombol Hapus memanggil onRemove', (
+      WidgetTester tester,
+    ) async {
+      useTallView(tester);
+      var removed = 0;
+      await tester.pumpWidget(_wrap(build(onRemove: () => removed++)));
+
+      await tester.tap(find.text('Hapus'));
+      expect(removed, 1);
     });
   });
 }

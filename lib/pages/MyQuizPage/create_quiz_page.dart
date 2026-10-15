@@ -10,14 +10,13 @@ import '../../services/api_client.dart';
 import '../../services/quiz_service.dart';
 import '../../services/session_service.dart';
 import '../../theme/app_theme.dart';
-import '../../theme/quiz_option_theme.dart';
 import '../../widgets/app_field_decoration.dart';
 import '../../widgets/app_header_bar_with_actions.dart';
 import '../../widgets/app_primary_button.dart';
 import '../../widgets/app_secondary_button.dart';
 import '../../widgets/app_snackbar.dart';
-
-const _durations = [1.5, 2.0, 3.0, 5.0];
+import '../../widgets/quiz_image_picker.dart';
+import '../../widgets/quiz_question_editor.dart';
 
 class _QuestionData {
   final TextEditingController question = TextEditingController();
@@ -228,10 +227,15 @@ class _CreateQuizPageState extends State<CreateQuizPage> {
                 const SizedBox(height: AppSpacing.space9),
                 _buildLabel('Gambar Quiz'),
                 const SizedBox(height: AppSpacing.space4),
-                _buildImagePicker(),
+                QuizImagePicker(
+                  bytes: _imageBytes,
+                  picking: _pickingImage,
+                  onPick: _pickImage,
+                  onRemove: _removeImage,
+                ),
                 const SizedBox(height: AppSpacing.space10),
                 for (var i = 0; i < _questions.length; i++) ...[
-                  _buildQuestionCard(i),
+                  _buildQuestionEditor(i),
                   const SizedBox(height: AppSpacing.space9),
                 ],
                 _buildAddQuestionButton(),
@@ -270,282 +274,19 @@ class _CreateQuizPageState extends State<CreateQuizPage> {
     );
   }
 
-  Widget _buildImagePicker() {
-    final bytes = _imageBytes;
-
-    return GestureDetector(
-      onTap: _pickingImage ? null : _pickImage,
-      child: Container(
-        width: double.infinity,
-        height: 200,
-        decoration: BoxDecoration(
-          color: AppColors.surfaceSoft,
-          borderRadius: AppRadius.md,
-          border: Border.all(
-            color: AppColors.divider,
-            width: AppBorderWidth.regular,
-          ),
-        ),
-        clipBehavior: Clip.antiAlias,
-        child: _pickingImage
-            ? const Center(child: CircularProgressIndicator())
-            : bytes == null
-            ? Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(
-                    Icons.add_photo_alternate_outlined,
-                    size: AppIconSize.lg,
-                    color: AppColors.textMuted,
-                  ),
-                  const SizedBox(height: AppSpacing.space6),
-                  Text(
-                    'Pilih Gambar (jpg, png, webp · maks 5 MB)',
-                    style: AppTextStyles.button.copyWith(
-                      color: AppColors.textSecondary,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ],
-              )
-            : Stack(
-                fit: StackFit.expand,
-                children: [
-                  Image.memory(bytes, fit: BoxFit.cover),
-                  Positioned(
-                    top: AppSpacing.space4,
-                    right: AppSpacing.space4,
-                    child: GestureDetector(
-                      onTap: _removeImage,
-                      child: Container(
-                        padding: const EdgeInsets.all(AppSpacing.space4),
-                        decoration: BoxDecoration(
-                          color: AppColors.textPrimary.withValues(alpha: 0.6),
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(
-                          Icons.close,
-                          size: AppIconSize.sm,
-                          color: AppColors.textOnPrimary,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-      ),
-    );
-  }
-
-  Widget _buildQuestionCard(int index) {
+  Widget _buildQuestionEditor(int index) {
     final question = _questions[index];
 
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.space9),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceSoft,
-        borderRadius: AppRadius.md,
-        border: Border.all(
-          color: AppColors.textOnPrimary,
-          width: AppBorderWidth.regular,
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.space8,
-                  vertical: AppSpacing.space4,
-                ),
-                decoration: BoxDecoration(
-                  color: AppColors.primary,
-                  borderRadius: AppRadius.md,
-                ),
-                child: Text(
-                  'Pertanyaan ${index + 1}',
-                  style: AppTextStyles.labelStrong.copyWith(
-                    color: AppColors.textOnPrimary,
-                  ),
-                ),
-              ),
-              const Spacer(),
-              TextButton(
-                onPressed: _questions.length == 1
-                    ? null
-                    : () => _removeQuestion(index),
-                child: Text(
-                  'Hapus',
-                  style: AppTextStyles.labelStrong.copyWith(
-                    color: AppColors.error,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.space6),
-          TextField(
-            controller: question.question,
-            maxLines: null,
-            minLines: 3,
-            style: AppTextStyles.buttonLarge.copyWith(
-              color: AppColors.textPrimary,
-            ),
-            decoration: AppFieldDecoration.bordered(
-              hint: 'Tuliskan pertanyaan Anda di sini...',
-              hintStyle: AppTextStyles.hintLarge,
-            ).build(),
-          ),
-          const SizedBox(height: AppSpacing.space8),
-          for (var i = 0; i < optionThemes.length; i++) ...[
-            _buildAnswerField(question, i),
-            if (i < optionThemes.length - 1)
-              const SizedBox(height: AppSpacing.space6),
-          ],
-          const SizedBox(height: AppSpacing.space8),
-          _buildDurationAndSkor(question),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildAnswerField(_QuestionData question, int index) {
-    final style = optionThemes[index];
-    final selected = question.correctIdx == index;
-
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.space6,
-        vertical: AppSpacing.space3,
-      ),
-      decoration: BoxDecoration(
-        color: style.bg,
-        borderRadius: AppRadius.md,
-        border: Border.all(color: style.border, width: AppBorderWidth.heavy),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 20,
-            height: 20,
-            decoration: BoxDecoration(color: style.dot, shape: BoxShape.circle),
-          ),
-          const SizedBox(width: AppSpacing.space6),
-          Expanded(
-            child: TextField(
-              controller: question.options[index],
-              style: AppTextStyles.button.copyWith(
-                color: AppColors.textPrimary,
-              ),
-              decoration: InputDecoration(
-                hintText: style.hint,
-                hintStyle: AppTextStyles.button.copyWith(
-                  color: AppColors.textPrimary.withValues(alpha: 0.5),
-                ),
-                border: InputBorder.none,
-                isDense: true,
-                contentPadding: const EdgeInsets.symmetric(
-                  vertical: AppSpacing.space7,
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(width: AppSpacing.space4),
-          GestureDetector(
-            onTap: () => setState(() => question.correctIdx = index),
-            child: Container(
-              width: 44,
-              height: 24,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: selected ? style.dot : style.dot.withValues(alpha: 0.3),
-                borderRadius: AppRadius.md,
-              ),
-              child: selected
-                  ? const Icon(
-                      Icons.check,
-                      size: AppIconSize.sm,
-                      color: AppColors.textOnPrimary,
-                    )
-                  : null,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDurationAndSkor(_QuestionData question) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildLabel('Durasi'),
-              const SizedBox(height: AppSpacing.space3),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.space8,
-                ),
-                decoration: BoxDecoration(
-                  color: AppColors.surface,
-                  borderRadius: AppRadius.md,
-                  border: Border.all(
-                    color: AppColors.divider,
-                    width: AppBorderWidth.regular,
-                  ),
-                ),
-                child: DropdownButtonHideUnderline(
-                  child: DropdownButton<double>(
-                    value: question.duration,
-                    isExpanded: true,
-                    borderRadius: AppRadius.md,
-                    style: AppTextStyles.button.copyWith(
-                      color: AppColors.textPrimary,
-                    ),
-                    items: [
-                      for (final duration in _durations)
-                        DropdownMenuItem(
-                          value: duration,
-                          child: Text(_durationLabel(duration)),
-                        ),
-                    ],
-                    onChanged: (value) {
-                      if (value == null) return;
-                      setState(() => question.duration = value);
-                    },
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(width: AppSpacing.space8),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildLabel('Poin (1-50)'),
-              const SizedBox(height: AppSpacing.space3),
-              TextField(
-                controller: question.skor,
-                keyboardType: TextInputType.number,
-                style: AppTextStyles.button.copyWith(
-                  color: AppColors.textPrimary,
-                ),
-                decoration: AppFieldDecoration.bordered(
-                  hint: '20',
-                  hintStyle: AppTextStyles.hint,
-                ).build(),
-              ),
-            ],
-          ),
-        ),
-      ],
+    return QuizQuestionEditor(
+      index: index,
+      questionController: question.question,
+      optionControllers: question.options,
+      skorController: question.skor,
+      correctIdx: question.correctIdx,
+      duration: question.duration,
+      onCorrectChanged: (value) => setState(() => question.correctIdx = value),
+      onDurationChanged: (value) => setState(() => question.duration = value),
+      onRemove: _questions.length == 1 ? null : () => _removeQuestion(index),
     );
   }
 
@@ -555,12 +296,5 @@ class _CreateQuizPageState extends State<CreateQuizPage> {
       icon: Icons.add,
       onPressed: _addQuestion,
     );
-  }
-
-  String _durationLabel(double duration) {
-    final value = duration == duration.roundToDouble()
-        ? duration.toInt()
-        : duration;
-    return '$value detik';
   }
 }
