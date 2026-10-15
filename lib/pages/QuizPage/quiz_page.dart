@@ -15,9 +15,8 @@ import '../../widgets/active_room_banner.dart';
 import '../../widgets/app_pill_button.dart';
 import '../../widgets/app_snackbar.dart';
 import '../../widgets/cache_info_bar.dart';
-import '../../widgets/empty_state_view.dart';
-import '../../widgets/error_state_view.dart';
-import '../../widgets/quiz_card.dart';
+import '../../widgets/quiz_results_list.dart';
+import '../../widgets/quiz_search_field.dart';
 import '../../widgets/section_header.dart';
 import '../../widgets/status_filter_row.dart';
 import '../login_redirect.dart';
@@ -255,7 +254,13 @@ class _QuizPageState extends State<QuizPage> {
               padding: const EdgeInsets.symmetric(
                 horizontal: AppSpacing.space9,
               ),
-              child: _buildSearchField(),
+              child: QuizSearchField(
+                controller: _searchController,
+                onChanged: _onSearchChanged,
+                onRefresh: _sync,
+                syncing: _syncing,
+                loading: _loading,
+              ),
             ),
             const SizedBox(height: AppSpacing.space4),
             Padding(
@@ -295,102 +300,21 @@ class _QuizPageState extends State<QuizPage> {
                 ),
               ),
             ],
-            Expanded(child: _buildResults()),
+            Expanded(
+              child: QuizResultsList(
+                loading: _loading,
+                error: _error,
+                notFound: _notFound,
+                pinProgress: _pinProgress,
+                quizzes: _selectedQuizzes,
+                query: _searchController.text.trim(),
+                onRetry: _sync,
+                onTapQuiz: _openRooms,
+              ),
+            ),
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildSearchField() {
-    return TextField(
-      controller: _searchController,
-      onChanged: _onSearchChanged,
-      textInputAction: TextInputAction.search,
-      style: AppTextStyles.bodySmall.copyWith(color: AppColors.textPrimary),
-      decoration: InputDecoration(
-        hintText: 'Ketik judul kuis atau 6 digit PIN...',
-        hintStyle: AppTextStyles.bodySmall.copyWith(color: AppColors.info),
-        filled: true,
-        fillColor: AppColors.textOnPrimary.withValues(alpha: 0.70),
-        isDense: true,
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.space8,
-          vertical: AppSpacing.space6,
-        ),
-        prefixIcon: const Icon(
-          Icons.search,
-          size: AppIconSize.sm,
-          color: AppColors.info,
-        ),
-        suffixIcon: _syncing
-            ? const Padding(
-                padding: EdgeInsets.all(AppSpacing.space7),
-                child: SizedBox(
-                  width: AppSpacing.space7,
-                  height: 14,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                ),
-              )
-            : IconButton(
-                tooltip: 'Refresh dari server',
-                onPressed: _loading ? null : _sync,
-                icon: const Icon(
-                  Icons.refresh,
-                  size: AppIconSize.sm,
-                  color: AppColors.info,
-                ),
-              ),
-        border: OutlineInputBorder(
-          borderRadius: AppRadius.lg,
-          borderSide: const BorderSide(color: AppColors.divider),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: AppRadius.lg,
-          borderSide: const BorderSide(color: AppColors.divider),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: AppRadius.lg,
-          borderSide: const BorderSide(color: AppColors.divider),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildResults() {
-    if (_loading) {
-      return const Center(child: CircularProgressIndicator());
-    }
-
-    if (_error != null) {
-      return ErrorStateView(message: _error!, onRetry: _sync);
-    }
-
-    if (_notFound) return const EmptyStateView.notFound();
-    final progress = _pinProgress;
-    if (progress != null) return EmptyStateView.searching(progress);
-
-    final quizzes = _selectedQuizzes;
-
-    if (quizzes.isEmpty) {
-      final query = _searchController.text.trim();
-      if (query.isEmpty) return const EmptyStateView.empty();
-      return EmptyStateView.noResult(query);
-    }
-
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(
-        AppSpacing.space9,
-        AppSpacing.space4,
-        AppSpacing.space9,
-        AppSpacing.scrollClearance,
-      ),
-      children: [
-        for (var i = 0; i < quizzes.length; i++) ...[
-          if (i > 0) const SizedBox(height: AppSpacing.space9),
-          QuizCard(quiz: quizzes[i], onTap: () => _openRooms(quizzes[i])),
-        ],
-      ],
     );
   }
 }

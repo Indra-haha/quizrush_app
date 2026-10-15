@@ -17,6 +17,8 @@ import 'package:quizrush/widgets/quiz_countdown_dial.dart';
 import 'package:quizrush/widgets/quiz_image_picker.dart';
 import 'package:quizrush/widgets/quiz_question_editor.dart';
 import 'package:quizrush/widgets/quiz_question_preview.dart';
+import 'package:quizrush/widgets/quiz_results_list.dart';
+import 'package:quizrush/widgets/quiz_search_field.dart';
 import 'package:quizrush/widgets/room_chat_bubble.dart';
 import 'package:quizrush/widgets/room_composer.dart';
 import 'package:quizrush/widgets/room_connection_bar.dart';
@@ -596,6 +598,45 @@ void main() {
 
       await tester.tap(find.byType(LoadMoreButton));
       expect(tapped, 1);
+    });
+  });
+
+  group('Widget quiz page', () {
+    testWidgets('QuizSearchField menampilkan hint dan refresh', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(
+        _wrap(
+          QuizSearchField(
+            controller: TextEditingController(),
+            onChanged: (_) {},
+            onRefresh: () {},
+            syncing: false,
+            loading: false,
+          ),
+        ),
+      );
+      expect(find.byIcon(Icons.search), findsOneWidget);
+    });
+
+    testWidgets('QuizResultsList menampilkan loading', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(
+        _wrap(
+          QuizResultsList(
+            loading: true,
+            error: null,
+            notFound: false,
+            pinProgress: null,
+            quizzes: const [],
+            query: '',
+            onRetry: () async {},
+            onTapQuiz: (_) {},
+          ),
+        ),
+      );
+      expect(find.byType(CircularProgressIndicator), findsOneWidget);
     });
   });
 }
