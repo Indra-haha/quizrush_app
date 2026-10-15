@@ -16,6 +16,7 @@ import 'package:quizrush/widgets/home_stat_card.dart';
 import 'package:quizrush/widgets/load_more_button.dart';
 import 'package:quizrush/widgets/quiz_answer_banner.dart';
 import 'package:quizrush/widgets/quiz_countdown_dial.dart';
+import 'package:quizrush/widgets/quiz_detail_hero.dart';
 import 'package:quizrush/widgets/quiz_image_picker.dart';
 import 'package:quizrush/widgets/quiz_question_editor.dart';
 import 'package:quizrush/widgets/quiz_question_preview.dart';
@@ -24,6 +25,8 @@ import 'package:quizrush/widgets/quiz_search_field.dart';
 import 'package:quizrush/widgets/room_chat_bubble.dart';
 import 'package:quizrush/widgets/room_composer.dart';
 import 'package:quizrush/widgets/room_connection_bar.dart';
+import 'package:quizrush/widgets/room_detail_card.dart';
+import 'package:quizrush/widgets/room_list_header.dart';
 import 'package:quizrush/widgets/status_filter_row.dart';
 
 Widget _wrap(Widget child) {
@@ -42,6 +45,28 @@ QuizQuestion _question({
     options: options ?? ['4', '3', '5', '6'],
     duration: duration,
     skor: skor,
+  );
+}
+
+Quizes _quiz({List<RoomSummary> rooms = const []}) {
+  return Quizes(
+    id: 'q1',
+    userId: 'u1',
+    title: 'Kuis Matematika',
+    description: 'Latihan cepat',
+    createdAt: '2026-09-17T10:00:00Z',
+    questions: [_question()],
+    rooms: rooms,
+  );
+}
+
+RoomSummary _room({String status = 'open'}) {
+  return RoomSummary(
+    id: 'r1',
+    kode: '123456',
+    status: status,
+    createdAt: '2026-09-17T10:00:00Z',
+    judul: 'Room Seru',
   );
 }
 
@@ -674,6 +699,61 @@ void main() {
       await tester.pumpWidget(_wrap(const HomeGreeting(name: '')));
 
       expect(find.text('Halo!'), findsOneWidget);
+    });
+  });
+
+  group('Widget detail quiz room', () {
+    testWidgets('QuizDetailHero menampilkan judul, deskripsi, dan tipe', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(_wrap(QuizDetailHero(quiz: _quiz())));
+
+      expect(find.text('Kuis Matematika'), findsOneWidget);
+      expect(find.text('Latihan cepat'), findsOneWidget);
+      expect(find.text('Pilihan Ganda'), findsOneWidget);
+    });
+
+    testWidgets('RoomListHeader menampilkan jumlah room', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(_wrap(const RoomListHeader(count: 3)));
+
+      expect(find.text('Daftar Room'), findsOneWidget);
+      expect(find.text('3 Room'), findsOneWidget);
+    });
+
+    testWidgets('RoomDetailCard menampilkan PIN dan tombol Masuk', (
+      WidgetTester tester,
+    ) async {
+      var joined = 0;
+      await tester.pumpWidget(
+        _wrap(
+          RoomDetailCard(
+            room: _room(),
+            index: 0,
+            isFocused: false,
+            onJoin: () => joined++,
+          ),
+        ),
+      );
+
+      expect(find.text('123 456'), findsOneWidget);
+      expect(find.text('Room Seru'), findsOneWidget);
+
+      await tester.tap(find.text('Masuk'));
+      expect(joined, 1);
+    });
+
+    testWidgets('RoomDetailCard fokus menampilkan pill PIN', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(
+        _wrap(
+          RoomDetailCard(room: _room(), index: 0, isFocused: true),
+        ),
+      );
+
+      expect(find.text('Room dari PIN yang kamu masukkan'), findsOneWidget);
     });
   });
 }
