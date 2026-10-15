@@ -12,16 +12,18 @@ void main() {
   testWidgets('Login page menampilkan field username dan password', (
     WidgetTester tester,
   ) async {
-    await tester.pumpWidget(const KalkulatorApp());
+    await tester.pumpWidget(const QuizApp());
 
-    expect(find.text('Everything about Numbers'), findsOneWidget);
+    expect(find.text('Login'), findsOneWidget);
+    expect(find.text('Username'), findsOneWidget);
+    expect(find.text('Password'), findsOneWidget);
     expect(find.widgetWithText(ElevatedButton, 'Login'), findsOneWidget);
   });
 
   testWidgets('Login tanpa input menampilkan pesan error', (
     WidgetTester tester,
   ) async {
-    await tester.pumpWidget(const KalkulatorApp());
+    await tester.pumpWidget(const QuizApp());
 
     await tester.tap(find.byType(ElevatedButton));
     await tester.pump();

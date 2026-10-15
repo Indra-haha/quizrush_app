@@ -2,7 +2,7 @@
 
 Aplikasi Flutter yang menggabungkan **(1)** platform kuis kelas daring lengkap dengan autentikasi NIM serta manajemen kuis dan room, dan **(2)** konversi kalender (Hijriah, Umur, Weton, Saka Bali).
 
-> Nama paket: `quizrush` · Root widget: `KalkulatorApp` · Judul aplikasi: `Aplikasi Kalkulator` · Android label: `Quiz Rush`
+> Nama paket: `quizrush` · Root widget: `QuizApp` · Judul aplikasi: `Aplikasi Quiz` · Android label: `Quiz Rush`
 
 ![Screenshot](lib/assets/demo.jpeg)
 
@@ -31,7 +31,7 @@ Aplikasi Flutter yang menggabungkan **(1)** platform kuis kelas daring lengkap d
 ### Kuis
 - **Berbrowse & mencari kuis** — dikelompokkan berdasarkan status (`open`, `in-Game`, `ended`), dengan pencarian judul.
 - **Cari room via PIN** — kolom pencarian mendeteksi 6 digit angka dan langsung menuju room tersebut.
-- **Buat kuis** — judul, deskripsi, N pertanyaan × 4 pilihan jawaban, toggle jawaban benar, durasi per soal (1,5 / 2 / 3 / 5 detik), dan poin (1–50).
+- **Buat kuis** — gambar kuis (jpg/png/webp, maks 5 MB), judul, deskripsi, minimal 5 pertanyaan × 4 pilihan jawaban, toggle jawaban benar, durasi per soal (1,5 / 2 / 3 / 5 detik), dan poin (1–50).
 - **Buat room** — pilih kuis berstatus `quarantine`, isi judul & deskripsi room, dapatkan **kode room 6 digit** yang bisa disalin.
 - **Alur status room** — `waiting → open → in-Game → ended`, diendorse lewat tombol aksi pada detail room.
 - **Tester kuis offline** — `QuizTestPage` menjalankan satu soal per layar dengan timer dial, penomoran waktu, dan penilaian skor tanpa menyentuh server.
@@ -103,7 +103,6 @@ lib/
 ├── pages/       4 tab shell + auth
 │   ├── MyQuizPage/   Sisi host: kuis saya, room, detail room, sheet buat room, buat kuis, tester
 │   └── QuizPage/     Sisi peserta: jelajahi kuis, detail kuis
-├── quarantine/  kalkulator_page.dart — kalkulator (belum terjangkau, lihat Keterbatasan)
 ├── services/    Lapisan data: REST client, auth, kuis, room, hasil, sesi, cache
 ├── theme/       Design token + AppTheme.light, palet status, palet opsi jawaban
 ├── utils/       format.dart (durasi, kode, waktu relatif) + konversi_format.dart (CalendarUtils)
@@ -192,6 +191,8 @@ flutter test
 | `test/widget_test.dart` | Smoke test aplikasi: halaman login tampil, validasi field kosong |
 | `test/widgets_test.dart` | Widget bersama (`AppPill`, `StatusFilterRow`, `CacheInfoBar`, `AppPrimaryButton`, `EmptyStateView`, `AppStatTile`, `QuizCountdownDial`, `QuizAnswerBanner`, `QuizStatus.palette`) + 7 unit test `QuizPlaySession` |
 | `test/quiz_cache_test.dart` | 8 test `QuizCacheService` (termasuk scoping per-NIM & migrasi format lama) + 8 test `QuizIndex` (grouping, cari PIN, pencarian judul) |
+| `test/room_model_test.dart` | 3 test `Room.displayTitle` (urun judul: room → kuis → default) |
+| `test/active_room_service_test.dart` | 4 test `ActiveRoomService` (set/clear + kontrak `ChangeNotifier`) |
 
 ---
 
@@ -201,8 +202,7 @@ Hal-hal yang **belum** berfungsi dan perlu diketahui:
 
 - **Join room belum diimplementasikan.** Tombol "Masuk" pada detail kuis hanya menampilkan snackbar `fitur join menyusul`.
 - **`ResultService` belum dipakai.** Model `Result`/`ResultEntry` dan endpoint skor sudah ada, tetapi belum ada layar atau alur pengiriman skor.
-- **`KalkulatorPage` tidak terjangkau.** `lib/quarantine/kalkulator_page.dart` tidak ada di tab navigasi dan tidak dinavigasi dari mana pun, meski halaman Bantuan masih mendokumentasikan fitur "Kalkulator". Engine-nya (`KalkulatorEngine`) tetap aktif dipakai untuk penilaian skor.
-- **Aturan minimal 10 pertanyaan tidak divalidasi di sisi klien.** `CreateQuizPage` hanya memeriksa kolom terisi, 4 opsi, jawaban benar terpilih, dan `skor` 1–50.
+- **Aturan minimal 5 pertanyaan sudah divalidasi di sisi klien.** `CreateQuizPage` memeriksa judul, deskripsi, gambar (wajib, maks 5 MB), minimal 5 pertanyaan, 4 opsi, jawaban benar terpilih, dan `skor` 1–50.
 - **Belum ada mode gelap** dan belum ada halaman pengaturan/preferensi selain `HelpPage`.
 - **Base URL backend hardcoded** di `lib/services/api_client.dart` — belum configurable via environment.
 
