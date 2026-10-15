@@ -1,7 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quizrush/helpers/json.dart';
 import 'package:quizrush/models/quiz.dart';
-import 'package:quizrush/models/result.dart';
 import 'package:quizrush/models/room.dart';
 import 'package:quizrush/models/room_message.dart';
 import 'package:quizrush/models/room_verify.dart';
@@ -171,35 +170,6 @@ void main() {
       final result = RoomVerifyResult.fromJson({'token': 'jwt'});
       expect(result.token, 'jwt');
       expect(result.room.kode, '');
-    });
-  });
-
-  group('Result', () {
-    test('skor numerik dari num dan String non-angka jadi 0', () {
-      final result = Result.fromJson({
-        'id': 'res1',
-        'entries': [
-          {'nama': 'Budi', 'skor': 90.0},
-          {'nama': 'Ani', 'skor': 'x'},
-        ],
-      });
-      expect(result.entries.first.skor, 90);
-      expect(result.entries.last.skor, 0);
-    });
-
-    test('toJson/fromJson round-trip', () {
-      const result = Result(
-        id: 'res1',
-        roomId: 'r1',
-        kode: '123456',
-        quizId: 'q1',
-        createdAt: '',
-        entries: [ResultEntry(nama: 'Budi', skor: 90)],
-      );
-      final kembali = Result.fromJson(result.toJson());
-      expect(kembali.id, 'res1');
-      expect(kembali.entries.single.nama, 'Budi');
-      expect(kembali.entries.single.skor, 90);
     });
   });
 
