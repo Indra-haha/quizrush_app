@@ -1,13 +1,17 @@
 import 'package:flutter/material.dart';
 
 import '../helpers/format.dart';
+import '../helpers/password_hasher.dart';
 import '../services/active_room_service.dart';
 import '../services/auth_service.dart';
+import '../services/biometric_service.dart';
 import '../services/quiz_cache_service.dart';
 import '../services/session_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_header_bar.dart';
 import '../widgets/app_primary_button.dart';
+import '../widgets/app_snackbar.dart';
+import '../widgets/auth_fields.dart';
 import 'login_redirect.dart';
 
 /// Halaman profil pengguna: menampilkan data akun dan menyediakan logout.
@@ -23,12 +27,121 @@ class ProfilePage extends StatefulWidget {
 class _ProfilePageState extends State<ProfilePage> {
   Map<String, dynamic>? _user;
   bool _loggingOut = false;
+  bool _biometricEnabled = false;
+  bool _biometricBusy = false;
 
   @override
   void initState() {
     super.initState();
     _user = widget.user;
     _loadUser();
+    _loadBiometricState();
+  }
+
+  Future<void> _loadBiometricState() async {
+    final enabled = await BiometricService.instance.isEnabled();
+    if (mounted) setState(() => _biometricEnabled = enabled);
+  }
+
+  Future<void> _toggleBiometric(bool value) async {
+    if (_biometricBusy) return;
+    setState(() => _biometricBusy = true);
+    try {
+      if (value) {
+        await _enableBiometric();
+      } else {
+        await BiometricService.instance.disable();
+        if (!mounted) return;
+        setState(() => _biometricEnabled = false);
+        AppSnackBar.show(context, 'Login sidik jari dinonaktifkan.');
+      }
+    } finally {
+      if (mounted) setState(() => _biometricBusy = false);
+    }
+  }
+
+  Future<void> _enableBiometric() async {
+    final biometric = BiometricService.instance;
+
+    if (!await biometric.isDeviceSupported()) {
+      if (!mounted) return;
+      AppSnackBar.error(context, 'Perangkat tidak mendukung biometrik.');
+      return;
+    }
+    if (!await biometric.hasEnrolledBiometrics()) {
+      if (!mounted) return;
+      AppSnackBar.error(
+        context,
+        'Sidik jari belum terdaftar di perangkat. Daftarkan di Pengaturan.',
+      );
+      return;
+    }
+
+    final ok = await biometric.authenticate(reason: 'Aktifkan login sidik jari');
+    if (!mounted) return;
+    if (!ok) {
+      AppSnackBar.error(context, 'Gagal verifikasi sidik jari.');
+      return;
+    }
+
+    final user = await SessionService.instance.getUser();
+    final username = (user?['username'] as String?)?.trim();
+    if (user == null || username == null || username.isEmpty) {
+      if (!mounted) return;
+      AppSnackBar.error(context, 'Sesi tidak ditemukan. Login ulang dahulu.');
+      return;
+    }
+
+    final password = await _askPassword();
+    if (!mounted) return;
+    if (password == null || password.isEmpty) {
+      AppSnackBar.error(
+        context,
+        'Password wajib diisi untuk mengaktifkan sidik jari.',
+      );
+      return;
+    }
+
+    await biometric.enable(
+      BiometricCredentials(
+        username: username,
+        passwordHash: hashPassword(password),
+        user: user,
+      ),
+    );
+    if (!mounted) return;
+    setState(() => _biometricEnabled = true);
+    AppSnackBar.success(context, 'Login sidik jari diaktifkan.');
+  }
+
+  /// Meminta password untuk menyimpan kredensial login biometrik.
+  Future<String?> _askPassword() async {
+    final controller = TextEditingController();
+    final result = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Konfirmasi Password'),
+        content: PasswordField(
+          controller: controller,
+          label: 'Password',
+          icon: Icons.lock_outline,
+          onSubmitted: (_) => Navigator.of(dialogContext).pop(controller.text),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('Batal'),
+          ),
+          TextButton(
+            onPressed: () =>
+                Navigator.of(dialogContext).pop(controller.text),
+            child: const Text('Simpan'),
+          ),
+        ],
+      ),
+    );
+    controller.dispose();
+    return result;
   }
 
   Future<void> _loadUser() async {
@@ -122,6 +235,32 @@ class _ProfilePageState extends State<ProfilePage> {
                   ),
                 ],
               ),
+            ),
+          ),
+          const SizedBox(height: AppSpacing.space10),
+          Card(
+            child: Column(
+              children: [
+                SwitchListTile(
+                  secondary: Icon(
+                    Icons.fingerprint,
+                    color: AppColors.primary,
+                    size: AppIconSize.lg,
+                  ),
+                  title: Text(
+                    'Login dengan Sidik Jari',
+                    style: AppTextStyles.labelStrong,
+                  ),
+                  subtitle: Text(
+                    _biometricEnabled
+                        ? 'Aktif — gunakan sidik jari untuk login'
+                        : 'Daftarkan sidik jari / Face ID perangkat',
+                    style: AppTextStyles.bodySmall,
+                  ),
+                  value: _biometricEnabled,
+                  onChanged: _biometricBusy ? null : _toggleBiometric,
+                ),
+              ],
             ),
           ),
           const SizedBox(height: AppSpacing.space10),

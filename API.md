@@ -11,6 +11,8 @@
 | Token room | Diperoleh dari `POST /api/rooms/verify` (§5.4), berlaku 1 jam, hanya untuk WebSocket `GET /api/rooms` |
 | Koleksi DB | `users`, `quizzes`, `rooms`, `results`, `tokens`, `emojis` |
 | Batas body | 1 MiB per request (`413` bila lebih) |
+| Hashing password | SHA-256 (hex lowercase), dilakukan di sisi klien sebelum dikirim |
+| Transport | HTTPS (produksi) melindungi password hash dan token |
 
 Semua endpoint wajib menyertakan header `Authorization` **kecuali** `POST /api/register` dan `POST /api/login`. Endpoint WebSocket `GET /api/rooms?token=<JWT room>` (§8) mewajibkan header `Authorization` (token login) **dan** JWT ber-scope room pada query `token`.
 
@@ -71,7 +73,7 @@ Semua endpoint yang dilindungi `middleware.Auth` (dan `POST /api/login`) menerap
 | 1 | `username` | string | ✅ | Username unik (min 3 karakter: huruf, angka, underscore, atau dash) |
 | 2 | `nama` | string | ✅ | Nama lengkap |
 | 3 | `kelas` | string | ✅ | Nama kelas |
-| 4 | `password` | string | ✅ | Password |
+| 4 | `password` | string | ✅ | Password dalam bentuk hash **SHA-256** (hex lowercase 64 karakter), bukan plaintext |
 | 5 | `tanggal_lahir` | string | ✅ | Format `YYYY-MM-DD`, tidak boleh di masa depan |
 
 **Contoh request:**
@@ -85,10 +87,14 @@ Content-Type: application/json
   "username": "124240200",
   "nama": "Budi Santoso",
   "kelas": "Pemrograman Mobile SI-B",
-  "password": "rahasia123",
+  "password": "bee5688aea66a47460b19c76f8f199c6b9585eb726f8322b1429793863609ca2",
   "tanggal_lahir": "2004-03-10"
 }
 ```
+
+> **Catatan hashing:** klien meng-hash password dengan SHA-256 sebelum dikirim
+> (`password` = `SHA256(plaintext)` di atas). Server menyimpan/membandingkan nilai
+> hash tersebut. Pengiriman tetap melalui HTTPS.
 
 **Response:**
 
@@ -155,7 +161,7 @@ Content-Type: application/json
 | No | Field | Tipe | Wajib | Deskripsi |
 |---|---|---|---|---|
 | 1 | `username` | string | ✅ | Username user |
-| 2 | `password` | string | ✅ | Password |
+| 2 | `password` | string | ✅ | Password dalam bentuk hash **SHA-256** (hex lowercase 64 karakter), bukan plaintext |
 | 3 | `device_id` | string | ✅ | ID perangkat; mengikat username ke perangkat ini (lihat catatan di bawah) |
 
 **Contoh request:**
@@ -167,10 +173,14 @@ Content-Type: application/json
 
 {
   "username": "124240200",
-  "password": "rahasia123",
+  "password": "bee5688aea66a47460b19c76f8f199c6b9585eb726f8322b1429793863609ca2",
   "device_id": "android-3f9c1d7b"
 }
 ```
+
+> **Catatan hashing:** klien meng-hash password dengan SHA-256 sebelum dikirim
+> (`password` = `SHA256(plaintext)`, contoh di atas untuk `rahasia123`). Server
+> membandingkan nilai hash tersebut. Pengiriman tetap melalui HTTPS.
 
 **Response:**
 

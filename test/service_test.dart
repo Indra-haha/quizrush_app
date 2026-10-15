@@ -1,6 +1,9 @@
+import 'dart:convert';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
+import 'package:quizrush/helpers/password_hasher.dart';
 import 'package:quizrush/models/quiz.dart';
 import 'package:quizrush/services/api_client.dart';
 import 'package:quizrush/services/auth_service.dart';
@@ -58,9 +61,12 @@ void main() {
   group('AuthService', () {
     test('login sukses mengembalikan token dan user', () async {
       String? sentDevice;
+      String? sentPassword;
       final service = AuthService.withApi(
         _api((request) async {
           sentDevice = request.body.contains('device_id') ? 'ada' : null;
+          final body = jsonDecode(request.body) as Map<String, dynamic>;
+          sentPassword = body['password'] as String?;
           return _json(
             '{"token":"jwt","user":{"username":"budi","nama":"Budi"}}',
             200,
@@ -72,6 +78,27 @@ void main() {
       expect(result.token, 'jwt');
       expect(result.user['username'], 'budi');
       expect(sentDevice, 'ada');
+      expect(sentPassword, hashPassword('rahasia'));
+      expect(sentPassword, isNot('rahasia'));
+    });
+
+    test('loginWithHash mengirim hash apa adanya', () async {
+      String? sentPassword;
+      final service = AuthService.withApi(
+        _api((request) async {
+          sentPassword =
+              (jsonDecode(request.body) as Map<String, dynamic>)['password']
+                  as String?;
+          return _json('{"token":"jwt","user":{"username":"budi"}}', 200);
+        }),
+      );
+
+      final result = await service.loginWithHash(
+        username: 'budi',
+        passwordHash: 'hash-tersimpan',
+      );
+      expect(sentPassword, 'hash-tersimpan');
+      expect(result.token, 'jwt');
     });
 
     test('login gagal melempar ApiException dengan pesan server', () async {
@@ -90,12 +117,17 @@ void main() {
     });
 
     test('register sukses mengembalikan User', () async {
+      String? sentPassword;
       final service = AuthService.withApi(
         _api(
-          (_) async => _json(
-            '{"user":{"username":"budi","nama":"Budi","kelas":"6A","tanggal_lahir":"2005-03-05"}}',
-            201,
-          ),
+          (request) async {
+            final body = jsonDecode(request.body) as Map<String, dynamic>;
+            sentPassword = body['password'] as String?;
+            return _json(
+              '{"user":{"username":"budi","nama":"Budi","kelas":"6A","tanggal_lahir":"2005-03-05"}}',
+              201,
+            );
+          },
         ),
       );
 
@@ -108,6 +140,7 @@ void main() {
       );
       expect(user.username, 'budi');
       expect(user.kelas, '6A');
+      expect(sentPassword, hashPassword('rahasia'));
     });
 
     test('logout gagal melempar ApiException', () async {

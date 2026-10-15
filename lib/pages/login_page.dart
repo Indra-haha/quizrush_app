@@ -3,9 +3,11 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../helpers/auth_validator.dart';
+import '../helpers/password_hasher.dart';
 import '../services/active_room_service.dart';
 import '../services/api_client.dart';
 import '../services/auth_service.dart';
+import '../services/biometric_service.dart';
 import '../services/session_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_loading_indicator.dart';
@@ -26,11 +28,18 @@ class _LoginPageState extends State<LoginPage> {
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   bool _isLoading = false;
+  bool _biometricEnabled = false;
 
   @override
   void initState() {
     super.initState();
     _restoreSession();
+    _loadBiometricState();
+  }
+
+  Future<void> _loadBiometricState() async {
+    final enabled = await BiometricService.instance.isEnabled();
+    if (mounted) setState(() => _biometricEnabled = enabled);
   }
 
   // Jika masih ada session tersimpan yang valid, langsung masuk ke menu utama.
@@ -71,6 +80,13 @@ class _LoginPageState extends State<LoginPage> {
         password: password,
       );
       await SessionService.instance.saveSession(result.token, result.user);
+      if (_biometricEnabled) {
+        await BiometricService.instance.updateCredentials(
+          username: username,
+          passwordHash: hashPassword(password),
+          user: result.user,
+        );
+      }
       if (!mounted) return;
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(builder: (_) => MainShell(user: result.user)),
@@ -83,6 +99,94 @@ class _LoginPageState extends State<LoginPage> {
     } on ApiException catch (e) {
       AppSnackBar.error(context, e.message);
     } catch (_) {
+      AppSnackBar.error(context, 'Tidak dapat terhubung ke server.');
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _loginWithBiometric() async {
+    if (_isLoading) return;
+
+    if (!_biometricEnabled) {
+      AppSnackBar.error(
+        context,
+        'Sidik jari belum terdaftar. Aktifkan dulu di halaman Profile.',
+      );
+      return;
+    }
+
+    final biometric = BiometricService.instance;
+    if (!await biometric.isDeviceSupported()) {
+      if (!mounted) return;
+      AppSnackBar.error(context, 'Perangkat tidak mendukung biometrik.');
+      return;
+    }
+    if (!await biometric.hasEnrolledBiometrics()) {
+      if (!mounted) return;
+      AppSnackBar.error(
+        context,
+        'Sidik jari belum terdaftar di perangkat. Daftarkan di Pengaturan.',
+      );
+      return;
+    }
+
+    setState(() => _isLoading = true);
+    try {
+      final ok = await biometric.authenticate(reason: 'Login dengan sidik jari');
+      if (!mounted) return;
+      if (!ok) {
+        AppSnackBar.error(context, 'Sidik jari tidak cocok. Coba lagi.');
+        return;
+      }
+
+      final credentials = await biometric.readCredentials();
+      if (credentials == null) {
+        await biometric.disable();
+        if (!mounted) return;
+        AppSnackBar.error(
+          context,
+          'Data sidik jari tidak ditemukan. Aktifkan ulang di Profile.',
+        );
+        return;
+      }
+
+      // Sesi lama sudah dihancurkan saat logout, jadi minta sesi baru ke server
+      // memakai kredensial tersimpan (sama seperti login manual).
+      final result = await AuthService.instance.loginWithHash(
+        username: credentials.username,
+        passwordHash: credentials.passwordHash,
+      );
+      await SessionService.instance.saveSession(result.token, result.user);
+      await biometric.updateCredentials(
+        username: credentials.username,
+        passwordHash: credentials.passwordHash,
+        user: result.user,
+      );
+      if (!mounted) return;
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (_) => MainShell(user: result.user)),
+      );
+    } on TimeoutException {
+      if (!mounted) return;
+      AppSnackBar.error(
+        context,
+        'Server tidak merespons. Pastikan backend berjalan.',
+      );
+    } on ApiException catch (e) {
+      if (e.statusCode == 401) {
+        await BiometricService.instance.disable();
+        if (!mounted) return;
+        AppSnackBar.error(
+          context,
+          'Sidik jari tidak valid lagi. Silakan login manual.',
+        );
+      } else {
+        if (!mounted) return;
+        AppSnackBar.error(context, e.message);
+      }
+    } catch (_) {
+      if (!mounted) return;
       AppSnackBar.error(context, 'Tidak dapat terhubung ke server.');
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -142,25 +246,64 @@ class _LoginPageState extends State<LoginPage> {
                       onSubmitted: (_) => _login(),
                     ),
                     const SizedBox(height: AppSpacing.space10),
-                    ElevatedButton(
-                      onPressed: _isLoading ? null : _login,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primary,
-                        foregroundColor: AppColors.textOnPrimary,
-                        padding: const EdgeInsets.symmetric(
-                          vertical: AppSpacing.space7,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: AppRadius.md,
-                        ),
+                    IntrinsicHeight(
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Expanded(
+                            child: ElevatedButton(
+                              onPressed: _isLoading ? null : _login,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.primary,
+                                foregroundColor: AppColors.textOnPrimary,
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: AppSpacing.space7,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: AppRadius.md,
+                                ),
+                              ),
+                              child: _isLoading
+                                  ? const SizedBox(
+                                      width: 22,
+                                      height: 22,
+                                      child: AppLoadingIndicator(),
+                                    )
+                                  : const Text('Login'),
+                            ),
+                          ),
+                          const SizedBox(width: AppSpacing.space4),
+                          OutlinedButton(
+                            onPressed:
+                                _isLoading ? null : _loginWithBiometric,
+                            style: OutlinedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: AppSpacing.space6,
+                              ),
+                              foregroundColor: _biometricEnabled
+                                  ? AppColors.primary
+                                  : AppColors.textSecondary,
+                              side: BorderSide(
+                                color: _biometricEnabled
+                                    ? AppColors.primary
+                                    : AppColors.textSecondary,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: AppRadius.md,
+                              ),
+                            ),
+                            child: Tooltip(
+                              message: _biometricEnabled
+                                  ? 'Login dengan sidik jari'
+                                  : 'Aktifkan sidik jari di Profile',
+                              child: Icon(
+                                Icons.fingerprint,
+                                size: AppIconSize.lg,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
-                      child: _isLoading
-                          ? const SizedBox(
-                              width: 22,
-                              height: 22,
-                              child: AppLoadingIndicator(),
-                            )
-                          : const Text('Login'),
                     ),
                     const SizedBox(height: AppSpacing.space6),
 

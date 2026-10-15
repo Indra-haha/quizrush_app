@@ -47,7 +47,14 @@ void main() {
       expect(find.text('@budi'), findsOneWidget);
       expect(find.text('XI IPA 1'), findsOneWidget);
       expect(find.text('2006-08-17'), findsOneWidget);
-      expect(find.widgetWithText(FilledButton, 'Logout'), findsOneWidget);
+
+      final logoutButton = find.widgetWithText(FilledButton, 'Logout');
+      await tester.scrollUntilVisible(
+        logoutButton,
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
+      expect(logoutButton, findsOneWidget);
     });
   });
 }

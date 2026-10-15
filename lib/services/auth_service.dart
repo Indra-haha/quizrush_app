@@ -1,6 +1,7 @@
 import 'api_client.dart';
 import 'device_service.dart';
 import '../helpers/json.dart';
+import '../helpers/password_hasher.dart';
 import '../models/user.dart';
 
 class LoginResult {
@@ -23,12 +24,23 @@ class AuthService {
   Future<LoginResult> login({
     required String username,
     required String password,
+  }) {
+    return loginWithHash(username: username, passwordHash: hashPassword(password));
+  }
+
+  /// Login memakai password yang sudah di-hash SHA-256.
+  ///
+  /// Dipakai login biometrik: kredensial tersimpan langsung dikirim tanpa
+  /// di-hash ulang.
+  Future<LoginResult> loginWithHash({
+    required String username,
+    required String passwordHash,
   }) async {
     final response = await _api.post(
       '/api/login',
       body: {
         'username': username,
-        'password': password,
+        'password': passwordHash,
         'device_id': DeviceService.instance.getId(),
       },
     );
@@ -60,7 +72,7 @@ class AuthService {
         'username': username,
         'kelas': kelas,
         'tanggal_lahir': tanggalLahir,
-        'password': password,
+        'password': hashPassword(password),
         'device_id': DeviceService.instance.getId(),
       },
     );
