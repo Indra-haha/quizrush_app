@@ -115,33 +115,11 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   /// Meminta password untuk menyimpan kredensial login biometrik.
-  Future<String?> _askPassword() async {
-    final controller = TextEditingController();
-    final result = await showDialog<String>(
+  Future<String?> _askPassword() {
+    return showDialog<String>(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Konfirmasi Password'),
-        content: PasswordField(
-          controller: controller,
-          label: 'Password',
-          icon: Icons.lock_outline,
-          onSubmitted: (_) => Navigator.of(dialogContext).pop(controller.text),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(),
-            child: const Text('Batal'),
-          ),
-          TextButton(
-            onPressed: () =>
-                Navigator.of(dialogContext).pop(controller.text),
-            child: const Text('Simpan'),
-          ),
-        ],
-      ),
+      builder: (_) => const _PasswordPromptDialog(),
     );
-    controller.dispose();
-    return result;
   }
 
   Future<void> _loadUser() async {
@@ -292,6 +270,50 @@ class _ProfilePageState extends State<ProfilePage> {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Dialog konfirmasi password untuk mengaktifkan login biometrik.
+///
+/// Mengelola [TextEditingController] miliknya sendiri agar controller tidak
+/// di-dispose saat animasi keluar dialog masih berjalan (yang menyebabkan
+/// error "TextEditingController was used after being disposed").
+class _PasswordPromptDialog extends StatefulWidget {
+  const _PasswordPromptDialog();
+
+  @override
+  State<_PasswordPromptDialog> createState() => _PasswordPromptDialogState();
+}
+
+class _PasswordPromptDialogState extends State<_PasswordPromptDialog> {
+  final TextEditingController _controller = TextEditingController();
+
+  void _submit() => Navigator.of(context).pop(_controller.text);
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Konfirmasi Password'),
+      content: PasswordField(
+        controller: _controller,
+        label: 'Password',
+        icon: Icons.lock_outline,
+        onSubmitted: (_) => _submit(),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Batal'),
+        ),
+        TextButton(onPressed: _submit, child: const Text('Simpan')),
+      ],
     );
   }
 }
