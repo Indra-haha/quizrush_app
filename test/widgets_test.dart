@@ -36,6 +36,7 @@ import 'package:quizrush/widgets/room_connection_bar.dart';
 import 'package:quizrush/widgets/room_code_dialog.dart';
 import 'package:quizrush/widgets/room_detail_card.dart';
 import 'package:quizrush/widgets/room_list_header.dart';
+import 'package:quizrush/widgets/room_list_tile.dart';
 import 'package:quizrush/widgets/status_filter_row.dart';
 
 Widget _wrap(Widget child) {
@@ -941,6 +942,31 @@ void main() {
       await tester.pumpWidget(_wrap(const KonversiUmurTab()));
 
       expect(find.text('Pilih Tanggal Lahir'), findsOneWidget);
+    });
+  });
+
+  group('RoomListTile', () {
+    testWidgets('menampilkan nomor, kode, dan memanggil onTap', (
+      WidgetTester tester,
+    ) async {
+      var tapped = 0;
+      await tester.pumpWidget(
+        _wrap(
+          RoomListTile(
+            room: _room(),
+            index: 1,
+            quizTitle: 'Kuis Matematika',
+            onTap: () => tapped++,
+          ),
+        ),
+      );
+
+      expect(find.text('2'), findsOneWidget);
+      expect(find.text('123456'), findsOneWidget);
+      expect(find.text('Kuis Matematika'), findsOneWidget);
+
+      await tester.tap(find.byType(RoomListTile));
+      expect(tapped, 1);
     });
   });
 }

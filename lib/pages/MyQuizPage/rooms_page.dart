@@ -4,11 +4,10 @@ import '../../models/quiz.dart';
 import '../../models/room.dart' show PublishResult;
 import '../../services/quiz_feed.dart';
 import '../../theme/app_theme.dart';
-import '../../helpers/format.dart';
 import '../../widgets/app_header_bar_with_actions.dart';
 import '../../widgets/empty_state_view.dart';
 import '../../widgets/error_state_view.dart';
-import '../../widgets/status_badge.dart';
+import '../../widgets/room_list_tile.dart';
 import '../login_redirect.dart';
 import 'detail_room_page.dart' show RoomDetailPage;
 
@@ -126,50 +125,11 @@ class _RoomsPageState extends State<RoomsPage> {
       separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.space4),
       itemBuilder: (context, index) {
         final room = rooms[index];
-        return Card(
-          child: InkWell(
-            borderRadius: AppRadius.md,
-            onTap: () => _openRoom(room),
-            child: Padding(
-              padding: const EdgeInsets.all(AppSpacing.space6),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      CircleAvatar(
-                        backgroundColor: AppColors.primary,
-                        foregroundColor: AppColors.textOnPrimary,
-                        child: Text('${index + 1}'),
-                      ),
-                      const SizedBox(width: AppSpacing.space6),
-                      Expanded(
-                        child: Text(
-                          room.kode,
-                          style: AppTextStyles.metricStrong.copyWith(
-                            color: AppColors.textPrimary,
-                          ),
-                        ),
-                      ),
-                      if (room.status.isNotEmpty)
-                        StatusBadge(status: room.status, dense: true),
-                    ],
-                  ),
-                  if (quiz.title.isNotEmpty) ...[
-                    const SizedBox(height: AppSpacing.space3),
-                    Text(quiz.title, style: AppTextStyles.bodyMeta),
-                  ],
-                  if (room.createdAt.isNotEmpty) ...[
-                    const SizedBox(height: AppSpacing.space3),
-                    Text(
-                      relativeTime(room.createdAt),
-                      style: AppTextStyles.metric,
-                    ),
-                  ],
-                ],
-              ),
-            ),
-          ),
+        return RoomListTile(
+          room: room,
+          index: index,
+          quizTitle: quiz.title,
+          onTap: () => _openRoom(room),
         );
       },
     );
