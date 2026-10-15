@@ -15,6 +15,9 @@ import 'package:quizrush/widgets/quiz_answer_banner.dart';
 import 'package:quizrush/widgets/quiz_countdown_dial.dart';
 import 'package:quizrush/widgets/quiz_image_picker.dart';
 import 'package:quizrush/widgets/quiz_question_editor.dart';
+import 'package:quizrush/widgets/room_chat_bubble.dart';
+import 'package:quizrush/widgets/room_composer.dart';
+import 'package:quizrush/widgets/room_connection_bar.dart';
 import 'package:quizrush/widgets/status_filter_row.dart';
 
 Widget _wrap(Widget child) {
@@ -448,6 +451,112 @@ void main() {
 
       await tester.tap(find.text('Hapus'));
       expect(removed, 1);
+    });
+  });
+
+  group('Widget ruang tunggu', () {
+    testWidgets('RoomSystemMessage menampilkan teks', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(_wrap(const RoomSystemMessage(text: 'bergabung.')));
+
+      expect(find.text('bergabung.'), findsOneWidget);
+    });
+
+    testWidgets('RoomChatBubble menampilkan pengirim hanya untuk pesan orang lain', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(
+        _wrap(const RoomChatBubble(from: 'Budi', text: 'halo', mine: false)),
+      );
+
+      expect(find.text('Budi'), findsOneWidget);
+      expect(find.text('halo'), findsOneWidget);
+    });
+
+    testWidgets('RoomChatBubble milik sendiri menyembunyikan pengirim', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(
+        _wrap(const RoomChatBubble(from: 'Kamu', text: 'hai', mine: true)),
+      );
+
+      expect(find.text('Kamu'), findsNothing);
+      expect(find.text('hai'), findsOneWidget);
+    });
+
+    testWidgets('RoomConnectionBar menampilkan label, pemain, dan tombol retry', (
+      WidgetTester tester,
+    ) async {
+      var retried = 0;
+      await tester.pumpWidget(
+        _wrap(
+          RoomConnectionBar(
+            statusColor: Colors.red,
+            statusLabel: 'Koneksi terputus',
+            users: 3,
+            onRetry: () => retried++,
+          ),
+        ),
+      );
+
+      expect(find.text('Koneksi terputus'), findsOneWidget);
+      expect(find.text('3 Pemain'), findsOneWidget);
+
+      await tester.tap(find.text('Coba lagi'));
+      expect(retried, 1);
+    });
+
+    testWidgets('RoomConnectionBar tanpa onRetry menyembunyikan tombol', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(
+        _wrap(
+          const RoomConnectionBar(
+            statusColor: Colors.green,
+            statusLabel: 'Tersambung',
+            users: 1,
+          ),
+        ),
+      );
+
+      expect(find.text('Coba lagi'), findsNothing);
+    });
+
+    testWidgets('RoomComposer mengirim saat aktif', (WidgetTester tester) async {
+      var sent = 0;
+      await tester.pumpWidget(
+        _wrap(
+          RoomComposer(
+            controller: TextEditingController(),
+            enabled: true,
+            hintText: 'Tulis pesan...',
+            onSend: () => sent++,
+          ),
+        ),
+      );
+
+      await tester.tap(find.byIcon(Icons.send));
+      expect(sent, 1);
+    });
+
+    testWidgets('RoomComposer nonaktif tidak mengirim', (
+      WidgetTester tester,
+    ) async {
+      var sent = 0;
+      await tester.pumpWidget(
+        _wrap(
+          RoomComposer(
+            controller: TextEditingController(),
+            enabled: false,
+            hintText: 'Menunggu koneksi...',
+            onSend: () => sent++,
+          ),
+        ),
+      );
+
+      await tester.tap(find.byIcon(Icons.send));
+      expect(sent, 0);
     });
   });
 }
