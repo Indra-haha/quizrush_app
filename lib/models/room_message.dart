@@ -1,3 +1,5 @@
+import '../helpers/json.dart';
+
 /// Satu frame pesan JSON dari WebSocket room (API.md §8, "Format pesan").
 ///
 /// `type` paling sering dipakai: dari server `connected`, `join`, `leave`,
@@ -21,11 +23,11 @@ class RoomMessage {
 
   factory RoomMessage.fromJson(Map<String, dynamic> json) {
     return RoomMessage(
-      type: json['type'] as String? ?? '',
-      room: json['room'] as String? ?? '',
-      from: json['from'] as String? ?? '',
-      time: json['time'] as String? ?? '',
-      users: (json['users'] as num?)?.toInt() ?? 0,
+      type: jsonString(json['type']),
+      room: jsonString(json['room']),
+      from: jsonString(json['from']),
+      time: jsonString(json['time']),
+      users: jsonInt(json['users']),
       data: json['data'],
     );
   }

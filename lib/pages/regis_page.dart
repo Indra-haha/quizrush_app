@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import '../helpers/auth_validator.dart';
 import '../utils/format.dart';
 import '../services/api_client.dart';
 import '../services/auth_service.dart';
@@ -56,18 +57,16 @@ class _RegisterPageState extends State<RegisterPage> {
     final password = _passwordController.text;
     final confirmPassword = _confirmPasswordController.text;
 
-    if (nama.isEmpty ||
-        username.isEmpty ||
-        kelas.isEmpty ||
-        tanggalLahir.isEmpty ||
-        password.isEmpty ||
-        confirmPassword.isEmpty) {
-      AppSnackBar.error(context, "Semua field wajib diisi");
-      return;
-    }
-
-    if (password != confirmPassword) {
-      AppSnackBar.error(context, "Password tidak cocok");
+    final error = AuthValidator.register(
+      nama: nama,
+      username: username,
+      kelas: kelas,
+      tanggalLahir: tanggalLahir,
+      password: password,
+      confirmPassword: confirmPassword,
+    );
+    if (error != null) {
+      AppSnackBar.error(context, error);
       return;
     }
 

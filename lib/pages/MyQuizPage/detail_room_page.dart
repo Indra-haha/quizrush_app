@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../helpers/room_status_flow.dart';
 import '../../models/quiz.dart';
 import '../../services/active_room_service.dart';
 import '../../services/api_client.dart';
@@ -18,9 +19,6 @@ import '../../widgets/empty_state_view.dart';
 import '../../widgets/error_state_view.dart';
 import '../../widgets/section_header.dart';
 import '../login_redirect.dart';
-
-/// Status room berikutnya mengikuti urutan publish yang sudah dipakai server.
-const _statusFlow = ['waiting', 'open', 'in-Game', 'ended'];
 
 final _optionColors = [
   optionThemes[1].dot,
@@ -53,24 +51,10 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
     _load();
   }
 
-  String? get _nextStatus {
-    final idx = _statusFlow.indexOf(_room.status);
-    if (idx < 0 || idx >= _statusFlow.length - 1) return null;
-    return _statusFlow[idx + 1];
-  }
+  String? get _nextStatus => RoomStatusFlow.next(_room.status);
 
-  (String, IconData) get _publishMeta {
-    switch (_nextStatus) {
-      case 'open':
-        return ('Publish', Icons.rocket_launch_outlined);
-      case 'in-Game':
-        return ('Mulai Game', Icons.play_circle_outline);
-      case 'ended':
-        return ('Akhiri', Icons.flag_outlined);
-      default:
-        return ('Selesai', Icons.check_circle_outline);
-    }
-  }
+  (String, IconData) get _publishMeta =>
+      RoomStatusFlow.publishMeta(_nextStatus);
 
   /// Detail room dibaca dari cache; server hanya dihubungi lewat tombol
   /// refresh atau setelah status room diubah.

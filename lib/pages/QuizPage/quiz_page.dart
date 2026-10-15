@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../../helpers/pin.dart';
 import '../../helpers/room_launcher.dart';
 import '../../models/quiz.dart';
 import '../../models/room.dart';
@@ -34,8 +35,6 @@ class QuizPage extends StatefulWidget {
 
 class _QuizPageState extends State<QuizPage> {
   static const _statuses = ['open', 'in-Game', 'ended'];
-  static final _pinPattern = RegExp(r'^\d{6}$');
-  static final _partialPinPattern = RegExp(r'^\d{1,5}$');
 
   QuizIndex? _index;
   bool _loading = true;
@@ -51,11 +50,7 @@ class _QuizPageState extends State<QuizPage> {
 
   /// Jumlah digit PIN yang sudah diketik (1-5), atau null kalau kolom pencarian
   /// tidak berisi PIN sebagian: kosong, ada huruf, atau sudah 6 digit.
-  int? get _pinProgress {
-    final query = _searchController.text.trim();
-    if (!_partialPinPattern.hasMatch(query)) return null;
-    return query.length;
-  }
+  int? get _pinProgress => Pin.progress(_searchController.text);
 
   @override
   void initState() {
@@ -135,7 +130,7 @@ class _QuizPageState extends State<QuizPage> {
   void _onSearchChanged(String value) {
     _notFoundTimer?.cancel();
     final query = value.trim();
-    if (_pinPattern.hasMatch(query)) {
+    if (Pin.isComplete(query)) {
       _openRoomByPin(query);
       return;
     }

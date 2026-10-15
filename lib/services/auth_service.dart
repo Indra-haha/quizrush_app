@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 
 import 'api_client.dart';
 import 'device_service.dart';
+import '../helpers/json.dart';
 import '../models/user.dart';
 
 class LoginResult {
@@ -42,8 +43,8 @@ class AuthService {
       );
     }
     return LoginResult(
-      token: data['token'] as String,
-      user: (data['user'] as Map).cast<String, dynamic>(),
+      token: jsonString(data['token']),
+      user: jsonMap(data['user']),
     );
   }
 
@@ -77,7 +78,7 @@ class AuthService {
         statusCode: response.statusCode,
       );
     }
-    return User.fromJson((data['user'] as Map).cast<String, dynamic>());
+    return User.fromJson(jsonMap(data['user']));
   }
 
   Future<void> logout(String token) async {
@@ -109,6 +110,6 @@ class AuthService {
         statusCode: response.statusCode,
       );
     }
-    return (data['user'] as Map).cast<String, dynamic>();
+    return jsonMap(data['user']);
   }
 }

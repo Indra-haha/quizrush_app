@@ -2,8 +2,9 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
-import 'package:http_parser/http_parser.dart';
 
+import '../helpers/json.dart';
+import '../helpers/quiz_image.dart';
 import '../models/quiz.dart';
 import 'api_client.dart';
 
@@ -25,7 +26,7 @@ class QuizService {
         statusCode: response.statusCode,
       );
     }
-    return AllQuizzes.fromJson((data as Map).cast<String, dynamic>());
+    return AllQuizzes.fromJson(jsonMap(data));
   }
 
   Future<MyQuizzes> getMyQuizzes(String token) async {
@@ -42,7 +43,7 @@ class QuizService {
         statusCode: response.statusCode,
       );
     }
-    return MyQuizzes.fromJson((data as Map).cast<String, dynamic>());
+    return MyQuizzes.fromJson(jsonMap(data));
   }
 
   Future<Quizes> createQuiz({
@@ -68,7 +69,7 @@ class QuizService {
         'file',
         imageBytes,
         filename: imageFilename,
-        contentType: _imageMediaType(imageFilename),
+        contentType: QuizImage.mediaType(imageFilename),
       ),
     );
 
@@ -81,21 +82,6 @@ class QuizService {
         statusCode: response.statusCode,
       );
     }
-    return Quizes.fromJson((data['quiz'] as Map).cast<String, dynamic>());
-  }
-
-  MediaType _imageMediaType(String filename) {
-    final extension = filename.split('.').last.toLowerCase();
-    switch (extension) {
-      case 'jpg':
-      case 'jpeg':
-        return MediaType('image', 'jpeg');
-      case 'png':
-        return MediaType('image', 'png');
-      case 'webp':
-        return MediaType('image', 'webp');
-      default:
-        return MediaType('application', 'octet-stream');
-    }
+    return Quizes.fromJson(jsonMap(data['quiz']));
   }
 }

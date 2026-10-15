@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../helpers/auth_validator.dart';
 import '../services/active_room_service.dart';
 import '../services/api_client.dart';
 import '../services/auth_service.dart';
@@ -57,8 +58,9 @@ class _LoginPageState extends State<LoginPage> {
     final String username = _usernameController.text.trim();
     final String password = _passwordController.text;
 
-    if (username.isEmpty || password.isEmpty) {
-      AppSnackBar.error(context, 'Username dan password wajib diisi');
+    final error = AuthValidator.login(username: username, password: password);
+    if (error != null) {
+      AppSnackBar.error(context, error);
       return;
     }
 

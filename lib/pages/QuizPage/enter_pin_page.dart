@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../helpers/pin.dart';
 import '../../helpers/room_launcher.dart';
 import '../../services/api_client.dart';
 import '../../theme/app_theme.dart';
@@ -20,8 +21,6 @@ class EnterPinPage extends StatefulWidget {
 }
 
 class _EnterPinPageState extends State<EnterPinPage> {
-  static final _pinPattern = RegExp(r'^\d{6}$');
-
   final _pinController = TextEditingController();
   bool _submitting = false;
   String? _error;
@@ -36,7 +35,7 @@ class _EnterPinPageState extends State<EnterPinPage> {
     if (_submitting) return;
 
     final pin = _pinController.text.trim();
-    if (!_pinPattern.hasMatch(pin)) {
+    if (!Pin.isComplete(pin)) {
       setState(() => _error = 'PIN harus 6 digit angka.');
       return;
     }

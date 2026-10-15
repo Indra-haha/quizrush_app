@@ -1,3 +1,4 @@
+import '../helpers/json.dart';
 import 'quiz.dart';
 
 /// Status room sebelum dan sesudah aksi publish. Dikembalikan dari halaman
@@ -28,16 +29,14 @@ class Room {
 
   factory Room.fromJson(Map<String, dynamic> json) {
     return Room(
-      id: json['id'] as String? ?? '',
-      quizId: json['quiz_id'] as String? ?? '',
-      kode: json['kode'] as String? ?? '',
-      status: json['status'] as String? ?? '',
-      createdAt: json['created_at'] as String? ?? '',
-      judul: json['judul'] as String?,
-      isi: json['isi'] as String?,
-      quiz: json['quiz'] == null
-          ? null
-          : QuizSummary.fromJson((json['quiz'] as Map).cast<String, dynamic>()),
+      id: jsonString(json['id']),
+      quizId: jsonString(json['quiz_id']),
+      kode: jsonString(json['kode']),
+      status: jsonString(json['status']),
+      createdAt: jsonString(json['created_at']),
+      judul: jsonStringOrNull(json['judul']),
+      isi: jsonStringOrNull(json['isi']),
+      quiz: jsonObject(json['quiz'], QuizSummary.fromJson),
     );
   }
 
@@ -48,5 +47,18 @@ class Room {
     final quizTitle = quiz?.title;
     if (quizTitle != null && quizTitle.isNotEmpty) return quizTitle;
     return 'Room Kuis';
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'quiz_id': quizId,
+      'kode': kode,
+      'status': status,
+      'created_at': createdAt,
+      'judul': judul,
+      'isi': isi,
+      'quiz': quiz?.toJson(),
+    };
   }
 }

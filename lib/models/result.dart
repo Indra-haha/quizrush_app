@@ -1,3 +1,4 @@
+import '../helpers/json.dart';
 import 'quiz.dart';
 
 class Result {
@@ -21,18 +22,28 @@ class Result {
 
   factory Result.fromJson(Map<String, dynamic> json) {
     return Result(
-      id: json['id'] as String? ?? '',
-      roomId: json['room_id'] as String? ?? '',
-      kode: json['kode'] as String? ?? '',
-      quizId: json['quiz_id'] as String? ?? '',
-      createdAt: json['created_at'] as String? ?? '',
-      quiz: json['quiz'] == null
-          ? null
-          : QuizSummary.fromJson((json['quiz'] as Map).cast<String, dynamic>()),
-      entries: (json['entries'] as List? ?? [])
-          .map((e) => ResultEntry.fromJson((e as Map).cast<String, dynamic>()))
-          .toList(),
+      id: jsonString(json['id']),
+      roomId: jsonString(json['room_id']),
+      kode: jsonString(json['kode']),
+      quizId: jsonString(json['quiz_id']),
+      createdAt: jsonString(json['created_at']),
+      quiz: jsonObject(json['quiz'], QuizSummary.fromJson),
+      entries: jsonMapList(
+        json['entries'],
+      ).map(ResultEntry.fromJson).toList(),
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'room_id': roomId,
+      'kode': kode,
+      'quiz_id': quizId,
+      'created_at': createdAt,
+      'quiz': quiz?.toJson(),
+      'entries': entries.map((e) => e.toJson()).toList(),
+    };
   }
 }
 
@@ -44,8 +55,8 @@ class ResultEntry {
 
   factory ResultEntry.fromJson(Map<String, dynamic> json) {
     return ResultEntry(
-      nama: json['nama'] as String? ?? '',
-      skor: json['skor'] as int? ?? 0,
+      nama: jsonString(json['nama']),
+      skor: jsonInt(json['skor']),
     );
   }
 

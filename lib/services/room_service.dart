@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
+import '../helpers/json.dart';
 import '../models/room.dart';
 import '../models/room_verify.dart';
 import 'api_client.dart';
@@ -34,7 +35,7 @@ class RoomService {
         statusCode: response.statusCode,
       );
     }
-    return RoomVerifyResult.fromJson((data as Map).cast<String, dynamic>());
+    return RoomVerifyResult.fromJson(jsonMap(data));
   }
 
   Future<Room> createRoom({
@@ -63,7 +64,7 @@ class RoomService {
         statusCode: response.statusCode,
       );
     }
-    return Room.fromJson((data['room'] as Map).cast<String, dynamic>());
+    return Room.fromJson(jsonMap(data['room']));
   }
 
   Future<Room> updateRoomStatus({
@@ -85,6 +86,6 @@ class RoomService {
         statusCode: response.statusCode,
       );
     }
-    return Room.fromJson((data['room'] as Map).cast<String, dynamic>());
+    return Room.fromJson(jsonMap(data['room']));
   }
 }

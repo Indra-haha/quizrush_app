@@ -3,6 +3,8 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../../helpers/quiz_form_validator.dart';
+import '../../helpers/quiz_image.dart';
 import '../../models/quiz.dart';
 import '../../services/api_client.dart';
 import '../../services/quiz_service.dart';
@@ -53,9 +55,6 @@ class _CreateQuizPageState extends State<CreateQuizPage> {
   bool _saving = false;
   bool _pickingImage = false;
 
-  static const int _maxImageBytes = 5 * 1024 * 1024;
-  static const int _minQuestions = 5;
-
   @override
   void dispose() {
     _titleController.dispose();
@@ -77,7 +76,7 @@ class _CreateQuizPageState extends State<CreateQuizPage> {
       );
       if (picked == null) return;
       final bytes = await picked.readAsBytes();
-      if (bytes.length > _maxImageBytes) {
+      if (!QuizImage.isWithinSizeLimit(bytes.length)) {
         if (!mounted) return;
         AppSnackBar.error(context, 'Ukuran gambar maksimal 5 MB.');
         return;
@@ -102,10 +101,8 @@ class _CreateQuizPageState extends State<CreateQuizPage> {
     });
   }
 
-  String _imageFilename(XFile image) {
-    if (image.name.trim().isNotEmpty) return image.name;
-    return image.path.split(RegExp(r'[\\/]')).last;
-  }
+  String _imageFilename(XFile image) =>
+      QuizImage.filename(name: image.name, path: image.path);
 
   void _addQuestion() {
     setState(() => _questions.add(_QuestionData()));
@@ -117,37 +114,23 @@ class _CreateQuizPageState extends State<CreateQuizPage> {
   }
 
   String? _validate() {
-    if (_titleController.text.trim().isEmpty) {
-      return 'Judul quiz wajib diisi.';
-    }
-    if (_descriptionController.text.trim().isEmpty) {
-      return 'Deskripsi quiz wajib diisi.';
-    }
-    if (_imageBytes == null) {
-      return 'Gambar kuis wajib diunggah.';
-    }
-    if (_questions.length < _minQuestions) {
-      return 'Minimal $_minQuestions pertanyaan.';
-    }
-    for (var i = 0; i < _questions.length; i++) {
-      final question = _questions[i];
-      if (question.question.text.trim().isEmpty) {
-        return 'Pertanyaan ${i + 1} wajib diisi.';
-      }
-      for (var j = 0; j < question.options.length; j++) {
-        if (question.options[j].text.trim().isEmpty) {
-          return 'Jawaban ${j + 1} pada pertanyaan ${i + 1} wajib diisi.';
-        }
-      }
-      if (question.correctIdx == null) {
-        return 'Pilih jawaban benar untuk pertanyaan ${i + 1}.';
-      }
-      final skor = int.tryParse(question.skor.text.trim());
-      if (skor == null || skor < 1 || skor > 50) {
-        return 'Poin pertanyaan ${i + 1} harus berupa angka 1-50.';
-      }
-    }
-    return null;
+    final questions = _questions
+        .map(
+          (question) => QuizFormQuestion(
+            question: question.question.text,
+            options: question.options.map((o) => o.text).toList(),
+            correctIdx: question.correctIdx,
+            skor: question.skor.text,
+          ),
+        )
+        .toList();
+
+    return QuizFormValidator.validate(
+      title: _titleController.text,
+      description: _descriptionController.text,
+      hasImage: _imageBytes != null,
+      questions: questions,
+    );
   }
 
   Future<void> _save() async {

@@ -1,3 +1,4 @@
+import '../helpers/json.dart';
 import 'room.dart';
 
 /// Hasil `POST /api/rooms/verify` (API.md §5.3): JWT ber-scope room untuk
@@ -10,8 +11,8 @@ class RoomVerifyResult {
 
   factory RoomVerifyResult.fromJson(Map<String, dynamic> json) {
     return RoomVerifyResult(
-      token: json['token'] as String? ?? '',
-      room: Room.fromJson((json['room'] as Map).cast<String, dynamic>()),
+      token: jsonString(json['token']),
+      room: Room.fromJson(jsonMap(json['room'])),
     );
   }
 }
