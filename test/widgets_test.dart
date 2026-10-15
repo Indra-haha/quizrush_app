@@ -21,8 +21,10 @@ import 'package:quizrush/widgets/quiz_detail_hero.dart';
 import 'package:quizrush/widgets/quiz_image_picker.dart';
 import 'package:quizrush/widgets/quiz_question_editor.dart';
 import 'package:quizrush/widgets/quiz_question_preview.dart';
+import 'package:quizrush/widgets/quiz_question_card.dart';
 import 'package:quizrush/widgets/quiz_results_list.dart';
 import 'package:quizrush/widgets/quiz_search_field.dart';
+import 'package:quizrush/widgets/quiz_test_header.dart';
 import 'package:quizrush/widgets/room_chat_bubble.dart';
 import 'package:quizrush/widgets/room_composer.dart';
 import 'package:quizrush/widgets/room_connection_bar.dart';
@@ -838,6 +840,38 @@ void main() {
       );
 
       expect(find.byType(CircularProgressIndicator), findsOneWidget);
+    });
+  });
+
+  group('Widget testing kuis', () {
+    testWidgets('QuizQuestionCard menampilkan teks pertanyaan', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(
+        _wrap(const QuizQuestionCard(question: 'Ibu kota Indonesia?')),
+      );
+
+      expect(find.text('Ibu kota Indonesia?'), findsOneWidget);
+    });
+
+    testWidgets('QuizTestHeader menampilkan progres dan skor', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(
+        _wrap(
+          const QuizTestHeader(
+            title: 'Kuis Matematika',
+            currentIndex: 1,
+            totalQuestions: 5,
+            maxScore: 100,
+            totalScore: 40,
+          ),
+        ),
+      );
+
+      expect(find.text('Soal 2'), findsOneWidget);
+      expect(find.text('Max 100 pts'), findsOneWidget);
+      expect(find.text('40'), findsOneWidget);
     });
   });
 }

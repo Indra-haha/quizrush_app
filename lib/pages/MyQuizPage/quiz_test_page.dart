@@ -4,12 +4,12 @@ import '../../helpers/quiz_play_session.dart';
 import '../../models/quiz.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/quiz_option_theme.dart';
-import '../../widgets/app_pill.dart';
-import '../../widgets/app_stat_tile.dart';
 import '../../widgets/empty_state_view.dart';
 import '../../widgets/quiz_answer_banner.dart';
 import '../../widgets/quiz_countdown_dial.dart';
 import '../../widgets/quiz_option_tile.dart';
+import '../../widgets/quiz_question_card.dart';
+import '../../widgets/quiz_test_header.dart';
 
 /// Halaman test lokal: satu soal, timer, dan empat pilihan jawaban. Semua
 /// aturan permainan ada di [QuizPlaySession], halaman ini hanya merender.
@@ -103,9 +103,15 @@ class _QuizTestPageState extends State<QuizTestPage> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildHeader(),
+              QuizTestHeader(
+                title: widget.quiz.title,
+                currentIndex: _session.currentIndex,
+                totalQuestions: _session.totalQuestions,
+                maxScore: _session.currentMaxScore,
+                totalScore: _session.totalScore,
+              ),
               _buildTimer(),
-              _buildQuestionCard(),
+              QuizQuestionCard(question: _session.currentQuestion.question),
               const SizedBox(height: AppSpacing.space8),
               _buildOptions(),
               if (_session.isAnswered && _session.isUserCorrect != null) ...[
@@ -122,84 +128,10 @@ class _QuizTestPageState extends State<QuizTestPage> {
     );
   }
 
-  Widget _buildHeader() {
-    return Padding(
-      padding: const EdgeInsets.only(
-        top: AppSpacing.space2,
-        bottom: AppSpacing.space6,
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                widget.quiz.title.toUpperCase(),
-                style: AppTextStyles.labelStrongSmall.copyWith(
-                  color: AppColors.primary,
-                ),
-              ),
-              const SizedBox(height: AppSpacing.space2),
-              AppPill(
-                text: 'Soal ${_session.currentIndex + 1}',
-                trailingText: '/ ${_session.totalQuestions}',
-                trailingColor: AppColors.textSecondary,
-                background: AppColors.surfaceSoft,
-                foreground: AppColors.textPrimary,
-                dot: AppColors.primary,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.space6,
-                  vertical: AppSpacing.space2,
-                ),
-              ),
-            ],
-          ),
-          Row(
-            children: [
-              AppStatTile.compact(
-                value: 'Max ${_session.currentMaxScore} pts',
-                bg: AppColors.surfaceSoft,
-                fg: AppColors.textSecondary,
-                borderColor: AppColors.divider,
-              ),
-              const SizedBox(width: AppSpacing.space4),
-              AppStatTile.compact(
-                value: '${_session.totalScore}',
-                bg: AppColors.surface,
-                fg: AppColors.textPrimary,
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildTimer() {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: AppSpacing.space4),
       child: Center(child: QuizCountdownDial(seconds: _session.timeLeft)),
-    );
-  }
-
-  Widget _buildQuestionCard() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(AppSpacing.space8),
-      decoration: BoxDecoration(
-        color: AppColors.textOnPrimary,
-        borderRadius: AppRadius.lg,
-        boxShadow: AppShadows.hairlineWide,
-      ),
-      child: Center(
-        child: Text(
-          _session.currentQuestion.question,
-          textAlign: TextAlign.center,
-          style: AppTextStyles.heading6,
-        ),
-      ),
     );
   }
 
