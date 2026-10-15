@@ -252,7 +252,7 @@ class _WaitingRoomPageState extends State<WaitingRoomPage> {
           ),
           if (quiz != null && quiz.description.isNotEmpty) ...[
             const SizedBox(height: AppSpacing.space2),
-            AppHeroSubtitle(quiz.description, fontSize: AppFontSize.bodyLarge),
+            AppHeroSubtitle(quiz.description),
           ],
         ],
       ),

@@ -288,7 +288,6 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
       text: text,
       background: color,
       foreground: textColor,
-      elevated: true,
     );
   }
 

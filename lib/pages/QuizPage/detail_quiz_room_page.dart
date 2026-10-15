@@ -77,7 +77,6 @@ class DetailQuizRoomPage extends StatelessWidget {
                 background: AppColors.textOnPrimary.withValues(alpha: 0.90),
                 foreground: AppColors.primary,
                 dot: info.color,
-                fontWeight: AppFontWeight.semibold,
               ),
             ],
           ),
@@ -90,7 +89,7 @@ class DetailQuizRoomPage extends StatelessWidget {
           ),
           if (quiz.description.isNotEmpty) ...[
             const SizedBox(height: AppSpacing.space4),
-            AppHeroSubtitle(quiz.description, fontSize: AppFontSize.bodyLarge),
+            AppHeroSubtitle(quiz.description),
           ],
           const SizedBox(height: AppSpacing.space9),
           IntrinsicHeight(

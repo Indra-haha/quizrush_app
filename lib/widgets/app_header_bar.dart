@@ -26,6 +26,12 @@ class AppHeaderBar extends StatelessWidget implements PreferredSizeWidget {
     return Size.fromHeight(kToolbarHeight + bottomHeight);
   }
 
+  /// Widget tambahan yang diletakkan setelah judul. Subclass meng-override
+  /// method ini alih-alih membangun AppBar-nya sendiri, sehingga konstruksi
+  /// AppBar hanya ada di satu tempat.
+  @protected
+  List<Widget> buildTrailing() => const [];
+
   /// Membangun baris judul di dalam AppBar. Widget tambahan (mis. action
   /// buttons) dapat disisipkan setelah judul oleh subclass.
   @protected
@@ -61,7 +67,7 @@ class AppHeaderBar extends StatelessWidget implements PreferredSizeWidget {
     return AppBar(
       automaticallyImplyLeading: false,
       titleSpacing: 0,
-      title: buildTitleRow(const []),
+      title: buildTitleRow(buildTrailing()),
       bottom: bottom,
     );
   }

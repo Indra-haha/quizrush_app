@@ -34,32 +34,11 @@ class AppHeroCard extends StatelessWidget {
   }
 }
 
-/// Judul besar di dalam hero card, warna putih.
-class AppHeroTitle extends StatelessWidget {
-  final String text;
-  final double fontSize;
-
-  const AppHeroTitle(this.text, {super.key, this.fontSize = 24});
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      text,
-      style: AppTextStyles.display1.copyWith(color: AppColors.textOnPrimary),
-    );
-  }
-}
-
 /// Teks deskripsi di bawah judul hero.
 class AppHeroSubtitle extends StatelessWidget {
   final String text;
-  final double fontSize;
 
-  const AppHeroSubtitle(
-    this.text, {
-    super.key,
-    this.fontSize = AppFontSize.small,
-  });
+  const AppHeroSubtitle(this.text, {super.key});
 
   @override
   Widget build(BuildContext context) {

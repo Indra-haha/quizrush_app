@@ -6,7 +6,7 @@ import '../theme/app_theme.dart';
 ///
 /// Konsumen tidak lagi menyuntik [TextStyle] sendiri; setiap kondisi punya
 /// named constructor sehingga gayanya terkunci di satu tempat.
-enum EmptyStateKind { empty, noResult, searching, notFound, error }
+enum EmptyStateKind { empty, noResult, searching, notFound }
 
 class EmptyStateView extends StatelessWidget {
   final IconData icon;
@@ -26,10 +26,6 @@ class EmptyStateView extends StatelessWidget {
     : icon = Icons.quiz_outlined,
       caption = null,
       kind = EmptyStateKind.empty;
-
-  const EmptyStateView.error(this.message, {super.key, this.caption})
-    : icon = Icons.error_outline,
-      kind = EmptyStateKind.error;
 
   factory EmptyStateView.noResult(String query) {
     return EmptyStateView(

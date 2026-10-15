@@ -18,23 +18,15 @@ class AppHeaderBarWithActions extends AppHeaderBar {
   });
 
   @override
-  Widget build(BuildContext context) {
+  List<Widget> buildTrailing() {
     final actionList = actions;
+    if (actionList == null || actionList.isEmpty) return const [];
 
-    final trailing = <Widget>[];
-    if (actionList != null && actionList.isNotEmpty) {
-      trailing.add(const SizedBox(width: AppSpacing.space4));
-      for (var i = 0; i < actionList.length; i++) {
-        if (i > 0) trailing.add(const SizedBox(width: _actionSpacing));
-        trailing.add(actionList[i]);
-      }
+    final trailing = <Widget>[const SizedBox(width: AppSpacing.space4)];
+    for (var i = 0; i < actionList.length; i++) {
+      if (i > 0) trailing.add(const SizedBox(width: _actionSpacing));
+      trailing.add(actionList[i]);
     }
-
-    return AppBar(
-      automaticallyImplyLeading: false,
-      titleSpacing: 0,
-      title: buildTitleRow(trailing),
-      bottom: bottom,
-    );
+    return trailing;
   }
 }

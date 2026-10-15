@@ -99,9 +99,9 @@ class QuizCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 if (quiz.status.isNotEmpty)
-                  _buildBadge(QuizStatus.labelOf(quiz.status), 16),
+                  _buildBadge(QuizStatus.labelOf(quiz.status)),
                 const SizedBox(height: AppSpacing.space2),
-                _buildBadge('${quiz.questions.length} Soal', 12),
+                _buildBadge('${quiz.questions.length} Soal'),
               ],
             ),
           ),
@@ -123,7 +123,7 @@ class QuizCard extends StatelessWidget {
     );
   }
 
-  Widget _buildBadge(String text, double fontSize) {
+  Widget _buildBadge(String text) {
     return Container(
       padding: const EdgeInsets.symmetric(
         horizontal: AppSpacing.space6,

@@ -15,7 +15,6 @@ class AppStatTile extends StatelessWidget {
   final Color? background;
   final Color? foreground;
   final Color? borderColor;
-  final double fontSize;
   final bool onDarkSurface;
   final bool compact;
 
@@ -29,7 +28,6 @@ class AppStatTile extends StatelessWidget {
        background = null,
        foreground = null,
        borderColor = null,
-       fontSize = 16,
        compact = false;
 
   const AppStatTile.detailed({
@@ -43,7 +41,6 @@ class AppStatTile extends StatelessWidget {
        background = null,
        foreground = null,
        borderColor = null,
-       fontSize = 16,
        compact = false;
 
   /// Kotak nilai kecil bergaya netral atau hangat, tanpa label bawah dan tanpa
@@ -53,7 +50,6 @@ class AppStatTile extends StatelessWidget {
     required this.value,
     required Color bg,
     required Color fg,
-    this.fontSize = 16,
     this.borderColor,
   }) : icon = Icons.abc,
        label = '',

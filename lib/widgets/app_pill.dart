@@ -16,10 +16,7 @@ class AppPill extends StatelessWidget {
   final Color? border;
   final Color? dot;
   final IconData? icon;
-  final bool elevated;
   final EdgeInsetsGeometry? padding;
-  final double fontSize;
-  final FontWeight fontWeight;
 
   const AppPill({
     super.key,
@@ -31,22 +28,18 @@ class AppPill extends StatelessWidget {
     this.border,
     this.dot,
     this.icon,
-    this.elevated = false,
     this.padding,
-    this.fontSize = AppFontSize.small,
-    this.fontWeight = AppFontWeight.semibold,
   });
 
   /// Pill status room; warna titik diambil dari palet status yang sama dengan
   /// badge, sehingga `open` tidak pernah hijau di satu tempat dan oranye di tempat lain.
-  factory AppPill.roomStatus(String status, {Key? key, bool elevated = true}) {
+  factory AppPill.roomStatus(String status, {Key? key}) {
     return AppPill(
       key: key,
       text: QuizStatus.labelOf(status),
       background: AppColors.textOnPrimary,
       foreground: AppColors.textSecondary,
       dot: QuizStatus.dotColor(status),
-      elevated: elevated,
     );
   }
 
