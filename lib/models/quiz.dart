@@ -3,6 +3,7 @@ class Quizes {
   final String userId;
   final String title;
   final String description;
+  final String path;
   final List<QuizQuestion> questions;
   final String createdAt;
   final String status;
@@ -15,6 +16,7 @@ class Quizes {
     required this.description,
     required this.questions,
     required this.createdAt,
+    this.path = '',
     this.status = '',
     this.rooms = const [],
   });
@@ -25,6 +27,7 @@ class Quizes {
       userId: json['user_id'] as String? ?? '',
       title: json['title'] as String? ?? '',
       description: json['description'] as String? ?? '',
+      path: json['path'] as String? ?? '',
       questions: (json['questions'] as List? ?? [])
           .map((e) => QuizQuestion.fromJson((e as Map).cast<String, dynamic>()))
           .toList(),
@@ -42,6 +45,7 @@ class Quizes {
       'user_id': userId,
       'title': title,
       'description': description,
+      'path': path,
       'questions': questions.map((q) => q.toJson()).toList(),
       'created_at': createdAt,
       'status': status,

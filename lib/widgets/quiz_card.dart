@@ -68,16 +68,30 @@ class QuizCard extends StatelessWidget {
       child: Stack(
         fit: StackFit.expand,
         children: [
-          const DecoratedBox(
-            decoration: BoxDecoration(gradient: AppGradients.heroGradient),
-            child: Center(
-              child: Icon(
-                Icons.quiz,
-                size: AppIconSize.illustration,
-                color: AppStatus.onLightAlpha,
-              ),
+          if (quiz.path.isEmpty)
+            _buildCoverPlaceholder()
+          else
+            Stack(
+              fit: StackFit.expand,
+              children: [
+                Image.network(
+                  quiz.path,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, _, _) => _buildCoverPlaceholder(),
+                  loadingBuilder: (context, child, progress) =>
+                      progress == null ? child : _buildCoverPlaceholder(),
+                ),
+                const DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [Color(0x66000000), Color(0x00000000)],
+                    ),
+                  ),
+                ),
+              ],
             ),
-          ),
           Positioned(
             top: 12,
             right: 12,
@@ -92,6 +106,19 @@ class QuizCard extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildCoverPlaceholder() {
+    return const DecoratedBox(
+      decoration: BoxDecoration(gradient: AppGradients.heroGradient),
+      child: Center(
+        child: Icon(
+          Icons.quiz,
+          size: AppIconSize.illustration,
+          color: AppStatus.onLightAlpha,
+        ),
       ),
     );
   }

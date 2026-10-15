@@ -1,4 +1,7 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../../models/quiz.dart';
 import '../../services/api_client.dart';
@@ -44,7 +47,14 @@ class _CreateQuizPageState extends State<CreateQuizPage> {
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
   final List<_QuestionData> _questions = [_QuestionData()];
+  final ImagePicker _picker = ImagePicker();
+  XFile? _image;
+  Uint8List? _imageBytes;
   bool _saving = false;
+  bool _pickingImage = false;
+
+  static const int _maxImageBytes = 5 * 1024 * 1024;
+  static const int _minQuestions = 5;
 
   @override
   void dispose() {
@@ -54,6 +64,47 @@ class _CreateQuizPageState extends State<CreateQuizPage> {
       question.dispose();
     }
     super.dispose();
+  }
+
+  Future<void> _pickImage() async {
+    if (_pickingImage) return;
+    setState(() => _pickingImage = true);
+    try {
+      final picked = await _picker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 1920,
+        imageQuality: 85,
+      );
+      if (picked == null) return;
+      final bytes = await picked.readAsBytes();
+      if (bytes.length > _maxImageBytes) {
+        if (!mounted) return;
+        AppSnackBar.error(context, 'Ukuran gambar maksimal 5 MB.');
+        return;
+      }
+      if (!mounted) return;
+      setState(() {
+        _image = picked;
+        _imageBytes = bytes;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      AppSnackBar.error(context, 'Gagal memilih gambar. ($e)');
+    } finally {
+      if (mounted) setState(() => _pickingImage = false);
+    }
+  }
+
+  void _removeImage() {
+    setState(() {
+      _image = null;
+      _imageBytes = null;
+    });
+  }
+
+  String _imageFilename(XFile image) {
+    if (image.name.trim().isNotEmpty) return image.name;
+    return image.path.split(RegExp(r'[\\/]')).last;
   }
 
   void _addQuestion() {
@@ -71,6 +122,12 @@ class _CreateQuizPageState extends State<CreateQuizPage> {
     }
     if (_descriptionController.text.trim().isEmpty) {
       return 'Deskripsi quiz wajib diisi.';
+    }
+    if (_imageBytes == null) {
+      return 'Gambar kuis wajib diunggah.';
+    }
+    if (_questions.length < _minQuestions) {
+      return 'Minimal $_minQuestions pertanyaan.';
     }
     for (var i = 0; i < _questions.length; i++) {
       final question = _questions[i];
@@ -128,6 +185,8 @@ class _CreateQuizPageState extends State<CreateQuizPage> {
         title: _titleController.text.trim(),
         description: _descriptionController.text.trim(),
         questions: questions,
+        imageBytes: _imageBytes!,
+        imageFilename: _imageFilename(_image!),
       );
       if (!mounted) return;
       Navigator.of(context).pop(true);
@@ -183,6 +242,10 @@ class _CreateQuizPageState extends State<CreateQuizPage> {
                 _buildLabel('Deskripsi'),
                 const SizedBox(height: AppSpacing.space4),
                 _buildDescriptionField(),
+                const SizedBox(height: AppSpacing.space9),
+                _buildLabel('Gambar Quiz'),
+                const SizedBox(height: AppSpacing.space4),
+                _buildImagePicker(),
                 const SizedBox(height: AppSpacing.space10),
                 for (var i = 0; i < _questions.length; i++) ...[
                   _buildQuestionCard(i),
@@ -221,6 +284,73 @@ class _CreateQuizPageState extends State<CreateQuizPage> {
       decoration: const AppFieldDecoration.bordered(
         hint: 'Masukkan deskripsi yang menarik...',
       ).build(),
+    );
+  }
+
+  Widget _buildImagePicker() {
+    final bytes = _imageBytes;
+
+    return GestureDetector(
+      onTap: _pickingImage ? null : _pickImage,
+      child: Container(
+        width: double.infinity,
+        height: 200,
+        decoration: BoxDecoration(
+          color: AppColors.surfaceSoft,
+          borderRadius: AppRadius.md,
+          border: Border.all(
+            color: AppColors.divider,
+            width: AppBorderWidth.regular,
+          ),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: _pickingImage
+            ? const Center(child: CircularProgressIndicator())
+            : bytes == null
+            ? Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(
+                    Icons.add_photo_alternate_outlined,
+                    size: AppIconSize.lg,
+                    color: AppColors.textMuted,
+                  ),
+                  const SizedBox(height: AppSpacing.space6),
+                  Text(
+                    'Pilih Gambar (jpg, png, webp · maks 5 MB)',
+                    style: AppTextStyles.button.copyWith(
+                      color: AppColors.textSecondary,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              )
+            : Stack(
+                fit: StackFit.expand,
+                children: [
+                  Image.memory(bytes, fit: BoxFit.cover),
+                  Positioned(
+                    top: AppSpacing.space4,
+                    right: AppSpacing.space4,
+                    child: GestureDetector(
+                      onTap: _removeImage,
+                      child: Container(
+                        padding: const EdgeInsets.all(AppSpacing.space4),
+                        decoration: BoxDecoration(
+                          color: AppColors.textPrimary.withValues(alpha: 0.6),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.close,
+                          size: AppIconSize.sm,
+                          color: AppColors.textOnPrimary,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+      ),
     );
   }
 
