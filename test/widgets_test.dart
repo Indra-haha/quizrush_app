@@ -9,6 +9,7 @@ import 'package:quizrush/theme/quiz_status.dart';
 import 'package:quizrush/widgets/app_pill.dart';
 import 'package:quizrush/widgets/app_primary_button.dart';
 import 'package:quizrush/widgets/app_stat_tile.dart';
+import 'package:quizrush/widgets/auth_fields.dart';
 import 'package:quizrush/widgets/cache_info_bar.dart';
 import 'package:quizrush/widgets/empty_state_view.dart';
 import 'package:quizrush/widgets/home_greeting.dart';
@@ -754,6 +755,63 @@ void main() {
       );
 
       expect(find.text('Room dari PIN yang kamu masukkan'), findsOneWidget);
+    });
+  });
+
+  group('Widget auth', () {
+    testWidgets('PasswordField menyembunyikan lalu menampilkan teks', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(
+        _wrap(
+          PasswordField(
+            controller: TextEditingController(),
+            label: 'Password',
+          ),
+        ),
+      );
+
+      expect(tester.widget<TextField>(find.byType(TextField)).obscureText, true);
+
+      await tester.tap(find.byIcon(Icons.visibility_off));
+      await tester.pump();
+
+      expect(tester.widget<TextField>(find.byType(TextField)).obscureText, false);
+    });
+
+    testWidgets('AuthSubmitButton menampilkan label dan memanggil onPressed', (
+      WidgetTester tester,
+    ) async {
+      var taps = 0;
+      await tester.pumpWidget(
+        _wrap(
+          AuthSubmitButton(
+            label: 'Daftar',
+            loading: false,
+            onPressed: () => taps++,
+          ),
+        ),
+      );
+
+      expect(find.text('Daftar'), findsOneWidget);
+      await tester.tap(find.text('Daftar'));
+      expect(taps, 1);
+    });
+
+    testWidgets('AuthSubmitButton saat loading menampilkan spinner', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(
+        _wrap(
+          AuthSubmitButton(
+            label: 'Daftar',
+            loading: true,
+            onPressed: () {},
+          ),
+        ),
+      );
+
+      expect(find.byType(CircularProgressIndicator), findsOneWidget);
     });
   });
 }

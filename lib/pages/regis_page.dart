@@ -6,9 +6,9 @@ import '../helpers/format.dart';
 import '../services/api_client.dart';
 import '../services/auth_service.dart';
 import '../theme/app_theme.dart';
-import '../widgets/app_loading_indicator.dart';
 import '../widgets/app_snackbar.dart';
 import '../widgets/app_text_field.dart';
+import '../widgets/auth_fields.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -26,8 +26,6 @@ class _RegisterPageState extends State<RegisterPage> {
   final TextEditingController _confirmPasswordController =
       TextEditingController();
 
-  bool _obscurePassword = true;
-  bool _obscureConfirmPassword = true;
   bool _isLoading = false;
 
   Future<void> _pickDate() async {
@@ -115,151 +113,60 @@ class _RegisterPageState extends State<RegisterPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      body: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(AppSpacing.space10),
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 450),
-            child: Card(
-              elevation: AppElevation.raised,
-              shape: RoundedRectangleBorder(borderRadius: AppRadius.lg),
-              child: Padding(
-                padding: const EdgeInsets.all(AppSpacing.space11),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Image.asset(
-                      'lib/assets/icon/logo.png',
-                      width: 70,
-                      height: 70,
-                    ),
-                    const SizedBox(height: AppSpacing.space5),
-
-                    Text(
-                      'Registrasi Akun',
-                      textAlign: TextAlign.center,
-                      style: AppTextStyles.heading2Strong,
-                    ),
-
-                    const SizedBox(height: AppSpacing.space16),
-
-                    AppTextField(
-                      controller: _namaController,
-                      label: 'Nama Lengkap',
-                      icon: Icons.person,
-                    ),
-
-                    const SizedBox(height: AppSpacing.space8),
-
-                    AppTextField(
-                      controller: _usernameController,
-                      label: 'Username',
-                      icon: Icons.badge,
-                    ),
-
-                    const SizedBox(height: AppSpacing.space8),
-
-                    AppTextField(
-                      controller: _kelasController,
-                      label: 'Kelas',
-                      icon: Icons.class_,
-                    ),
-
-                    const SizedBox(height: AppSpacing.space8),
-
-                    AppTextField(
-                      controller: _tanggalLahirController,
-                      label: 'Tanggal Lahir',
-                      icon: Icons.calendar_month,
-                      readOnly: true,
-                      onTap: _pickDate,
-                    ),
-
-                    const SizedBox(height: AppSpacing.space8),
-
-                    AppTextField(
-                      controller: _passwordController,
-                      label: 'Password',
-                      icon: Icons.lock,
-                      obscureText: _obscurePassword,
-                      suffixIcon: IconButton(
-                        icon: Icon(
-                          _obscurePassword
-                              ? Icons.visibility_off
-                              : Icons.visibility,
-                        ),
-                        onPressed: () {
-                          setState(() {
-                            _obscurePassword = !_obscurePassword;
-                          });
-                        },
-                      ),
-                    ),
-
-                    const SizedBox(height: AppSpacing.space8),
-
-                    AppTextField(
-                      controller: _confirmPasswordController,
-                      label: 'Konfirmasi Password',
-                      icon: Icons.lock_reset,
-                      obscureText: _obscureConfirmPassword,
-                      suffixIcon: IconButton(
-                        icon: Icon(
-                          _obscureConfirmPassword
-                              ? Icons.visibility_off
-                              : Icons.visibility,
-                        ),
-                        onPressed: () {
-                          setState(() {
-                            _obscureConfirmPassword = !_obscureConfirmPassword;
-                          });
-                        },
-                      ),
-                    ),
-
-                    const SizedBox(height: AppSpacing.space10),
-
-                    ElevatedButton(
-                      onPressed: _isLoading ? null : _register,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primary,
-                        foregroundColor: AppColors.textOnPrimary,
-                        padding: const EdgeInsets.symmetric(
-                          vertical: AppSpacing.space7,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: AppRadius.md,
-                        ),
-                      ),
-                      child: _isLoading
-                          ? const SizedBox(
-                              width: 22,
-                              height: 22,
-                              child: AppLoadingIndicator(),
-                            )
-                          : Text('Daftar', style: AppTextStyles.button),
-                    ),
-
-                    const SizedBox(height: AppSpacing.space6),
-
-                    TextButton(
-                      onPressed: () {
-                        Navigator.pop(context);
-                      },
-                      child: Text(
-                        'Sudah punya akun? Login',
-                        style: AppTextStyles.buttonSmall,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
+    return AuthFormCard(
+      title: 'Registrasi Akun',
+      children: [
+        AppTextField(
+          controller: _namaController,
+          label: 'Nama Lengkap',
+          icon: Icons.person,
+        ),
+        const SizedBox(height: AppSpacing.space8),
+        AppTextField(
+          controller: _usernameController,
+          label: 'Username',
+          icon: Icons.badge,
+        ),
+        const SizedBox(height: AppSpacing.space8),
+        AppTextField(
+          controller: _kelasController,
+          label: 'Kelas',
+          icon: Icons.class_,
+        ),
+        const SizedBox(height: AppSpacing.space8),
+        AppTextField(
+          controller: _tanggalLahirController,
+          label: 'Tanggal Lahir',
+          icon: Icons.calendar_month,
+          readOnly: true,
+          onTap: _pickDate,
+        ),
+        const SizedBox(height: AppSpacing.space8),
+        PasswordField(
+          controller: _passwordController,
+          label: 'Password',
+        ),
+        const SizedBox(height: AppSpacing.space8),
+        PasswordField(
+          controller: _confirmPasswordController,
+          label: 'Konfirmasi Password',
+          icon: Icons.lock_reset,
+        ),
+        const SizedBox(height: AppSpacing.space10),
+        AuthSubmitButton(
+          label: 'Daftar',
+          loading: _isLoading,
+          onPressed: _register,
+        ),
+        const SizedBox(height: AppSpacing.space6),
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: Text(
+            'Sudah punya akun? Login',
+            style: AppTextStyles.buttonSmall,
           ),
         ),
-      ),
+      ],
     );
   }
 }
