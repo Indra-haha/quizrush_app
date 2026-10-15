@@ -8,6 +8,7 @@ import '../../services/api_client.dart';
 import '../../services/room_service.dart';
 import '../../services/session_service.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/app_bottom_sheet.dart';
 import '../../widgets/app_field_decoration.dart';
 import '../../widgets/app_inline_error.dart';
 import '../../widgets/app_primary_button.dart';
@@ -108,100 +109,72 @@ class _CreateRoomSheetState extends State<CreateRoomSheet> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(
-        AppSpacing.space9,
-        AppSpacing.space6,
-        AppSpacing.space9,
-        AppSpacing.space9,
-      ),
-      decoration: const BoxDecoration(
-        color: AppColors.textOnPrimary,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      child: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Center(
-              child: Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: AppColors.divider,
-                  borderRadius: AppRadius.md,
+    return AppBottomSheet(
+      title: 'Create Room',
+      children: [
+        DropdownButtonFormField<String>(
+          initialValue: _selectedQuizId,
+          isExpanded: true,
+          isDense: true,
+          menuMaxHeight: MediaQuery.sizeOf(context).height * 0.4,
+          decoration: _inputDecoration('Pilih Kuis'),
+          hint: Text(
+            _quarantine.isEmpty
+                ? 'Tidak ada kuis tanpa room'
+                : 'Pilih kuis...',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          items: [
+            for (final quiz in _quarantine)
+              DropdownMenuItem(
+                value: quiz.id,
+                child: Text(
+                  quiz.title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
-            ),
-            const SizedBox(height: AppSpacing.space8),
-            Text('Create Room', style: AppTextStyles.heading1),
-            const SizedBox(height: AppSpacing.space8),
-            DropdownButtonFormField<String>(
-              initialValue: _selectedQuizId,
-              isExpanded: true,
-              isDense: true,
-              menuMaxHeight: MediaQuery.sizeOf(context).height * 0.4,
-              decoration: _inputDecoration('Pilih Kuis'),
-              hint: Text(
-                _quarantine.isEmpty
-                    ? 'Tidak ada kuis tanpa room'
-                    : 'Pilih kuis...',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-              items: [
-                for (final quiz in _quarantine)
-                  DropdownMenuItem(
-                    value: quiz.id,
-                    child: Text(
-                      quiz.title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-              ],
-              onChanged: _submitting ? null : _onQuizChanged,
-            ),
-            const SizedBox(height: AppSpacing.space6),
-            TextField(
-              controller: _titleController,
-              enabled: !_submitting,
-              textCapitalization: TextCapitalization.words,
-              scrollPadding: const EdgeInsets.only(
-                bottom: AppSpacing.scrollClearanceLarge,
-              ),
-              onChanged: (_) => setState(() {}),
-              decoration: _inputDecoration('Judul'),
-            ),
-            const SizedBox(height: AppSpacing.space6),
-            TextField(
-              controller: _descriptionController,
-              enabled: !_submitting,
-              maxLines: 2,
-              scrollPadding: const EdgeInsets.only(
-                bottom: AppSpacing.scrollClearanceLarge,
-              ),
-              decoration: _inputDecoration('Deskripsi'),
-            ),
-            if (_error != null) ...[
-              const SizedBox(height: AppSpacing.space6),
-              AppInlineError(message: _error!),
-            ],
-            const SizedBox(height: AppSpacing.space9),
-            AppPrimaryButton(
-              label: 'Kirim',
-              onPressed: _canSubmit ? _submit : null,
-              loading: _submitting,
-              radius: 9999,
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppSpacing.space9,
-                vertical: AppSpacing.space15,
-              ),
-            ),
           ],
+          onChanged: _submitting ? null : _onQuizChanged,
         ),
-      ),
+        const SizedBox(height: AppSpacing.space6),
+        TextField(
+          controller: _titleController,
+          enabled: !_submitting,
+          textCapitalization: TextCapitalization.words,
+          scrollPadding: const EdgeInsets.only(
+            bottom: AppSpacing.scrollClearanceLarge,
+          ),
+          onChanged: (_) => setState(() {}),
+          decoration: _inputDecoration('Judul'),
+        ),
+        const SizedBox(height: AppSpacing.space6),
+        TextField(
+          controller: _descriptionController,
+          enabled: !_submitting,
+          maxLines: 2,
+          scrollPadding: const EdgeInsets.only(
+            bottom: AppSpacing.scrollClearanceLarge,
+          ),
+          decoration: _inputDecoration('Deskripsi'),
+        ),
+        if (_error != null) ...[
+          const SizedBox(height: AppSpacing.space6),
+          AppInlineError(message: _error!),
+        ],
+        const SizedBox(height: AppSpacing.space9),
+        AppPrimaryButton(
+          label: 'Kirim',
+          onPressed: _canSubmit ? _submit : null,
+          loading: _submitting,
+          radius: 9999,
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.space9,
+            vertical: AppSpacing.space15,
+          ),
+        ),
+      ],
     );
   }
 

@@ -7,6 +7,7 @@ import 'package:quizrush/helpers/quiz_play_session.dart';
 import 'package:quizrush/models/quiz.dart';
 import 'package:quizrush/theme/quiz_status.dart';
 import 'package:quizrush/widgets/app_pill.dart';
+import 'package:quizrush/widgets/app_bottom_sheet.dart';
 import 'package:quizrush/widgets/app_primary_button.dart';
 import 'package:quizrush/widgets/app_stat_tile.dart';
 import 'package:quizrush/widgets/auth_fields.dart';
@@ -872,6 +873,22 @@ void main() {
       expect(find.text('Soal 2'), findsOneWidget);
       expect(find.text('Max 100 pts'), findsOneWidget);
       expect(find.text('40'), findsOneWidget);
+    });
+  });
+
+  group('AppBottomSheet', () {
+    testWidgets('menampilkan judul dan konten', (WidgetTester tester) async {
+      await tester.pumpWidget(
+        _wrap(
+          const AppBottomSheet(
+            title: 'Create Room',
+            children: [Text('isi sheet')],
+          ),
+        ),
+      );
+
+      expect(find.text('Create Room'), findsOneWidget);
+      expect(find.text('isi sheet'), findsOneWidget);
     });
   });
 }
