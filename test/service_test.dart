@@ -1,0 +1,295 @@
+import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
+import 'package:quizrush/models/quiz.dart';
+import 'package:quizrush/services/api_client.dart';
+import 'package:quizrush/services/auth_service.dart';
+import 'package:quizrush/services/quiz_service.dart';
+import 'package:quizrush/services/room_service.dart';
+
+ApiClient _api(Future<http.Response> Function(http.Request) handler) {
+  return ApiClient(
+    client: MockClient(handler),
+    baseUrl: 'https://test.local',
+  );
+}
+
+http.Response _json(String body, int status) {
+  return http.Response(body, status, headers: {'content-type': 'application/json'});
+}
+
+void main() {
+  group('ApiClient', () {
+    test('uri menggabungkan baseUrl dan path', () {
+      final api = _api((_) async => _json('{}', 200));
+      expect(api.uri('/api/quizzes').toString(), 'https://test.local/api/quizzes');
+    });
+
+    test('headers mengisi Authorization dan User-Agent', () {
+      final api = _api((_) async => _json('{}', 200));
+      final headers = api.headers(token: 'abc', body: true);
+      expect(headers['Authorization'], 'Bearer abc');
+      expect(headers['Content-Type'], 'application/json');
+      expect(headers['User-Agent'], isNotEmpty);
+    });
+
+    test('decode mengembalikan map kosong untuk body tidak valid', () {
+      expect(ApiClient.decode(http.Response('bukan json', 200)), isEmpty);
+      expect(ApiClient.decode(http.Response('{"a":1}', 200)), {'a': 1});
+    });
+
+    test('message memakai pesan server atau default', () {
+      expect(ApiClient.message({'message': 'gagal'}), 'gagal');
+      expect(ApiClient.message({'x': 1}), 'Terjadi kesalahan');
+      expect(ApiClient.message(null), 'Terjadi kesalahan');
+    });
+
+    test('get mengirim bearer token', () async {
+      String? auth;
+      final api = _api((request) async {
+        auth = request.headers['Authorization'];
+        return _json('{}', 200);
+      });
+      await api.get('/api/session', token: 'xyz');
+      expect(auth, 'Bearer xyz');
+    });
+  });
+
+  group('AuthService', () {
+    test('login sukses mengembalikan token dan user', () async {
+      String? sentDevice;
+      final service = AuthService.withApi(
+        _api((request) async {
+          sentDevice = request.body.contains('device_id') ? 'ada' : null;
+          return _json(
+            '{"token":"jwt","user":{"username":"budi","nama":"Budi"}}',
+            200,
+          );
+        }),
+      );
+
+      final result = await service.login(username: 'budi', password: 'rahasia');
+      expect(result.token, 'jwt');
+      expect(result.user['username'], 'budi');
+      expect(sentDevice, 'ada');
+    });
+
+    test('login gagal melempar ApiException dengan pesan server', () async {
+      final service = AuthService.withApi(
+        _api((_) async => _json('{"message":"Username atau password salah"}', 401)),
+      );
+
+      expect(
+        () => service.login(username: 'budi', password: 'x'),
+        throwsA(
+          isA<ApiException>()
+              .having((e) => e.statusCode, 'statusCode', 401)
+              .having((e) => e.message, 'message', 'Username atau password salah'),
+        ),
+      );
+    });
+
+    test('register sukses mengembalikan User', () async {
+      final service = AuthService.withApi(
+        _api(
+          (_) async => _json(
+            '{"user":{"username":"budi","nama":"Budi","kelas":"6A","tanggal_lahir":"2005-03-05"}}',
+            201,
+          ),
+        ),
+      );
+
+      final user = await service.register(
+        nama: 'Budi',
+        username: 'budi',
+        kelas: '6A',
+        tanggalLahir: '2005-03-05',
+        password: 'rahasia',
+      );
+      expect(user.username, 'budi');
+      expect(user.kelas, '6A');
+    });
+
+    test('logout gagal melempar ApiException', () async {
+      final service = AuthService.withApi(
+        _api((_) async => _json('{"message":"unauthorized"}', 401)),
+      );
+      expect(
+        () => service.logout('token'),
+        throwsA(isA<ApiException>()),
+      );
+    });
+
+    test('checkSession mengembalikan map user', () async {
+      final service = AuthService.withApi(
+        _api((_) async => _json('{"user":{"username":"budi"}}', 200)),
+      );
+      final user = await service.checkSession('token');
+      expect(user['username'], 'budi');
+    });
+  });
+
+  group('QuizService', () {
+    test('getQuizzes mem-parse grup AllQuizzes', () async {
+      final service = QuizService.withApi(
+        _api(
+          (_) async => _json(
+            '{"open":[{"id":"q1","title":"Kuis"}],"in-Game":[],"ended":[]}',
+            200,
+          ),
+        ),
+      );
+
+      final data = await service.getQuizzes('token');
+      expect(data.open.single.title, 'Kuis');
+      expect(data.ended, isEmpty);
+    });
+
+    test('getMyQuizzes mem-parse lima grup', () async {
+      final service = QuizService.withApi(
+        _api(
+          (_) async => _json(
+            '{"waiting":[{"id":"q1"}],"open":[],"in-Game":[],"ended":[],"quarantine":[]}',
+            200,
+          ),
+        ),
+      );
+
+      final data = await service.getMyQuizzes('token');
+      expect(data.waiting.single.id, 'q1');
+      expect(data.isEmpty, isFalse);
+    });
+
+    test('getQuizzes non-200 melempar ApiException', () async {
+      final service = QuizService.withApi(
+        _api((_) async => _json('{"message":"unauthorized"}', 401)),
+      );
+      expect(
+        () => service.getQuizzes('token'),
+        throwsA(isA<ApiException>().having((e) => e.statusCode, 'status', 401)),
+      );
+    });
+
+    test('createQuiz mengunggah multipart dan mem-parse quiz', () async {
+      String? method;
+      String? path;
+      String? contentType;
+      String? body;
+
+      final service = QuizService.withApi(
+        _api((request) async {
+          method = request.method;
+          path = request.url.path;
+          contentType = request.headers['content-type'];
+          body = request.body;
+          return _json('{"quiz":{"id":"q9","title":"Kuis Baru"}}', 201);
+        }),
+      );
+
+      final quiz = await service.createQuiz(
+        token: 'token',
+        title: 'Kuis Baru',
+        description: 'Deskripsi',
+        questions: const [
+          QuizQuestionInput(
+            question: 'q',
+            options: ['a', 'b', 'c', 'd'],
+            correctIdx: 0,
+            duration: 2,
+            skor: 10,
+          ),
+        ],
+        imageBytes: 'PNGDATA'.codeUnits,
+        imageFilename: 'cover.png',
+      );
+
+      expect(method, 'POST');
+      expect(path, '/api/create/quiz');
+      expect(contentType, contains('multipart/form-data'));
+      expect(body, contains('"title":"Kuis Baru"'));
+      expect(quiz.id, 'q9');
+    });
+
+    test('createQuiz non-201 melempar ApiException', () async {
+      final service = QuizService.withApi(
+        _api((_) async => _json('{"message":"validasi gagal"}', 422)),
+      );
+      expect(
+        () => service.createQuiz(
+          token: 'token',
+          title: 'Kuis',
+          questions: const [],
+          imageBytes: const [1, 2, 3],
+          imageFilename: 'c.png',
+        ),
+        throwsA(
+          isA<ApiException>()
+              .having((e) => e.statusCode, 'status', 422)
+              .having((e) => e.message, 'message', 'validasi gagal'),
+        ),
+      );
+    });
+  });
+
+  group('RoomService', () {
+    test('verifyPin mem-parse token dan room', () async {
+      final service = RoomService.withApi(
+        _api(
+          (_) async => _json(
+            '{"token":"room-jwt","room":{"id":"r1","kode":"123456","status":"waiting"}}',
+            200,
+          ),
+        ),
+      );
+
+      final result = await service.verifyPin(token: 'token', pin: '123456');
+      expect(result.token, 'room-jwt');
+      expect(result.room.kode, '123456');
+    });
+
+    test('verifyPin gagal melempar ApiException', () async {
+      final service = RoomService.withApi(
+        _api((_) async => _json('{"message":"PIN tidak valid"}', 400)),
+      );
+      expect(
+        () => service.verifyPin(token: 'token', pin: '000000'),
+        throwsA(
+          isA<ApiException>().having((e) => e.message, 'message', 'PIN tidak valid'),
+        ),
+      );
+    });
+
+    test('createRoom sukses mem-parse room', () async {
+      final service = RoomService.withApi(
+        _api(
+          (_) async => _json(
+            '{"room":{"id":"r1","kode":"123456","status":"waiting"}}',
+            201,
+          ),
+        ),
+      );
+      final room = await service.createRoom(token: 'token', quizId: 'q1');
+      expect(room.id, 'r1');
+    });
+
+    test('updateRoomStatus memakai PUT dan mem-parse room', () async {
+      String? method;
+      final service = RoomService.withApi(
+        _api((request) async {
+          method = request.method;
+          return _json(
+            '{"room":{"id":"r1","kode":"123456","status":"open"}}',
+            200,
+          );
+        }),
+      );
+      final room = await service.updateRoomStatus(
+        token: 'token',
+        roomId: 'r1',
+        status: 'open',
+      );
+      expect(method, 'PUT');
+      expect(room.status, 'open');
+    });
+  });
+}

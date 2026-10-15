@@ -1,16 +1,17 @@
-import 'dart:async';
-import 'dart:convert';
-
-import 'package:http/http.dart' as http;
-
 import '../helpers/json.dart';
 import '../models/room.dart';
 import '../models/room_verify.dart';
 import 'api_client.dart';
 
 class RoomService {
-  RoomService._();
-  static final RoomService instance = RoomService._();
+  RoomService._(this._api);
+
+  /// Instance untuk pengujian dengan [ApiClient] yang di-inject.
+  RoomService.withApi(this._api);
+
+  static final RoomService instance = RoomService._(ApiClient.instance);
+
+  final ApiClient _api;
 
   /// Verifikasi 6 digit PIN room (API.md §5.3 `POST /api/rooms/verify`).
   ///
@@ -21,13 +22,11 @@ class RoomService {
     required String token,
     required String pin,
   }) async {
-    final response = await http
-        .post(
-          Uri.parse('${ApiClient.baseUrl}/api/rooms/verify'),
-          headers: ApiClient.headers(token: token, body: true),
-          body: jsonEncode({'pin': pin}),
-        )
-        .timeout(const Duration(seconds: 10));
+    final response = await _api.post(
+      '/api/rooms/verify',
+      token: token,
+      body: {'pin': pin},
+    );
     final data = ApiClient.decode(response);
     if (response.statusCode != 200) {
       throw ApiException(
@@ -45,18 +44,11 @@ class RoomService {
     String? isi,
     String? status,
   }) async {
-    final response = await http
-        .post(
-          Uri.parse('${ApiClient.baseUrl}/api/create/room'),
-          headers: ApiClient.headers(token: token, body: true),
-          body: jsonEncode({
-            'quiz_id': quizId,
-            'judul': ?judul,
-            'isi': ?isi,
-            'status': ?status,
-          }),
-        )
-        .timeout(const Duration(seconds: 10));
+    final response = await _api.post(
+      '/api/create/room',
+      token: token,
+      body: {'quiz_id': quizId, 'judul': ?judul, 'isi': ?isi, 'status': ?status},
+    );
     final data = ApiClient.decode(response);
     if (response.statusCode != 201) {
       throw ApiException(
@@ -72,13 +64,11 @@ class RoomService {
     required String roomId,
     required String status,
   }) async {
-    final response = await http
-        .put(
-          Uri.parse('${ApiClient.baseUrl}/api/room/$roomId/status'),
-          headers: ApiClient.headers(token: token, body: true),
-          body: jsonEncode({'room_id': roomId, 'status': status}),
-        )
-        .timeout(const Duration(seconds: 10));
+    final response = await _api.put(
+      '/api/room/$roomId/status',
+      token: token,
+      body: {'room_id': roomId, 'status': status},
+    );
     final data = ApiClient.decode(response);
     if (response.statusCode != 200) {
       throw ApiException(

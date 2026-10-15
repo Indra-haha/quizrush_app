@@ -14,19 +14,81 @@ class ApiException implements Exception {
   String toString() => message;
 }
 
+/// Pembungkus HTTP tunggal untuk semua service.
+///
+/// [http.Client] dan [baseUrl] bisa diganti (mis. `MockClient` dan server lokal
+/// pada pengujian) sehingga service tidak lagi memanggil fungsi global
+/// `http.get`/`http.post` langsung. Gunakan [ApiClient.instance] di produksi,
+/// atau `ApiClient(client: ..., baseUrl: ...)` di test.
 class ApiClient {
-  ApiClient._();
-  static final ApiClient instance = ApiClient._();
+  ApiClient({http.Client? client, String? baseUrl})
+    : _client = client ?? http.Client(),
+      baseUrl = baseUrl ?? defaultBaseUrl;
 
-  // Android emulator memakai 10.0.2.2 untuk mengakses localhost dari host.
-  // Untuk device fisik, ganti dengan IP komputer (mis. https://192.168.1.10:8080).
-  static const String baseUrl = 'https://deera-server.my.id';
+  static const String defaultBaseUrl = 'https://deera-server.my.id';
+  static const Duration defaultTimeout = Duration(seconds: 10);
 
-  static Map<String, String> headers({String? token, bool body = false}) => {
+  static final ApiClient instance = ApiClient();
+
+  final http.Client _client;
+  final String baseUrl;
+
+  Uri uri(String path) => Uri.parse('$baseUrl$path');
+
+  Map<String, String> headers({String? token, bool body = false}) => {
     if (body) 'Content-Type': 'application/json',
     if (token != null) 'Authorization': 'Bearer $token',
     'User-Agent': DeviceService.instance.userAgent,
   };
+
+  Future<http.Response> get(
+    String path, {
+    String? token,
+    Duration timeout = defaultTimeout,
+  }) {
+    return _client
+        .get(uri(path), headers: headers(token: token))
+        .timeout(timeout);
+  }
+
+  Future<http.Response> post(
+    String path, {
+    String? token,
+    Object? body,
+    Duration timeout = defaultTimeout,
+  }) {
+    return _client
+        .post(
+          uri(path),
+          headers: headers(token: token, body: body != null),
+          body: body == null ? null : jsonEncode(body),
+        )
+        .timeout(timeout);
+  }
+
+  Future<http.Response> put(
+    String path, {
+    String? token,
+    Object? body,
+    Duration timeout = defaultTimeout,
+  }) {
+    return _client
+        .put(
+          uri(path),
+          headers: headers(token: token, body: body != null),
+          body: body == null ? null : jsonEncode(body),
+        )
+        .timeout(timeout);
+  }
+
+  /// Kirim [request] mentah (mis. `MultipartRequest`) memakai client ini.
+  Future<http.Response> send(
+    http.BaseRequest request, {
+    Duration timeout = defaultTimeout,
+  }) async {
+    final streamed = await _client.send(request).timeout(timeout);
+    return http.Response.fromStream(streamed);
+  }
 
   static dynamic decode(http.Response response) {
     try {

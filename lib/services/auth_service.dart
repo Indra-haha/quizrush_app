@@ -1,8 +1,3 @@
-import 'dart:async';
-import 'dart:convert';
-
-import 'package:http/http.dart' as http;
-
 import 'api_client.dart';
 import 'device_service.dart';
 import '../helpers/json.dart';
@@ -16,24 +11,27 @@ class LoginResult {
 }
 
 class AuthService {
-  AuthService._();
-  static final AuthService instance = AuthService._();
+  AuthService._(this._api);
+
+  /// Instance untuk pengujian dengan [ApiClient] yang di-inject.
+  AuthService.withApi(this._api);
+
+  static final AuthService instance = AuthService._(ApiClient.instance);
+
+  final ApiClient _api;
 
   Future<LoginResult> login({
     required String username,
     required String password,
   }) async {
-    final response = await http
-        .post(
-          Uri.parse('${ApiClient.baseUrl}/api/login'),
-          headers: ApiClient.headers(body: true),
-          body: jsonEncode({
-            'username': username,
-            'password': password,
-            'device_id': DeviceService.instance.getId(),
-          }),
-        )
-        .timeout(const Duration(seconds: 10));
+    final response = await _api.post(
+      '/api/login',
+      body: {
+        'username': username,
+        'password': password,
+        'device_id': DeviceService.instance.getId(),
+      },
+    );
 
     final data = ApiClient.decode(response);
     if (response.statusCode != 200) {
@@ -55,20 +53,17 @@ class AuthService {
     required String tanggalLahir,
     required String password,
   }) async {
-    final response = await http
-        .post(
-          Uri.parse('${ApiClient.baseUrl}/api/register'),
-          headers: ApiClient.headers(body: true),
-          body: jsonEncode({
-            'nama': nama,
-            'username': username,
-            'kelas': kelas,
-            'tanggal_lahir': tanggalLahir,
-            'password': password,
-            'device_id': DeviceService.instance.getId(),
-          }),
-        )
-        .timeout(const Duration(seconds: 10));
+    final response = await _api.post(
+      '/api/register',
+      body: {
+        'nama': nama,
+        'username': username,
+        'kelas': kelas,
+        'tanggal_lahir': tanggalLahir,
+        'password': password,
+        'device_id': DeviceService.instance.getId(),
+      },
+    );
 
     final data = ApiClient.decode(response);
 
@@ -82,12 +77,7 @@ class AuthService {
   }
 
   Future<void> logout(String token) async {
-    final response = await http
-        .post(
-          Uri.parse('${ApiClient.baseUrl}/api/logout'),
-          headers: ApiClient.headers(token: token),
-        )
-        .timeout(const Duration(seconds: 10));
+    final response = await _api.post('/api/logout', token: token);
     if (response.statusCode != 200) {
       throw ApiException(
         ApiClient.message(ApiClient.decode(response)),
@@ -97,12 +87,7 @@ class AuthService {
   }
 
   Future<Map<String, dynamic>> checkSession(String token) async {
-    final response = await http
-        .get(
-          Uri.parse('${ApiClient.baseUrl}/api/session'),
-          headers: ApiClient.headers(token: token),
-        )
-        .timeout(const Duration(seconds: 10));
+    final response = await _api.get('/api/session', token: token);
     final data = ApiClient.decode(response);
     if (response.statusCode != 200) {
       throw ApiException(

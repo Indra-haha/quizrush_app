@@ -145,7 +145,7 @@ class RoomSocket {
   }
 
   Uri _handshakeUri() {
-    final base = Uri.parse(ApiClient.baseUrl);
+    final base = Uri.parse(ApiClient.instance.baseUrl);
     return Uri(
       scheme: base.scheme == 'https' ? 'wss' : 'ws',
       host: base.host,

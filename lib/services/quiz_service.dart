@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
@@ -9,16 +8,17 @@ import '../models/quiz.dart';
 import 'api_client.dart';
 
 class QuizService {
-  QuizService._();
-  static final QuizService instance = QuizService._();
+  QuizService._(this._api);
+
+  /// Instance untuk pengujian dengan [ApiClient] yang di-inject.
+  QuizService.withApi(this._api);
+
+  static final QuizService instance = QuizService._(ApiClient.instance);
+
+  final ApiClient _api;
 
   Future<AllQuizzes> getQuizzes(String token) async {
-    final response = await http
-        .get(
-          Uri.parse('${ApiClient.baseUrl}/api/quizzes'),
-          headers: ApiClient.headers(token: token),
-        )
-        .timeout(const Duration(seconds: 10));
+    final response = await _api.get('/api/quizzes', token: token);
     final data = ApiClient.decode(response);
     if (response.statusCode != 200) {
       throw ApiException(
@@ -30,12 +30,7 @@ class QuizService {
   }
 
   Future<MyQuizzes> getMyQuizzes(String token) async {
-    final response = await http
-        .get(
-          Uri.parse('${ApiClient.baseUrl}/api/my-quizzes'),
-          headers: ApiClient.headers(token: token),
-        )
-        .timeout(const Duration(seconds: 10));
+    final response = await _api.get('/api/my-quizzes', token: token);
     final data = ApiClient.decode(response);
     if (response.statusCode != 200) {
       throw ApiException(
@@ -54,11 +49,8 @@ class QuizService {
     required List<int> imageBytes,
     required String imageFilename,
   }) async {
-    final request = http.MultipartRequest(
-      'POST',
-      Uri.parse('${ApiClient.baseUrl}/api/create/quiz'),
-    );
-    request.headers.addAll(ApiClient.headers(token: token));
+    final request = http.MultipartRequest('POST', _api.uri('/api/create/quiz'));
+    request.headers.addAll(_api.headers(token: token));
     request.fields['data'] = jsonEncode({
       'title': title,
       'description': ?description,
@@ -73,8 +65,10 @@ class QuizService {
       ),
     );
 
-    final streamed = await request.send().timeout(const Duration(seconds: 30));
-    final response = await http.Response.fromStream(streamed);
+    final response = await _api.send(
+      request,
+      timeout: const Duration(seconds: 30),
+    );
     final data = ApiClient.decode(response);
     if (response.statusCode != 201) {
       throw ApiException(
