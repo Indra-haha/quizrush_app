@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../models/quiz.dart';
-import '../services/active_room_service.dart';
-import '../services/auth_service.dart';
-import '../services/quiz_cache_service.dart';
 import '../services/quiz_feed.dart';
 import '../services/quiz_index.dart';
 import '../services/session_service.dart';
@@ -35,7 +32,6 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   Map<String, dynamic>? _user;
-  bool _loggingOut = false;
   QuizIndex? _index;
   bool _loading = true;
   bool _syncing = false;
@@ -85,25 +81,6 @@ class _HomePageState extends State<HomePage> {
       _loading = false;
       _syncing = false;
     });
-  }
-
-  Future<void> _logout() async {
-    if (_loggingOut) return;
-    setState(() => _loggingOut = true);
-
-    final token = await SessionService.instance.getToken();
-    try {
-      if (token != null) {
-        await AuthService.instance.logout(token);
-      }
-    } catch (_) {
-      // Backend tidak terjangkau; session lokal tetap dihapus.
-    }
-    await SessionService.instance.clear();
-    await QuizCacheService.instance.clear();
-    ActiveRoomService.instance.clear();
-    if (!mounted) return;
-    LoginRedirect.go(context);
   }
 
   void _openRooms(Quizes quiz) {
@@ -165,17 +142,6 @@ class _HomePageState extends State<HomePage> {
             tooltip: 'Refresh dari server',
             onPressed: _loading ? null : _sync,
             icon: const Icon(Icons.refresh),
-          ),
-          IconButton(
-            tooltip: 'Logout',
-            onPressed: _loggingOut ? null : _logout,
-            icon: _loggingOut
-                ? const SizedBox(
-                    width: AppSpacing.space9,
-                    height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Icon(Icons.logout),
           ),
         ],
       ),

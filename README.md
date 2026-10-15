@@ -1,6 +1,6 @@
 # Quiz Rush
 
-Aplikasi Flutter yang menggabungkan **(1)** platform kuis kelas daring lengkap dengan autentikasi NIM serta manajemen kuis dan room, dan **(2)** konversi kalender (Hijriah, Umur, Weton, Saka Bali).
+Aplikasi Flutter untuk **platform kuis kelas daring** lengkap dengan autentikasi NIM, manajemen kuis dan room, serta halaman **Friend** dan **Profile** pengguna.
 
 > Nama paket: `quizrush` · Root widget: `QuizApp` · Judul aplikasi: `Aplikasi Quiz` · Android label: `Quiz Rush`
 
@@ -36,20 +36,11 @@ Aplikasi Flutter yang menggabungkan **(1)** platform kuis kelas daring lengkap d
 - **Alur status room** — `waiting → open → in-Game → ended`, diendorse lewat tombol aksi pada detail room.
 - **Tester kuis offline** — `QuizTestPage` menjalankan satu soal per layar dengan timer dial, penomoran waktu, dan penilaian skor tanpa menyentuh server.
 
-### Konversi Kalender
-Empat tab konversi dari tanggal Mase:
+### Friend
+Halaman daftar teman — saat ini masih berupa kerangka UI (kolom pencarian + empty state) dan belum tersambung ke backend.
 
-| Tab | Hasil |
-|---|---|
-| Hijriah | Tanggal Hijriah |
-| Umur | Tahun, bulan, hari, jam, menit, detik |
-| Weton | Weton Jawa |
-| Saka Bali | Angka Tahun Saka Bali |
-
-Seluruh perhitungan berjalan **lokal** di `CalendarUtils` — tanpa jaringan.
-
-### Bantuan
-Halaman panduan statis yang menjelaskan login, home, kuis, pembuatan kuis, konversi, dan logout.
+### Profile
+Halaman profil pengguna yang menampilkan nama, username, kelas, dan tanggal lahir, serta tombol **Logout** untuk mengakhiri sesi.
 
 ---
 
@@ -59,9 +50,9 @@ Halaman panduan statis yang menjelaskan login, home, kuis, pembuatan kuis, konve
 2. **Temukan kuis** → tab **Quiz** → cari judul atau ketik 6-digit PIN → lihat detail & kode room.
 3. **Buat kuis** → FAB **Create Quiz** di Home → isi form → buat room → bagikan kode 6 digit.
 4. **Jalankan** → detail room → `Publish` → `Mulai Game` → `Akhiri`.
-5. **Alat** → tab **Konversi** untuk kalender, tab **Bantuan** untuk panduan, logout untuk mengakhiri sesi.
+5. **Akun** → tab **Friend** untuk daftar teman (kerangka UI), tab **Profile** untuk melihat profil dan logout.
 
-Navigasi memakai `MainShell` (`lib/pages/button.dart`) dengan 4 tab: **Home · Quiz · Konversi · Bantuan**.
+Navigasi memakai `MainShell` (`lib/pages/button.dart`) dengan 4 tab: **Home · Quiz · Friend · Profile**.
 
 ---
 
@@ -98,14 +89,14 @@ Untuk.device/ emulator, ganti dengan host yang dapat dijangkau (mis. `10.0.2.2` 
 ```
 lib/
 ├── engine/      KalkulatorEngine — pohon Expr + hitung() & hitungSkorWaktu
-├── helpers/     Logika murni Dart: json, format, konversi_format, validators, pin, room_status_flow, quiz_play_session, quiz_image, room_launcher
+├── helpers/     Logika murni Dart: json, format, validators, pin, room_status_flow, quiz_play_session, quiz_image, room_launcher
 ├── models/      User, Quizes, Room, RoomMessage, RoomVerify + serialisasi JSON
 ├── pages/       4 tab shell + auth
 │   ├── MyQuizPage/   Sisi host: kuis saya, room, detail room, sheet buat room, buat kuis, tester
 │   └── QuizPage/     Sisi peserta: jelajahi kuis, detail kuis
 ├── services/    Lapisan data: REST client, auth, kuis, room, sesi, cache
 ├── theme/       Design token (modul terpisah) + barrel app_theme.dart, palet status, palet opsi jawaban
-└── widgets/     52 widget presentational tanpa logika halaman
+└── widgets/     50 widget presentational tanpa logika halaman
 ```
 
 Pola yang dipakai:
@@ -186,18 +177,18 @@ flutter test
 | Berkas | Cakupan |
 |---|---|
 | `test/widget_test.dart` | Smoke test aplikasi: halaman login tampil, validasi field kosong |
-| `test/widgets_test.dart` | Widget bersama presentational (tombol, badge, kartu kuis/room, tab konversi, dsb.) + unit `QuizPlaySession` |
+| `test/widgets_test.dart` | Widget bersama presentational (tombol, badge, kartu kuis/room, dsb.) + unit `QuizPlaySession` |
+| `test/pages_test.dart` | Halaman `FriendPage` (judul + empty state) dan `ProfilePage` (data user + tombol logout) |
 | `test/quiz_cache_test.dart` | `QuizCacheService` (scoping per-NIM & migrasi format lama) + `QuizIndex` (grouping, cari PIN, pencarian judul) |
 | `test/room_model_test.dart` | `Room.displayTitle` (urutan judul: room → kuis → default) |
 | `test/active_room_service_test.dart` | `ActiveRoomService` (set/clear + kontrak `ChangeNotifier`) |
 | `test/helpers_test.dart` | Helper murni: `json`, `pin`, `auth_validator`, `room_status_flow`, `quiz_image`, `quiz_form_validator` |
 | `test/format_test.dart` | `format` (durasi, kode, waktu relatif, tanggal lahir, `totalDuration`) |
-| `test/konversi_format_test.dart` | `CalendarUtils` (Hijriah & Saka Bali) |
 | `test/engine_score_test.dart` | `KalkulatorEngine.hitungSkorWaktu` |
 | `test/model_json_test.dart` | Serialisasi/deserialisasi model (`Quizes`, `Room`, `RoomMessage`, `User`, dll) |
 | `test/service_test.dart` | Lapisan service lewat `MockClient` (`ApiClient`, auth, quiz, room) |
 
-Total **164** test, semuanya lulus.
+Total **158** test, semuanya lulus.
 
 ---
 
@@ -207,7 +198,7 @@ Hal-hal yang **belum** berfungsi dan perlu diketahui:
 
 - **Join room belum diimplementasikan.** Tombol "Masuk" pada detail kuis hanya menampilkan snackbar `fitur join menyusul`.
 - **Aturan minimal 5 pertanyaan sudah divalidasi di sisi klien.** `CreateQuizPage` memeriksa judul, deskripsi, gambar (wajib, maks 5 MB), minimal 5 pertanyaan, 4 opsi, jawaban benar terpilih, dan `skor` 1–50.
-- **Belum ada mode gelap** dan belum ada halaman pengaturan/preferensi selain `HelpPage`.
+- **Belum ada mode gelap** dan belum ada halaman pengaturan/preferensi selain `ProfilePage`.
 - **Base URL backend hardcoded** di `lib/services/api_client.dart` — belum configurable via environment.
 
 ---

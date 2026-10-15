@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 import 'home_page.dart';
 import 'QuizPage/quiz_page.dart';
-import 'konversi_page.dart';
-import 'help_page.dart';
+import 'friend_page.dart';
+import 'profile_page.dart';
 
 class MainShell extends StatefulWidget {
   final Map<String, dynamic>? user;
@@ -23,8 +23,8 @@ class _MainShellState extends State<MainShell> {
     final pages = [
       HomePage(user: widget.user),
       QuizPage(user: widget.user),
-      KonversiPage(),
-      HelpPage(),
+      FriendPage(),
+      ProfilePage(user: widget.user),
     ];
     return Scaffold(
       body: IndexedStack(index: _index, children: pages),
@@ -38,12 +38,12 @@ class _MainShellState extends State<MainShell> {
           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
           BottomNavigationBarItem(icon: Icon(Icons.quiz), label: 'Quiz'),
           BottomNavigationBarItem(
-            icon: Icon(Icons.swap_horiz),
-            label: 'Konversi',
+            icon: Icon(Icons.people_outline),
+            label: 'Friend',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.help_outline),
-            label: 'Bantuan',
+            icon: Icon(Icons.person_outline),
+            label: 'Profile',
           ),
         ],
       ),
