@@ -41,7 +41,7 @@ Semua endpoint yang dilindungi `middleware.Auth` (dan `POST /api/login`) menerap
 | GET | `/api/session` | ✓ | Mengecek sesi login masih aktif |
 | GET | `/api/my-quizzes` | ✓ | List kuis milik user (dikelompokkan by status room) |
 | POST | `/api/create/quiz` | ✓ | Membuat kuis baru |
-| GET | `/api/quizzes` | ✓ | List semua kuis (grup: waiting, open, in-Game, ended, quarantine) |
+| GET | `/api/quizzes` | ✓ | List semua kuis (grup: open, in-Game, ended; tanpa soal, berisi total soal/durasi/skor) |
 | POST | `/api/create/room` | ✓ | Membuat room baru |
 | POST | `/api/rooms/verify` | ✓ | Memverifikasi pin (kode) room |
 | PUT | `/api/room/{id}/status` | ✓ | Mengubah status room |
@@ -594,10 +594,11 @@ Nilai `path` di atas adalah URL dari Cloudinary, bukan input klien.
 
 Tidak ada request parameter.
 
-Response dikelompokkan ke **5 grup** berdasarkan status room paling terakhir dibuat:
-`waiting`, `open`, `in-Game`, `ended`, dan `quarantine` (kuis yang belum punya room sama sekali).
-Setiap kuis muncul hanya di satu grup; room di dalam kuis diurutkan ascending by `created_at`, dan urutan
-kuis di tiap grup berdasarkan `created_at` kuis (terbaru di atas).
+Response dikelompokkan ke **3 grup** berdasarkan status room paling terakhir dibuat:
+`open`, `in-Game`, dan `ended`. Kuis berstatus `waiting` maupun yang belum punya room sama
+sekali **tidak ditampilkan** pada feed ini. Setiap kuis muncul hanya di satu grup; room di
+dalam kuis diurutkan ascending by `created_at`, dan urutan kuis di tiap grup berdasarkan
+`created_at` kuis (terbaru di atas).
 
 **Contoh request:**
 
@@ -613,27 +614,22 @@ Authorization: Bearer <TOKEN>
 |---|---|
 | 200 | Semua kuis (dikelompokkan by status room) |
 | 401 | Token tidak valid / sesi berakhir / bukan smartphone |
+| 500 | Gagal memuat data kuis / data room / data host kuis |
 
 **Contoh response — `200 OK`**
 
 ```json
 {
-  "waiting": [],
   "open": [
     {
       "id": "<id>",
-      "user_id": "<user_id>",
+      "host": "Budi Santoso",
       "title": "Kuis Pemrograman Mobile",
       "description": "Dasar Flutter & Dart",
       "path": "https://res.cloudinary.com/quiz/image/upload/v123/galery-quiz/quiz-image/kuis-mobile.png",
-      "questions": [
-        {
-          "question": "Bahasa pemrograman utama Flutter?",
-          "options": ["Kotlin", "Dart", "Swift", "Java"],
-          "duration": 1.5,
-          "skor": 20
-        }
-      ],
+      "total_questions": 10,
+      "total_duration": 20,
+      "total_skor": 200,
       "created_at": "2026-09-17T10:00:00Z",
       "rooms": [
         {
@@ -647,30 +643,11 @@ Authorization: Bearer <TOKEN>
     }
   ],
   "in-Game": [],
-  "ended": [],
-  "quarantine": [
-    {
-      "id": "<id>",
-      "user_id": "<user_id>",
-      "title": "Kuis Basis Data MongoDB",
-      "description": "Konsep dasar MongoDB",
-      "path": "https://res.cloudinary.com/quiz/image/upload/v123/galery-quiz/quiz-image/kuis-mongodb.png",
-      "questions": [
-        {
-          "question": "MongoDB termasuk database jenis apa?",
-          "options": ["SQL", "Redis", "NoSQL", "GraphQL"],
-          "duration": 2,
-          "skor": 30
-        }
-      ],
-      "created_at": "2026-09-16T08:00:00Z",
-      "rooms": []
-    }
-  ]
+  "ended": []
 }
 ```
 
-> `path` berisi URL gambar kuis hasil unggahan Cloudinary (lihat §4.2). `correct_idx` tidak dikembalikan pada response untuk menjaga jawaban benar tetap rahasia. `status` di level kuis tidak dikembalikan pada endpoint ini (status room terbaru sudah direpresentasikan oleh nama grup; kuis tanpa room masuk grup `quarantine`). Pin room (`kode`) **tidak** dikembalikan pada feed publik ini; klien harus memverifikasi pin lewat `POST /api/rooms/verify` (§5.3) untuk mendapat data room.
+> `path` berisi URL gambar kuis hasil unggahan Cloudinary (lihat §4.2). `host` berisi nama pemilik kuis (field `nama` pada koleksi `users`, diambil dari `user_id` kuis); `user_id` tidak dikembalikan pada feed ini. Feed publik **tidak** mengembalikan daftar soal; sebagai gantinya dikirim ringkasan `total_questions` (jumlah soal), `total_duration` (jumlah durasi semua soal dalam detik), dan `total_skor` (jumlah skor semua soal). `status` di level kuis tidak dikembalikan pada endpoint ini (status room terbaru sudah direpresentasikan oleh nama grup). Kuis berstatus `waiting` maupun yang belum punya room tidak ditampilkan. Pin room (`kode`) **tidak** dikembalikan pada feed publik ini; klien harus memverifikasi pin lewat `POST /api/rooms/verify` (§5.3) untuk mendapat data room.
 
 **Contoh response — `401 Unauthorized`**
 

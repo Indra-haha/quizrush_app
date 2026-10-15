@@ -41,6 +41,22 @@ class QuizDetailHero extends StatelessWidget {
               color: AppColors.textOnPrimary,
             ),
           ),
+          if (quiz.host.isNotEmpty) ...[
+            const SizedBox(height: AppSpacing.space4),
+            Row(
+              children: [
+                const Icon(
+                  Icons.person_outline,
+                  size: AppIconSize.xs,
+                  color: AppColors.textOnPrimary,
+                ),
+                const SizedBox(width: AppSpacing.space2),
+                Flexible(
+                  child: AppHeroSubtitle('oleh ${quiz.host}'),
+                ),
+              ],
+            ),
+          ],
           if (quiz.description.isNotEmpty) ...[
             const SizedBox(height: AppSpacing.space4),
             AppHeroSubtitle(quiz.description),
@@ -53,7 +69,7 @@ class QuizDetailHero extends StatelessWidget {
                 Expanded(
                   child: AppStatTile.stacked(
                     icon: Icons.timer_outlined,
-                    value: formatDuration(totalDuration(quiz)),
+                    value: formatDuration(quiz.durationSeconds),
                     label: 'Durasi',
                   ),
                 ),
@@ -61,7 +77,7 @@ class QuizDetailHero extends StatelessWidget {
                 Expanded(
                   child: AppStatTile.stacked(
                     icon: Icons.list_alt,
-                    value: '${quiz.questions.length}',
+                    value: '${quiz.questionCount}',
                     label: 'Pertanyaan',
                   ),
                 ),

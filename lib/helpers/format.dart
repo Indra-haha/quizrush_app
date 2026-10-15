@@ -1,11 +1,7 @@
 import '../models/quiz.dart';
 
 double totalDuration(Quizes quiz) {
-  var total = 0.0;
-  for (final q in quiz.questions) {
-    total += q.duration;
-  }
-  return total;
+  return quiz.durationSeconds;
 }
 
 String formatDuration(double totalSeconds) {

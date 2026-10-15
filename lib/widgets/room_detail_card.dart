@@ -88,48 +88,52 @@ class RoomDetailCard extends StatelessWidget {
             style: AppTextStyles.body.copyWith(color: AppColors.textSecondary),
           ),
           const SizedBox(height: AppSpacing.space8),
-          Container(
-            padding: const EdgeInsets.fromLTRB(
-              AppSpacing.space6,
-              AppSpacing.space8,
-              AppSpacing.space6,
-              AppSpacing.space6,
-            ),
-            decoration: BoxDecoration(
-              color: AppColors.surface,
-              borderRadius: AppRadius.lg,
-            ),
-            child: Row(
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('PIN SERVER', style: AppTextStyles.bodyMeta),
-                    const SizedBox(height: AppSpacing.space1),
-                    Text(
-                      formatKode(room.kode),
-                      style: AppTextStyles.display2.copyWith(
-                        color: AppColors.primary,
+          if (room.kode.isNotEmpty || room.status == 'open')
+            Container(
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.space6,
+                AppSpacing.space8,
+                AppSpacing.space6,
+                AppSpacing.space6,
+              ),
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: AppRadius.lg,
+              ),
+              child: Row(
+                children: [
+                  // Feed publik tidak mengembalikan PIN; sembunyikan blok ini
+                  // dan biarkan user memverifikasi lewat alur "Masuk".
+                  if (room.kode.isNotEmpty)
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('PIN SERVER', style: AppTextStyles.bodyMeta),
+                        const SizedBox(height: AppSpacing.space1),
+                        Text(
+                          formatKode(room.kode),
+                          style: AppTextStyles.display2.copyWith(
+                            color: AppColors.primary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  const Spacer(),
+                  if (room.status == 'open')
+                    SizedBox(
+                      height: 44,
+                      child: AppPrimaryButton(
+                        label: 'Masuk',
+                        radius: 12,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppSpacing.space10,
+                        ),
+                        onPressed: onJoin,
                       ),
                     ),
-                  ],
-                ),
-                const Spacer(),
-                if (room.status == 'open')
-                  SizedBox(
-                    height: 44,
-                    child: AppPrimaryButton(
-                      label: 'Masuk',
-                      radius: 12,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: AppSpacing.space10,
-                      ),
-                      onPressed: onJoin,
-                    ),
-                  ),
-              ],
+                ],
+              ),
             ),
-          ),
         ],
       ),
     );

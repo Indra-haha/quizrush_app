@@ -102,7 +102,7 @@ lib/
 Pola yang dipakai:
 
 - **Service singleton** — konstruktor privat + `static final … instance`.
-- **Cache-first** — `QuizFeed` membaca `shared_preferences` dulu; jaringan hanya saat tombol refresh atau setelah mutasi.
+- **Cache-first** — `QuizFeed` membaca `shared_preferences` dulu; jaringan hanya saat tombol refresh atau setelah mutasi. Cache feed publik menyimpan ringkasan (`host`, `total_questions`, `total_duration`, `total_skor`, tanpa soal mentah/PIN), sedangkan `my-quizzes` tetap menyimpan `questions[]` mentah.
 - **In-memory index** — `QuizIndex` membangun peta `byId` / `byGroup` / `byKode` / `lowerTitles` agar pencarian & filter tidak menyentuh disk atau jaringan.
 - **Sesi & cache per-NIM** — kunci `auth_token`, `auth_user`, `cache_all-<NIM>`, `cache_mine-<NIM>`. `clear()` menghapus seluruh awalan `cache_`.
 - **Migrasi format** — cache versi lama (list datar) otomatis dimMigrasikan ke format terelompok saat dibaca.

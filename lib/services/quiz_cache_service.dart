@@ -13,7 +13,7 @@ class QuizCacheService {
   static final QuizCacheService instance = QuizCacheService._();
 
   static const _prefix = 'cache_';
-  static const _version = 2;
+  static const _version = 3;
   static const _allKey = 'all';
   static const _mineKey = 'mine';
 

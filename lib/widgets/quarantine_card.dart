@@ -92,8 +92,7 @@ class QuarantineCard extends StatelessWidget {
   }
 
   Widget _durationChip() {
-    final total = quiz.questions.fold<double>(0, (sum, q) => sum + q.duration);
-    final minutes = total.ceil();
+    final minutes = quiz.durationSeconds.ceil();
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [

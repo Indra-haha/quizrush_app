@@ -40,6 +40,36 @@ Map<String, dynamic> roomJson(String id, String kode, String status) {
   };
 }
 
+/// Bentuk feed publik `/api/quizzes`: ringkasan, tanpa soal mentah, `user_id`,
+/// status kuis, maupun PIN room.
+Map<String, dynamic> publicQuizJson(
+  String id,
+  String title,
+  List<Map<String, dynamic>> rooms,
+) {
+  return {
+    'id': id,
+    'host': 'Budi Santoso',
+    'title': title,
+    'description': '',
+    'created_at': '2026-09-20T08:00:00Z',
+    'total_questions': 10,
+    'total_duration': 20,
+    'total_skor': 200,
+    'rooms': rooms,
+  };
+}
+
+Map<String, dynamic> publicRoomJson(String id, String status) {
+  return {
+    'id': id,
+    'status': status,
+    'judul': 'Room $id',
+    'isi': '',
+    'created_at': '2026-09-20T09:00:00Z',
+  };
+}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -62,14 +92,14 @@ void main() {
     test('AllQuizzes hanya menyimpan tiga grup', () async {
       final data = AllQuizzes.fromJson({
         'waiting': [
-          quizJson('q1', 'Kuis Menunggu', [
-            roomJson('r1', '111111', 'waiting'),
+          publicQuizJson('q1', 'Kuis Menunggu', [
+            publicRoomJson('r1', 'waiting'),
           ]),
         ],
-        'open': [quizJson('q2', 'Kuis Matematika', [])],
-        'in-Game': [quizJson('q3', 'Kuis Fisika', [])],
-        'ended': [quizJson('q4', 'Kuis Kimia', [])],
-        'quarantine': [quizJson('q5', 'Kuis Baru', [])],
+        'open': [publicQuizJson('q2', 'Kuis Matematika', [])],
+        'in-Game': [publicQuizJson('q3', 'Kuis Fisika', [])],
+        'ended': [publicQuizJson('q4', 'Kuis Kimia', [])],
+        'quarantine': [publicQuizJson('q5', 'Kuis Baru', [])],
       });
       expect(data.all.map((q) => q.id), ['q2', 'q3', 'q4']);
 
@@ -82,13 +112,15 @@ void main() {
     test('tiga grup AllQuizzes tersimpan utuh setelah round-trip', () async {
       final data = AllQuizzes.fromJson({
         'open': [
-          quizJson('q2', 'Kuis Matematika', [roomJson('r2', '482913', 'open')]),
+          publicQuizJson('q2', 'Kuis Matematika', [publicRoomJson('r2', 'open')]),
         ],
         'in-Game': [
-          quizJson('q3', 'Kuis Fisika', [roomJson('r3', '222222', 'in-Game')]),
+          publicQuizJson('q3', 'Kuis Fisika', [
+            publicRoomJson('r3', 'in-Game'),
+          ]),
         ],
         'ended': [
-          quizJson('q4', 'Kuis Kimia', [roomJson('r4', '333333', 'ended')]),
+          publicQuizJson('q4', 'Kuis Kimia', [publicRoomJson('r4', 'ended')]),
         ],
       });
       await QuizCacheService.instance.saveAllQuizzes(data);
@@ -100,6 +132,30 @@ void main() {
       expect(cache.groups['in-Game'], ['q3']);
       expect(cache.groups['ended'], ['q4']);
       expect(cache.savedAt.millisecondsSinceEpoch, greaterThan(0));
+    });
+
+    test('cache menyimpan ringkasan feed publik tanpa soal mentah', () async {
+      await QuizCacheService.instance.saveAllQuizzes(
+        AllQuizzes.fromJson({
+          'open': [
+            publicQuizJson('q2', 'Kuis Matematika', [
+              publicRoomJson('r2', 'open'),
+            ]),
+          ],
+        }),
+      );
+
+      final prefs = await SharedPreferences.getInstance();
+      final raw = jsonDecode(prefs.getString('cache_all-guest')!) as Map;
+      final stored = (raw['quizzes'] as List).single as Map;
+
+      expect(stored['host'], 'Budi Santoso');
+      expect(stored['total_questions'], 10);
+      expect(stored['total_duration'], 20);
+      expect(stored['total_skor'], 200);
+      expect(stored.containsKey('questions'), isFalse);
+      expect(stored.containsKey('user_id'), isFalse);
+      expect((stored['rooms'] as List).single.containsKey('kode'), isFalse);
     });
 
     test('lima grup MyQuizzes tersimpan utuh setelah round-trip', () async {
@@ -135,7 +191,7 @@ void main() {
     test('quiz dirantai ke user lain tidak ikut kebaca', () async {
       await QuizCacheService.instance.saveAllQuizzes(
         AllQuizzes.fromJson({
-          'open': [quizJson('q1', 'Kuis Matematika', [])],
+          'open': [publicQuizJson('q1', 'Kuis Matematika', [])],
         }),
       );
 

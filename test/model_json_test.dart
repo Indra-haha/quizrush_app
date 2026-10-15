@@ -112,6 +112,70 @@ void main() {
       expect(kembali.questions.single.duration, 1.5);
       expect(kembali.rooms.single.id, 'r1');
     });
+
+    test('feed publik membaca ringkasan host & total tanpa soal mentah', () {
+      final quiz = Quizes.fromJson({
+        'id': 'q1',
+        'host': 'Budi Santoso',
+        'title': 'Kuis Mobile',
+        'description': 'Dasar Flutter',
+        'path': 'https://cdn/img.png',
+        'total_questions': 10,
+        'total_duration': 20,
+        'total_skor': 200,
+        'created_at': '2026-09-17T10:00:00Z',
+        'rooms': [
+          {'id': 'r1', 'judul': 'Room A', 'isi': 'Latihan', 'status': 'open'},
+        ],
+      });
+
+      expect(quiz.host, 'Budi Santoso');
+      expect(quiz.questions, isEmpty);
+      expect(quiz.questionCount, 10);
+      expect(quiz.durationSeconds, 20.0);
+      expect(quiz.score, 200);
+      expect(quiz.rooms.single.kode, isEmpty);
+    });
+
+    test('getter jatuh ke soal mentah saat ringkasan absen', () {
+      const quiz = Quizes(
+        id: 'q1',
+        userId: 'u1',
+        title: 'Kuis',
+        description: '',
+        createdAt: '',
+        questions: [
+          QuizQuestion(question: 'a', options: ['x'], duration: 1.5, skor: 5),
+          QuizQuestion(question: 'b', options: ['y'], duration: 2, skor: 15),
+        ],
+      );
+
+      expect(quiz.questionCount, 2);
+      expect(quiz.durationSeconds, 3.5);
+      expect(quiz.score, 20);
+    });
+
+    test('toJson tidak menulis soal/kode mentah saat kosong', () {
+      const quiz = Quizes(
+        id: 'q1',
+        userId: '',
+        host: 'Budi',
+        title: 'Kuis',
+        description: '',
+        createdAt: '',
+        questions: [],
+        totalQuestions: 4,
+        totalDuration: 8,
+        totalSkor: 80,
+      );
+
+      final json = quiz.toJson();
+      expect(json.containsKey('questions'), isFalse);
+      expect(json.containsKey('user_id'), isFalse);
+      expect(json['total_questions'], 4);
+      expect(json['total_duration'], 8.0);
+      expect(json['total_skor'], 80);
+    });
   });
 
   group('MyQuizzes / AllQuizzes', () {

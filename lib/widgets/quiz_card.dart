@@ -101,7 +101,7 @@ class QuizCard extends StatelessWidget {
                 if (quiz.status.isNotEmpty)
                   _buildBadge(QuizStatus.labelOf(quiz.status)),
                 const SizedBox(height: AppSpacing.space2),
-                _buildBadge('${quiz.questions.length} Soal'),
+                _buildBadge('${quiz.questionCount} Soal'),
               ],
             ),
           ),
