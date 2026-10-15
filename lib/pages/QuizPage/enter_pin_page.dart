@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 import '../../helpers/pin.dart';
 import '../../helpers/room_launcher.dart';
@@ -8,6 +7,8 @@ import '../../theme/app_theme.dart';
 import '../../widgets/app_header_bar.dart';
 import '../../widgets/app_inline_error.dart';
 import '../../widgets/app_primary_button.dart';
+import '../../widgets/enter_pin_intro_card.dart';
+import '../../widgets/pin_input_field.dart';
 
 /// Halaman input PIN room: memverifikasi 6 digit PIN lewat
 /// `POST /api/rooms/verify` (API.md §5.3) lalu, kalau valid, mengganti halaman
@@ -88,9 +89,16 @@ class _EnterPinPageState extends State<EnterPinPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              _introCard(),
+              const EnterPinIntroCard(),
               const SizedBox(height: AppSpacing.space10),
-              _pinField(),
+              PinInputField(
+                controller: _pinController,
+                enabled: !_submitting,
+                onSubmitted: (_) => _submit(),
+                onChanged: (_) {
+                  if (_error != null) setState(() => _error = null);
+                },
+              ),
               if (_error != null) ...[
                 const SizedBox(height: AppSpacing.space4),
                 AppInlineError(message: _error!),
@@ -104,100 +112,6 @@ class _EnterPinPageState extends State<EnterPinPage> {
                 onPressed: _submit,
               ),
             ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _introCard() {
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.space9),
-      decoration: BoxDecoration(
-        gradient: AppGradients.solidHero,
-        borderRadius: AppRadius.xl,
-        boxShadow: AppShadows.brandGlow,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              color: AppColors.textOnPrimary.withValues(alpha: 0.16),
-              borderRadius: AppRadius.md,
-            ),
-            child: const Icon(
-              Icons.pin_outlined,
-              color: AppColors.textOnPrimary,
-              size: AppIconSize.lg,
-            ),
-          ),
-          const SizedBox(height: AppSpacing.space6),
-          Text(
-            'Gabung ke Room',
-            style: AppTextStyles.heading2.copyWith(
-              color: AppColors.textOnPrimary,
-            ),
-          ),
-          const SizedBox(height: AppSpacing.space2),
-          Text(
-            'Masukkan 6 digit PIN room untuk memverifikasi lalu '
-            'masuk ke ruang tunggu kuis.',
-            style: AppTextStyles.bodyMediumOnPrimary.copyWith(
-              color: AppColors.textOnPrimary.withValues(alpha: 0.85),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _pinField() {
-    return TextField(
-      controller: _pinController,
-      autofocus: true,
-      enabled: !_submitting,
-      keyboardType: TextInputType.number,
-      textInputAction: TextInputAction.done,
-      onSubmitted: (_) => _submit(),
-      onChanged: (_) {
-        if (_error != null) setState(() => _error = null);
-      },
-      maxLength: 6,
-      inputFormatters: [
-        FilteringTextInputFormatter.digitsOnly,
-        LengthLimitingTextInputFormatter(6),
-      ],
-      textAlign: TextAlign.center,
-      style: AppTextStyles.code.copyWith(
-        color: AppColors.primary,
-        letterSpacing: 8,
-      ),
-      decoration: InputDecoration(
-        counterText: '',
-        hintText: '000000',
-        hintStyle: AppTextStyles.code.copyWith(color: AppColors.info),
-        filled: true,
-        fillColor: AppColors.textOnPrimary,
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.space8,
-          vertical: AppSpacing.space9,
-        ),
-        border: OutlineInputBorder(
-          borderRadius: AppRadius.lg,
-          borderSide: const BorderSide(color: AppColors.divider),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: AppRadius.lg,
-          borderSide: const BorderSide(color: AppColors.divider),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: AppRadius.lg,
-          borderSide: const BorderSide(
-            color: AppColors.primary,
-            width: AppBorderWidth.regular,
           ),
         ),
       ),

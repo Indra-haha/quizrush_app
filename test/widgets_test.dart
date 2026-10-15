@@ -13,9 +13,11 @@ import 'package:quizrush/widgets/app_stat_tile.dart';
 import 'package:quizrush/widgets/auth_fields.dart';
 import 'package:quizrush/widgets/cache_info_bar.dart';
 import 'package:quizrush/widgets/empty_state_view.dart';
+import 'package:quizrush/widgets/enter_pin_intro_card.dart';
 import 'package:quizrush/widgets/home_greeting.dart';
 import 'package:quizrush/widgets/home_stat_card.dart';
 import 'package:quizrush/widgets/load_more_button.dart';
+import 'package:quizrush/widgets/pin_input_field.dart';
 import 'package:quizrush/widgets/quiz_answer_banner.dart';
 import 'package:quizrush/widgets/quiz_countdown_dial.dart';
 import 'package:quizrush/widgets/quiz_detail_hero.dart';
@@ -889,6 +891,28 @@ void main() {
 
       expect(find.text('Create Room'), findsOneWidget);
       expect(find.text('isi sheet'), findsOneWidget);
+    });
+  });
+
+  group('Widget enter pin', () {
+    testWidgets('PinInputField menerima hanya 6 digit angka', (
+      WidgetTester tester,
+    ) async {
+      final controller = TextEditingController();
+      await tester.pumpWidget(
+        _wrap(PinInputField(controller: controller)),
+      );
+
+      await tester.enterText(find.byType(TextField), '12ab34567');
+      expect(controller.text, '123456');
+    });
+
+    testWidgets('EnterPinIntroCard menampilkan ajakan gabung', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(_wrap(const EnterPinIntroCard()));
+
+      expect(find.text('Gabung ke Room'), findsOneWidget);
     });
   });
 }
