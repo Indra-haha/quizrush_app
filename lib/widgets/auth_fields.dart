@@ -11,12 +11,16 @@ class PasswordField extends StatefulWidget {
   final TextEditingController controller;
   final String label;
   final IconData icon;
+  final bool enabled;
+  final ValueChanged<String>? onSubmitted;
 
   const PasswordField({
     super.key,
     required this.controller,
     required this.label,
     this.icon = Icons.lock,
+    this.enabled = true,
+    this.onSubmitted,
   });
 
   @override
@@ -33,6 +37,8 @@ class _PasswordFieldState extends State<PasswordField> {
       label: widget.label,
       icon: widget.icon,
       obscureText: _obscure,
+      enabled: widget.enabled,
+      onSubmitted: widget.onSubmitted,
       suffixIcon: IconButton(
         icon: Icon(_obscure ? Icons.visibility_off : Icons.visibility),
         onPressed: () => setState(() => _obscure = !_obscure),

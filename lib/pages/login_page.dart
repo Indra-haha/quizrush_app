@@ -11,6 +11,7 @@ import '../theme/app_theme.dart';
 import '../widgets/app_loading_indicator.dart';
 import '../widgets/app_snackbar.dart';
 import '../widgets/app_text_field.dart';
+import '../widgets/auth_fields.dart';
 import 'button.dart';
 import 'regis_page.dart';
 
@@ -24,7 +25,6 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  bool _obscurePassword = true;
   bool _isLoading = false;
 
   @override
@@ -134,25 +134,12 @@ class _LoginPageState extends State<LoginPage> {
                       enabled: !_isLoading,
                     ),
                     const SizedBox(height: AppSpacing.space8),
-                    AppTextField(
+                    PasswordField(
                       controller: _passwordController,
                       label: 'Password',
                       icon: Icons.lock_outline,
-                      obscureText: _obscurePassword,
                       enabled: !_isLoading,
                       onSubmitted: (_) => _login(),
-                      suffixIcon: IconButton(
-                        icon: Icon(
-                          _obscurePassword
-                              ? Icons.visibility_off
-                              : Icons.visibility,
-                        ),
-                        onPressed: () {
-                          setState(() {
-                            _obscurePassword = !_obscurePassword;
-                          });
-                        },
-                      ),
                     ),
                     const SizedBox(height: AppSpacing.space10),
                     ElevatedButton(
