@@ -16,6 +16,8 @@ import 'package:quizrush/widgets/empty_state_view.dart';
 import 'package:quizrush/widgets/enter_pin_intro_card.dart';
 import 'package:quizrush/widgets/home_greeting.dart';
 import 'package:quizrush/widgets/home_stat_card.dart';
+import 'package:quizrush/widgets/konversi_tanggal_tab.dart';
+import 'package:quizrush/widgets/konversi_umur_tab.dart';
 import 'package:quizrush/widgets/load_more_button.dart';
 import 'package:quizrush/widgets/pin_input_field.dart';
 import 'package:quizrush/widgets/quiz_answer_banner.dart';
@@ -913,6 +915,32 @@ void main() {
       await tester.pumpWidget(_wrap(const EnterPinIntroCard()));
 
       expect(find.text('Gabung ke Room'), findsOneWidget);
+    });
+  });
+
+  group('Widget konversi', () {
+    testWidgets('KonversiTanggalTab menampilkan tombol pilih tanggal', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(
+        _wrap(
+          KonversiTanggalTab(
+            judul: 'Pilih Tanggal Masehi',
+            labelHasil: 'Tanggal Hijriah',
+            konversi: (d) => 'hasil',
+          ),
+        ),
+      );
+
+      expect(find.text('Pilih Tanggal Masehi'), findsOneWidget);
+    });
+
+    testWidgets('KonversiUmurTab menampilkan tombol tanggal lahir', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(_wrap(const KonversiUmurTab()));
+
+      expect(find.text('Pilih Tanggal Lahir'), findsOneWidget);
     });
   });
 }
