@@ -26,6 +26,7 @@ import 'package:quizrush/widgets/quiz_search_field.dart';
 import 'package:quizrush/widgets/room_chat_bubble.dart';
 import 'package:quizrush/widgets/room_composer.dart';
 import 'package:quizrush/widgets/room_connection_bar.dart';
+import 'package:quizrush/widgets/room_code_dialog.dart';
 import 'package:quizrush/widgets/room_detail_card.dart';
 import 'package:quizrush/widgets/room_list_header.dart';
 import 'package:quizrush/widgets/status_filter_row.dart';
@@ -665,6 +666,31 @@ void main() {
         ),
       );
       expect(find.byType(CircularProgressIndicator), findsOneWidget);
+    });
+  });
+
+  group('RoomCodeDialog', () {
+    testWidgets('menampilkan kode room yang dibuat', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Builder(
+              builder: (context) => ElevatedButton(
+                onPressed: () => showRoomCodeDialog(context, '123456'),
+                child: const Text('buka'),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('buka'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Room Dibuat'), findsOneWidget);
+      expect(find.text('123456'), findsOneWidget);
     });
   });
 

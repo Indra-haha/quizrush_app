@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 import '../../models/quiz.dart';
 import '../../models/room.dart';
@@ -13,6 +12,7 @@ import '../../widgets/app_snackbar.dart';
 import '../../widgets/empty_state_view.dart';
 import '../../widgets/quarantine_card.dart';
 import '../../widgets/room_card.dart';
+import '../../widgets/room_code_dialog.dart';
 import '../../widgets/status_filter_row.dart';
 import '../login_redirect.dart';
 import 'create_room_sheet.dart';
@@ -91,49 +91,8 @@ class _MyQuizPageState extends State<MyQuizPage> {
   Future<void> _openCreateRoom() async {
     final room = await showCreateRoomSheet(context, _index.group('quarantine'));
     if (room == null || !mounted) return;
-    await _showKodeDialog(room);
+    await showRoomCodeDialog(context, room.kode);
     await _sync();
-  }
-
-  Future<void> _showKodeDialog(Room room) async {
-    await showDialog<void>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Room Dibuat'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              'Kode Room',
-              style: AppTextStyles.statLabelOnPrimary.copyWith(
-                color: AppColors.textSecondary,
-              ),
-            ),
-            const SizedBox(height: AppSpacing.space4),
-            Text(room.kode, style: AppTextStyles.code),
-            const SizedBox(height: AppSpacing.space8),
-            TextButton.icon(
-              onPressed: () {
-                Clipboard.setData(ClipboardData(text: room.kode));
-                AppSnackBar.show(
-                  dialogContext,
-                  'Kode room disalin.',
-                  duration: const Duration(seconds: 1),
-                );
-              },
-              icon: const Icon(Icons.copy, size: AppIconSize.sm),
-              label: const Text('Salin'),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(),
-            child: const Text('OK'),
-          ),
-        ],
-      ),
-    );
   }
 
   /// Server hanya dihubungi lewat tombol refresh atau setelah ada mutasi
