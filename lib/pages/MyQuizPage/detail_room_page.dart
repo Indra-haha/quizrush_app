@@ -8,7 +8,6 @@ import '../../services/quiz_feed.dart';
 import '../../services/room_service.dart';
 import '../../services/session_service.dart';
 import '../../theme/app_theme.dart';
-import '../../theme/quiz_option_theme.dart';
 import '../../utils/format.dart';
 import '../../widgets/app_header_bar_with_actions.dart';
 import '../../widgets/app_pill.dart';
@@ -17,15 +16,10 @@ import '../../widgets/app_snackbar.dart';
 import '../../widgets/app_stat_tile.dart';
 import '../../widgets/empty_state_view.dart';
 import '../../widgets/error_state_view.dart';
+import '../../widgets/load_more_button.dart';
+import '../../widgets/quiz_question_preview.dart';
 import '../../widgets/section_header.dart';
 import '../login_redirect.dart';
-
-final _optionColors = [
-  optionThemes[1].dot,
-  optionThemes[2].dot,
-  optionThemes[3].dot,
-  optionThemes[0].dot,
-];
 
 class RoomDetailPage extends StatefulWidget {
   final String quizId;
@@ -209,12 +203,16 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
         const SectionHeader(title: 'Jumlah Pertanyaan'),
         const SizedBox(height: AppSpacing.space8),
         for (final (i, q) in preview.indexed) ...[
-          _questionCard(q, i),
+          QuizQuestionPreviewCard(question: q, index: i),
           if (i < preview.length - 1) const SizedBox(height: AppSpacing.space8),
         ],
         if (remaining > 0) ...[
           const SizedBox(height: AppSpacing.space8),
-          _loadMoreButton(total, remaining),
+          LoadMoreButton(
+            total: total,
+            remaining: remaining,
+            onTap: () => setState(() => _visibleCount = total),
+          ),
         ],
         const SizedBox(height: AppSpacing.space10),
         _publishButton(),
@@ -293,123 +291,6 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
 
   Widget _statusPill() {
     return AppPill.roomStatus(_room.status);
-  }
-
-  Widget _questionCard(QuizQuestion q, int index) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(AppSpacing.space8),
-      decoration: BoxDecoration(
-        color: AppColors.textOnPrimary,
-        borderRadius: AppRadius.md,
-        boxShadow: AppShadows.layeredCard,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              _pill(
-                color: AppColors.primary,
-                textColor: AppColors.textOnPrimary,
-                text: 'Soal ${index + 1}',
-              ),
-              const SizedBox(width: AppSpacing.space4),
-              _pill(
-                color: AppColors.surfaceSoft,
-                textColor: AppColors.textSecondary,
-                text: formatQDuration(q.duration),
-              ),
-              const Spacer(),
-              Text(
-                '${q.skor} Pts',
-                style: AppTextStyles.statLabelOnPrimary.copyWith(
-                  color: AppColors.textPrimary,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.space6),
-          Text(
-            q.question,
-            style: AppTextStyles.buttonLarge.copyWith(
-              color: AppColors.textPrimary,
-            ),
-          ),
-          const SizedBox(height: AppSpacing.space6),
-          for (final (i, option) in q.options.indexed) ...[
-            _optionTile(option, i),
-            if (i < q.options.length - 1)
-              const SizedBox(height: AppSpacing.space4),
-          ],
-        ],
-      ),
-    );
-  }
-
-  Widget _optionTile(String option, int index) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(AppSpacing.space6),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        boxShadow: AppShadows.hairlineTight,
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 24,
-            height: 24,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: _optionColors[index % _optionColors.length],
-              borderRadius: AppRadius.md,
-            ),
-            child: Text(
-              String.fromCharCode(65 + index),
-              style: AppTextStyles.labelStrongSmall.copyWith(
-                color: AppColors.textOnPrimary,
-              ),
-            ),
-          ),
-          const SizedBox(width: AppSpacing.space4),
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.only(top: AppSpacing.space1),
-              child: Text(option, style: AppTextStyles.bodyLarge),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _loadMoreButton(int total, int remaining) {
-    return Material(
-      color: AppColors.surfaceSoft,
-      borderRadius: AppRadius.md,
-      child: InkWell(
-        borderRadius: AppRadius.md,
-        onTap: () => setState(() => _visibleCount = total),
-        child: Container(
-          width: double.infinity,
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.space10,
-            vertical: AppSpacing.space8,
-          ),
-          decoration: BoxDecoration(
-            borderRadius: AppRadius.md,
-            boxShadow: AppShadows.hairlineTight,
-          ),
-          child: Text(
-            'Muat $remaining Soal Lainnya (Total $total Soal)',
-            textAlign: TextAlign.center,
-            style: AppTextStyles.labelStrong.copyWith(color: AppColors.primary),
-          ),
-        ),
-      ),
-    );
   }
 
   Widget _publishButton() {

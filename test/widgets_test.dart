@@ -11,10 +11,12 @@ import 'package:quizrush/widgets/app_primary_button.dart';
 import 'package:quizrush/widgets/app_stat_tile.dart';
 import 'package:quizrush/widgets/cache_info_bar.dart';
 import 'package:quizrush/widgets/empty_state_view.dart';
+import 'package:quizrush/widgets/load_more_button.dart';
 import 'package:quizrush/widgets/quiz_answer_banner.dart';
 import 'package:quizrush/widgets/quiz_countdown_dial.dart';
 import 'package:quizrush/widgets/quiz_image_picker.dart';
 import 'package:quizrush/widgets/quiz_question_editor.dart';
+import 'package:quizrush/widgets/quiz_question_preview.dart';
 import 'package:quizrush/widgets/room_chat_bubble.dart';
 import 'package:quizrush/widgets/room_composer.dart';
 import 'package:quizrush/widgets/room_connection_bar.dart';
@@ -557,6 +559,43 @@ void main() {
 
       await tester.tap(find.byIcon(Icons.send));
       expect(sent, 0);
+    });
+  });
+
+  group('Widget detail room', () {
+    testWidgets('QuizQuestionPreviewCard menampilkan soal, poin, dan opsi', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(
+        _wrap(
+          QuizQuestionPreviewCard(
+            question: _question(skor: 10),
+            index: 0,
+          ),
+        ),
+      );
+
+      expect(find.text('Soal 1'), findsOneWidget);
+      expect(find.text('2 + 2 = ?'), findsOneWidget);
+      expect(find.text('10 Pts'), findsOneWidget);
+      expect(find.text('A'), findsOneWidget);
+      expect(find.text('4'), findsOneWidget);
+    });
+
+    testWidgets('LoadMoreButton menampilkan sisa dan memanggil onTap', (
+      WidgetTester tester,
+    ) async {
+      var tapped = 0;
+      await tester.pumpWidget(
+        _wrap(
+          LoadMoreButton(total: 5, remaining: 2, onTap: () => tapped++),
+        ),
+      );
+
+      expect(find.text('Muat 2 Soal Lainnya (Total 5 Soal)'), findsOneWidget);
+
+      await tester.tap(find.byType(LoadMoreButton));
+      expect(tapped, 1);
     });
   });
 }
