@@ -97,16 +97,15 @@ Untuk.device/ emulator, ganti dengan host yang dapat dijangkau (mis. `10.0.2.2` 
 
 ```
 lib/
-├── engine/      KalkulatorEngine — parser rekursif-desent (+ - × ÷) & hitungSkorWaktu
-├── helpers/     QuizPlaySession — logika permainan murni Dart (timer, skor, callback)
-├── models/      User, Quizes, Room, Result + serialisasi JSON
+├── engine/      KalkulatorEngine — pohon Expr + hitung() & hitungSkorWaktu
+├── helpers/     Logika murni Dart: json, format, konversi_format, validators, pin, room_status_flow, quiz_play_session, quiz_image, room_launcher
+├── models/      User, Quizes, Room, RoomMessage, RoomVerify + serialisasi JSON
 ├── pages/       4 tab shell + auth
 │   ├── MyQuizPage/   Sisi host: kuis saya, room, detail room, sheet buat room, buat kuis, tester
 │   └── QuizPage/     Sisi peserta: jelajahi kuis, detail kuis
-├── services/    Lapisan data: REST client, auth, kuis, room, hasil, sesi, cache
-├── theme/       Design token + AppTheme.light, palet status, palet opsi jawaban
-├── utils/       format.dart (durasi, kode, waktu relatif) + konversi_format.dart (CalendarUtils)
-└── widgets/     31 widget presentational tanpa logika halaman
+├── services/    Lapisan data: REST client, auth, kuis, room, sesi, cache
+├── theme/       Design token (modul terpisah) + barrel app_theme.dart, palet status, palet opsi jawaban
+└── widgets/     35 widget presentational tanpa logika halaman
 ```
 
 Pola yang dipakai:
@@ -121,13 +120,12 @@ Pola yang dipakai:
 
 ## Design System
 
-Semua token design berada di **`lib/theme/app_theme.dart`**. Aturan repo: **warna, font, spacing, radius, dan shadow tidak boleh di-hardcode di file lain.**
+Token design terbagi ke modul-modul di **`lib/theme/`** (`app_colors.dart`, `app_spacing.dart`, `app_metrics.dart`, `app_typography.dart`, `app_shadows.dart`, `app_gradients.dart`, `app_decorations.dart`, `app_buttons.dart`, `app_theme_data.dart`) dan dire-export oleh barrel **`lib/theme/app_theme.dart`**. Aturan repo: **warna, font, spacing, radius, dan shadow tidak boleh di-hardcode di file lain.**
 
 | Kelas | Cakupan |
 |---|---|
 | `AppColors` | Brand, surface, teks, status, divider + palet 4 warna jawaban |
 | `AppSpacing` | Skala numerik `space1`…`space16`, clearances, alias semantik `xxs`…`xxl` |
-| `AppPadding` | ~25 preset `EdgeInsets` siap pakai (page, card, badge, chip, screen, scroll) |
 | `AppRadius` | `sm 8`, `md 12`, `lg 16`, `xl 24`, `pill 999` |
 | `AppShadows` | 12 preset `List<BoxShadow>` (card, raised, hairline, layered, pillButton, brandGlow, …) |
 | `AppElevation` | `none`, `subtle`, `medium`, `raised` |
@@ -160,7 +158,6 @@ REST (bukan Supabase/Firebase) memakai `package:http`, dengan JSON dua arah dan 
 | `AuthService` | `POST /api/login` · `POST /api/register` · `POST /api/logout` · `GET /api/session` |
 | `QuizService` | `GET /api/quizzes` · `GET /api/my-quizzes` · `POST /api/create/quiz` |
 | `RoomService` | `POST /api/create/room` · `PUT /api/room/{id}/status` |
-| `ResultService` | `POST/GET/PUT /api/room/{kode}/result` · `GET /api/results` *(didefinisikan, belum dipakai UI)* |
 
 Semua request selain login/register mengirim `Authorization: Bearer <token>`; token berlaku 24 jam. `ApiException` dengan `statusCode == 401` diubah menjadi `needsAuth: true` yang memicu `LoginRedirect.go` ke halaman login.
 
@@ -189,10 +186,18 @@ flutter test
 | Berkas | Cakupan |
 |---|---|
 | `test/widget_test.dart` | Smoke test aplikasi: halaman login tampil, validasi field kosong |
-| `test/widgets_test.dart` | Widget bersama (`AppPill`, `StatusFilterRow`, `CacheInfoBar`, `AppPrimaryButton`, `EmptyStateView`, `AppStatTile`, `QuizCountdownDial`, `QuizAnswerBanner`, `QuizStatus.palette`) + 7 unit test `QuizPlaySession` |
-| `test/quiz_cache_test.dart` | 8 test `QuizCacheService` (termasuk scoping per-NIM & migrasi format lama) + 8 test `QuizIndex` (grouping, cari PIN, pencarian judul) |
-| `test/room_model_test.dart` | 3 test `Room.displayTitle` (urun judul: room → kuis → default) |
-| `test/active_room_service_test.dart` | 4 test `ActiveRoomService` (set/clear + kontrak `ChangeNotifier`) |
+| `test/widgets_test.dart` | Widget bersama (`AppPill`, `StatusFilterRow`, `CacheInfoBar`, `AppPrimaryButton`, `EmptyStateView`, `AppStatTile`, `QuizCountdownDial`, `QuizAnswerBanner`, `QuizImagePicker`, `QuizQuestionEditor`, `RoomChatBubble`, `RoomConnectionBar`, `RoomComposer`, `QuizQuestionPreviewCard`, `LoadMoreButton`) + unit `QuizPlaySession` |
+| `test/quiz_cache_test.dart` | `QuizCacheService` (scoping per-NIM & migrasi format lama) + `QuizIndex` (grouping, cari PIN, pencarian judul) |
+| `test/room_model_test.dart` | `Room.displayTitle` (urutan judul: room → kuis → default) |
+| `test/active_room_service_test.dart` | `ActiveRoomService` (set/clear + kontrak `ChangeNotifier`) |
+| `test/helpers_test.dart` | Helper murni: `json`, `pin`, `auth_validator`, `room_status_flow`, `quiz_image`, `quiz_form_validator` |
+| `test/format_test.dart` | `format` (durasi, kode, waktu relatif, tanggal lahir, `totalDuration`) |
+| `test/konversi_format_test.dart` | `CalendarUtils` (Hijriah & Saka Bali) |
+| `test/engine_score_test.dart` | `KalkulatorEngine.hitungSkorWaktu` |
+| `test/model_json_test.dart` | Serialisasi/deserialisasi model (`Quizes`, `Room`, `RoomMessage`, `User`, dll) |
+| `test/service_test.dart` | Lapisan service lewat `MockClient` (`ApiClient`, auth, quiz, room) |
+
+Total **143** test, semuanya lulus.
 
 ---
 
@@ -201,7 +206,6 @@ flutter test
 Hal-hal yang **belum** berfungsi dan perlu diketahui:
 
 - **Join room belum diimplementasikan.** Tombol "Masuk" pada detail kuis hanya menampilkan snackbar `fitur join menyusul`.
-- **`ResultService` belum dipakai.** Model `Result`/`ResultEntry` dan endpoint skor sudah ada, tetapi belum ada layar atau alur pengiriman skor.
 - **Aturan minimal 5 pertanyaan sudah divalidasi di sisi klien.** `CreateQuizPage` memeriksa judul, deskripsi, gambar (wajib, maks 5 MB), minimal 5 pertanyaan, 4 opsi, jawaban benar terpilih, dan `skor` 1–50.
 - **Belum ada mode gelap** dan belum ada halaman pengaturan/preferensi selain `HelpPage`.
 - **Base URL backend hardcoded** di `lib/services/api_client.dart` — belum configurable via environment.

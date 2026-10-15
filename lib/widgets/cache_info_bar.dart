@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../theme/app_theme.dart';
-import '../utils/format.dart';
+import '../helpers/format.dart';
 
 /// Baris informasi kecil di bawah kolom pencarian.
 ///

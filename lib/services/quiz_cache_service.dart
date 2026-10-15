@@ -4,7 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/quiz.dart';
-import '../utils/format.dart';
+import '../helpers/format.dart';
 import 'quiz_index.dart';
 import 'session_service.dart';
 

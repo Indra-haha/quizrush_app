@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../models/quiz.dart';
 import '../theme/app_theme.dart';
 import '../theme/quiz_status.dart';
-import '../utils/format.dart';
+import '../helpers/format.dart';
 
 class QuizCard extends StatelessWidget {
   final Quizes quiz;

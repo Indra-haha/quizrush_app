@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../models/room.dart';
 import '../theme/app_theme.dart';
-import '../utils/format.dart';
+import '../helpers/format.dart';
 import 'app_primary_button.dart';
 import 'status_badge.dart';
 

@@ -4,7 +4,7 @@ import '../../models/quiz.dart';
 import '../../models/room.dart' show PublishResult;
 import '../../services/quiz_feed.dart';
 import '../../theme/app_theme.dart';
-import '../../utils/format.dart';
+import '../../helpers/format.dart';
 import '../../widgets/app_header_bar_with_actions.dart';
 import '../../widgets/empty_state_view.dart';
 import '../../widgets/error_state_view.dart';

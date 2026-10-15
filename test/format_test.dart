@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quizrush/models/quiz.dart';
-import 'package:quizrush/utils/format.dart';
+import 'package:quizrush/helpers/format.dart';
 
 Quizes _quiz(List<double> durations) {
   return Quizes(

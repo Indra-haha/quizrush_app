@@ -7,7 +7,7 @@ import '../../models/room_message.dart';
 import '../../services/room_socket.dart';
 import '../../services/session_service.dart';
 import '../../theme/app_theme.dart';
-import '../../utils/format.dart';
+import '../../helpers/format.dart';
 import '../../widgets/app_header_bar_with_actions.dart';
 import '../../widgets/app_hero_card.dart';
 import '../../widgets/room_chat_bubble.dart';
