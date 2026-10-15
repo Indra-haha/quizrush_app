@@ -105,7 +105,7 @@ lib/
 │   └── QuizPage/     Sisi peserta: jelajahi kuis, detail kuis
 ├── services/    Lapisan data: REST client, auth, kuis, room, sesi, cache
 ├── theme/       Design token (modul terpisah) + barrel app_theme.dart, palet status, palet opsi jawaban
-└── widgets/     35 widget presentational tanpa logika halaman
+└── widgets/     52 widget presentational tanpa logika halaman
 ```
 
 Pola yang dipakai:
@@ -186,7 +186,7 @@ flutter test
 | Berkas | Cakupan |
 |---|---|
 | `test/widget_test.dart` | Smoke test aplikasi: halaman login tampil, validasi field kosong |
-| `test/widgets_test.dart` | Widget bersama (`AppPill`, `StatusFilterRow`, `CacheInfoBar`, `AppPrimaryButton`, `EmptyStateView`, `AppStatTile`, `QuizCountdownDial`, `QuizAnswerBanner`, `QuizImagePicker`, `QuizQuestionEditor`, `RoomChatBubble`, `RoomConnectionBar`, `RoomComposer`, `QuizQuestionPreviewCard`, `LoadMoreButton`) + unit `QuizPlaySession` |
+| `test/widgets_test.dart` | Widget bersama presentational (tombol, badge, kartu kuis/room, tab konversi, dsb.) + unit `QuizPlaySession` |
 | `test/quiz_cache_test.dart` | `QuizCacheService` (scoping per-NIM & migrasi format lama) + `QuizIndex` (grouping, cari PIN, pencarian judul) |
 | `test/room_model_test.dart` | `Room.displayTitle` (urutan judul: room → kuis → default) |
 | `test/active_room_service_test.dart` | `ActiveRoomService` (set/clear + kontrak `ChangeNotifier`) |
@@ -197,7 +197,7 @@ flutter test
 | `test/model_json_test.dart` | Serialisasi/deserialisasi model (`Quizes`, `Room`, `RoomMessage`, `User`, dll) |
 | `test/service_test.dart` | Lapisan service lewat `MockClient` (`ApiClient`, auth, quiz, room) |
 
-Total **143** test, semuanya lulus.
+Total **164** test, semuanya lulus.
 
 ---
 
