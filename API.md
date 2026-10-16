@@ -42,7 +42,8 @@ Semua endpoint yang dilindungi `middleware.Auth` (dan `POST /api/login`) menerap
 | POST | `/api/logout` | ✓ | Mengakhiri sesi token |
 | GET | `/api/session` | ✓ | Mengecek sesi login masih aktif |
 | GET | `/api/my-quizzes` | ✓ | List kuis milik user (dikelompokkan by status room) |
-| POST | `/api/create/quiz` | ✓ | Membuat kuis baru |
+| POST | `/api/create/signature` | ✓ | Membuat signature Cloudinary untuk upload gambar kuis langsung dari klien |
+| POST | `/api/create/quiz` | ✓ | Membuat kuis baru (setelah gambar diunggah ke Cloudinary) |
 | GET | `/api/quizzes` | ✓ | List semua kuis (grup: open, in-Game, ended; tanpa soal, berisi total soal/durasi/skor) |
 | POST | `/api/create/room` | ✓ | Membuat room baru |
 | POST | `/api/rooms/verify` | ✓ | Memverifikasi pin (kode) room |
@@ -383,7 +384,7 @@ Authorization: Bearer <TOKEN>
       "user_id": "<user_id>",
       "title": "Kuis Pemrograman Mobile",
       "description": "Dasar Flutter & Dart",
-      "path": "https://res.cloudinary.com/quiz/image/upload/v123/galery-quiz/quiz-image/kuis-mobile.png",
+      "path": "https://res.cloudinary.com/quiz/image/authenticated/s--aBcD1234--/galery-quiz/quiz-image/kuis-mobile.png",
       "questions": [
         {
           "question": "Bahasa pemrograman utama Flutter?",
@@ -415,7 +416,7 @@ Authorization: Bearer <TOKEN>
       "user_id": "<user_id>",
       "title": "Kuis Basis Data MongoDB",
       "description": "Konsep dasar MongoDB",
-      "path": "https://res.cloudinary.com/quiz/image/upload/v123/galery-quiz/quiz-image/kuis-mongodb.png",
+      "path": "https://res.cloudinary.com/quiz/image/authenticated/s--aBcD1234--/galery-quiz/quiz-image/kuis-mongodb.png",
       "questions": [
         {
           "question": "MongoDB termasuk database jenis apa?",
@@ -431,7 +432,7 @@ Authorization: Bearer <TOKEN>
 }
 ```
 
-> `status` pada kuis = status room yang paling terakhir dibuat; field ini dihilangkan (`omitempty`) jika kuis belum punya room (masuk grup `quarantine`). `path` berisi URL gambar kuis hasil unggahan Cloudinary (lihat §4.2). `correct_idx` tidak dikembalikan pada response untuk menjaga jawaban benar tetap rahasia.
+> `status` pada kuis = status room yang paling terakhir dibuat; field ini dihilangkan (`omitempty`) jika kuis belum punya room (masuk grup `quarantine`). `path` berisi **signed URL** gambar kuis hasil unggahan Cloudinary (lihat §4.2–§4.4); URL aset aslinya bertipe `authenticated` dan tidak bisa diakses publik. `correct_idx` tidak dikembalikan pada response untuk menjaga jawaban benar tetap rahasia.
 
 **Contoh response — `401 Unauthorized`**
 
@@ -449,30 +450,188 @@ Authorization: Bearer <TOKEN>
 { "message": "User tidak ditemukan" }
 ```
 
-### 4.2 POST /api/create/quiz
+---
+
+### 4.2 POST /api/create/signature
 
 | Metode | Path | Auth |
 |---|---|---|
-| POST | `/api/create/quiz` | ✓ |
+| POST | `/api/create/signature` | ✓ |
+
+Endpoint ini digunakan klien untuk meminta tanda tangan digital (*signature*) resmi dari server
+sebelum mengunggah gambar langsung ke Cloudinary. Signature ditandatangani dari parameter
+`folder`, `timestamp` (waktu server saat ini), dan `type` (`authenticated`) memakai API secret
+Cloudinary; API secret itu sendiri **tidak pernah** dikembalikan.
+
+Gambar kuis disimpan sebagai aset **authenticated**, sehingga hanya dapat ditampilkan lewat
+**signed URL** yang dibuat server (lihat §4.4). URL aset mentah tidak dapat diakses publik.
 
 **Request body:**
 
 | No | Field | Tipe | Wajib | Deskripsi |
 |---|---|---|---|---|
-| 1 | `file` | file (binary) | ✅ | Gambar kuis: `jpg`/`jpeg`/`png`/`webp`, maksimal 5 MB |
-| 2 | `data` | string (JSON) | ✅ | Data kuis dalam JSON (lihat field `data.*` di bawah) |
-| 3 | `data.title` | string | ✅ | Judul kuis |
-| 4 | `data.description` | string | ✗ | Deskripsi kuis |
-| 5 | `data.questions` | array | ✅ | Minimal 5 soal |
-| 6 | `data.questions[].question` | string | ✅ | Pertanyaan |
-| 7 | `data.questions[].options` | array\[4\] | ✅ | Tepat 4 opsi jawaban |
-| 8 | `data.questions[].correct_idx` | int | ✅ | Index jawaban benar (0–3) |
-| 9 | `data.questions[].duration` | float | ✅ | Salah satu dari: `1.5`, `2`, `3`, `5` detik |
-| 10 | `data.questions[].skor` | int | ✅ | Skor soal, antara 1–50 |
+| 1 | `folder` | string | ✅ | Folder tujuan aset di Cloudinary; harus `galery-quiz/quiz-image` |
 
-Dikirim sebagai `multipart/form-data`. Server mengunggah `file` lebih dulu ke Cloudinary (folder `galery-quiz/quiz-image`).
-Bila berhasil, URL gambar hasil unggahan disimpan ke field `path` kuis di database,
-lalu kuis ditulis. Jadi field `path` **tidak dikirim** klien; nilainya berasal dari Cloudinary.
+**Contoh request:**
+
+```http
+POST /api/create/signature HTTP/1.1
+Host: localhost:8080
+Authorization: Bearer <TOKEN>
+Content-Type: application/json
+
+{
+  "folder": "galery-quiz/quiz-image"
+}
+```
+
+**Response:**
+
+| Status | Deskripsi |
+|---|---|
+| 200 | Sukses menghasilkan signature |
+| 400 | `folder` kosong atau bukan folder yang diizinkan |
+| 401 | Token tidak valid / sesi berakhir / bukan smartphone |
+| 413 | Body terlalu besar (> 1 MiB) |
+| 415 | Content-Type bukan JSON |
+| 500 | Gagal membuat signature (konfigurasi Cloudinary belum lengkap) |
+
+**Contoh response — `200 OK`**
+
+```json
+{
+  "success": true,
+  "signature": "81f14371fa77c3852cd1d6ebbe382cf8476aa081",
+  "timestamp": 1792154580,
+  "apiKey": "123456789012345",
+  "cloudName": "dlxxyz123",
+  "type": "authenticated"
+}
+```
+
+> `apiKey`, `cloudName`, dan `type` adalah kredensial publik; `signature` dihitung dari `folder` +
+> `timestamp` + `type` (SHA-1). Klien mengirim ulang `api_key`, `timestamp`, `signature`,
+> `folder`, dan `type` yang sama (nilai `type` dari field `type` respons ini) saat upload ke
+> Cloudinary (§4.3). Karena `timestamp` diambil saat permintaan, signature hanya berlaku dalam
+> jendela waktu singkat yang diterima Cloudinary.
+
+**Contoh response — `400 Bad Request`**
+
+```json
+// folder kosong
+{ "message": "folder wajib diisi" }
+
+// folder bukan folder yang diizinkan
+{ "message": "folder tidak diizinkan" }
+```
+
+---
+
+### 4.3 POST /image/upload (Direct to Cloudinary)
+
+| Metode | Path | Auth |
+|---|---|---|
+| POST | `https://api.cloudinary.com/v1_1/<cloudName>/image/upload` | ✗ |
+
+Endpoint ini disediakan langsung oleh Cloudinary. Klien mengirimkan file asli (*binary*) ke URL
+ini menggunakan data otorisasi yang didapatkan dari endpoint `POST /api/create/signature` (§4.2).
+
+**Request body (multipart/form-data):**
+
+| No | Field | Tipe | Wajib | Deskripsi |
+|---|---|---|---|---|
+| 1 | `file` | file (binary) | ✅ | File fisik gambar kuis (`jpg`/`jpeg`/`png`/`webp`), maksimal 5 MB |
+| 2 | `api_key` | string | ✅ | Diambil dari field `apiKey` hasil respons endpoint `/api/create/signature` |
+| 3 | `timestamp` | int | ✅ | Diambil dari field `timestamp` hasil respons endpoint `/api/create/signature` |
+| 4 | `signature` | string | ✅ | Diambil dari field `signature` hasil respons endpoint `/api/create/signature` |
+| 5 | `folder` | string | ✅ | **Wajib sama** dengan folder yang dikirim pada endpoint `/api/create/signature` |
+| 6 | `type` | string | ✅ | **Wajib sama** dengan field `type` hasil respons `/api/create/signature` (yaitu `authenticated`) |
+
+**Contoh request:**
+
+```http
+POST /v1_1/dlxxyz123/image/upload HTTP/1.1
+Host: api.cloudinary.com
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary
+
+------WebKitFormBoundary
+Content-Disposition: form-data; name="api_key"
+
+123456789012345
+------WebKitFormBoundary
+Content-Disposition: form-data; name="timestamp"
+
+1792154580
+------WebKitFormBoundary
+Content-Disposition: form-data; name="signature"
+
+81f14371fa77c3852cd1d6ebbe382cf8476aa081
+------WebKitFormBoundary
+Content-Disposition: form-data; name="folder"
+
+galery-quiz/quiz-image
+------WebKitFormBoundary
+Content-Disposition: form-data; name="type"
+
+authenticated
+------WebKitFormBoundary
+Content-Disposition: form-data; name="file"; filename="kuis-mobile.png"
+Content-Type: image/png
+
+<isi biner gambar>
+------WebKitFormBoundary--
+```
+
+**Response (JSON — `200 OK`):**
+Klien wajib menangkap nilai **`public_id`** dan **`format`** pada respons ini untuk dikirimkan ke
+backend sebagai `image_id` dan `image_format` kuis (§4.4). Aset terunggah bertipe `authenticated`,
+sehingga `secure_url` di respons ini **tidak** bisa diakses langsung tanpa signed URL dari server.
+
+```json
+{
+  "asset_id": "8347f3b8918c5e7b23c56d78a912e34d",
+  "public_id": "galery-quiz/quiz-image/kuis-mobile",
+  "format": "png",
+  "resource_type": "image",
+  "type": "authenticated",
+  "secure_url": "https://res.cloudinary.com/dlxxyz123/image/authenticated/v1792154580/galery-quiz/quiz-image/kuis-mobile.png"
+}
+```
+
+---
+
+### 4.4 POST /api/create/quiz
+
+| Metode | Path | Auth |
+|---|---|---|
+| POST | `/api/create/quiz` | ✓ |
+
+Endpoint ini dipanggil setelah klien berhasil mengunggah gambar ke Cloudinary (§4.3). Identitas
+aset (`public_id` dan `format`) dikirim klien pada field **`image_id`** dan **`image_format`**
+untuk disimpan ke database. Server menyimpan `public_id` + `format` dan menghasilkan **signed
+URL** (`…/image/authenticated/s--<sig>--/<public_id>.<format>`) setiap kali kuis dibaca; URL
+inilah yang muncul pada field `path` di respons. Signed URL hanya dibuat server (memegang API
+secret) dan tidak kedaluwarsa.
+
+> Data kuis lama yang belum punya `image_id`/`image_format` akan menampilkan gambar kosong
+> (placeholder).
+
+Untuk submit kuis yang berhasil, klien wajib mengirimkan **minimal 5 soal** dan format data berupa **`application/json`**.
+
+**Request body:**
+
+| No | Field | Tipe | Wajib | Deskripsi |
+|---|---|---|---|---|
+| 1 | `title` | string | ✅ | Judul kuis |
+| 2 | `description` | string | ✗ | Deskripsi kuis |
+| 3 | `image_id` | string | ✅ | `public_id` aset gambar kuis hasil balikan dari Cloudinary |
+| 4 | `image_format` | string | ✅ | `format` aset gambar kuis hasil balikan dari Cloudinary (mis. `png`) |
+| 5 | `questions` | array | ✅ | Array berisi objek pertanyaan, minimal 5 soal |
+| 6 | `questions[].question` | string | ✅ | Teks pertanyaan soal |
+| 7 | `questions[].options` | array\[4\] | ✅ | Tepat 4 opsi pilihan jawaban |
+| 8 | `questions[].correct_idx` | int | ✅ | Index jawaban yang benar (rentang 0–3) |
+| 9 | `questions[].duration` | float | ✅ | Durasi pengerjaan soal. Harus salah satu dari: `1.5`, `2`, `3`, `5` detik |
+| 10 | `questions[].skor` | int | ✅ | Skor bobot soal, wajib berada di antara rentang 1–50 |
 
 **Contoh request:**
 
@@ -480,15 +639,13 @@ lalu kuis ditulis. Jadi field `path` **tidak dikirim** klien; nilainya berasal d
 POST /api/create/quiz HTTP/1.1
 Host: localhost:8080
 Authorization: Bearer <TOKEN>
-Content-Type: multipart/form-data; boundary=----WebKitFormBoundary
-
-------WebKitFormBoundary
-Content-Disposition: form-data; name="data"
 Content-Type: application/json
 
 {
   "title": "Kuis Pemrograman Mobile",
   "description": "Dasar Flutter & Dart",
+  "image_id": "galery-quiz/quiz-image/kuis-mobile",
+  "image_format": "png",
   "questions": [
     {
       "question": "Bahasa pemrograman utama Flutter?",
@@ -499,36 +656,25 @@ Content-Type: application/json
     }
   ]
 }
-------WebKitFormBoundary
-Content-Disposition: form-data; name="file"; filename="kuis-mobile.png"
-Content-Type: image/png
-
-<isi biner gambar>
-------WebKitFormBoundary--
 ```
 
-> Untuk submit berhasil butuh minimal **5 soal**; contoh di atas hanya ilustrasi 1 soal.
+> **Catatan Singkat:** Contoh request di atas hanya mengilustrasikan 1 soal demi ringkasnya dokumen. Validasi sistem tetap mewajibkan minimal **5 soal**.
 
 **Response:**
 
 | Status | Deskripsi |
 |---|---|
-| 201 | Kuis dibuat |
-| 400 | Request bukan multipart / data tidak valid |
-| 400 | `data` kosong |
-| 400 | `file` tidak diunggah |
-| 400 | Format gambar bukan jpg/jpeg/png/webp |
-| 400 | Ukuran gambar > 5 MB |
-| 400 | Judul kosong |
-| 400 | Soal < 5 |
-| 400 | Soal ke-n tidak valid |
-| 400 | Opsi != 4 |
-| 400 | correct_idx salah |
-| 400 | Durasi salah |
-| 400 | Skor tidak valid |
+| 201 | Kuis berhasil dibuat |
+| 400 | `title` / `image_id` / `image_format` kosong atau tidak valid |
+| 400 | Jumlah soal di dalam `questions` kurang dari 5 |
+| 400 | Properti `question` pada soal ke-n kosong |
+| 400 | Jumlah item `options` pada soal ke-n tidak tepat 4 |
+| 400 | Nilai `correct_idx` pada soal ke-n berada di luar rentang 0-3 |
+| 400 | Nilai `duration` pada soal ke-n tidak sesuai pilihan yang diizinkan |
+| 400 | Nilai `skor` pada soal ke-n berada di luar rentang 1-50 |
 | 401 | Token tidak valid / sesi berakhir / bukan smartphone |
-| 413 | Ukuran unggahan terlalu besar (maksimal 5 MB) |
-| 500 | Gagal mengunggah gambar kuis / Gagal membuat kuis |
+| 415 | Content-Type bukan JSON |
+| 500 | Gagal menyimpan data kuis ke database |
 
 **Contoh response — `201 Created`**
 
@@ -536,11 +682,11 @@ Content-Type: image/png
 {
   "message": "Kuis berhasil dibuat",
   "quiz": {
-    "id": "<id>",
-    "user_id": "<user_id>",
+    "id": "qz_8812x",
+    "user_id": "usr_9921a",
     "title": "Kuis Pemrograman Mobile",
     "description": "Dasar Flutter & Dart",
-    "path": "https://res.cloudinary.com/quiz/image/upload/v123/galery-quiz/quiz-image/kuis-mobile.png",
+    "path": "https://res.cloudinary.com/dlxxyz123/image/authenticated/s--aBcD1234--/galery-quiz/quiz-image/kuis-mobile.png",
     "questions": [
       {
         "question": "Bahasa pemrograman utama Flutter?",
@@ -549,54 +695,44 @@ Content-Type: image/png
         "skor": 20
       }
     ],
-    "created_at": "2026-09-17T10:00:00Z"
+    "created_at": "2026-10-16T15:15:00Z"
   }
 }
 ```
 
-Nilai `path` di atas adalah URL dari Cloudinary, bukan input klien.
-
 **Contoh response — `400 Bad Request`**
 
 ```json
-// Field data kosong
-{ "message": "Field data wajib diisi" }
-
-// Field data bukan JSON valid
-{ "message": "Field data tidak valid" }
-
-// File tidak diunggah
-{ "message": "Gambar kuis wajib diunggah" }
-
-// Format gambar salah
-{ "message": "Format gambar kuis harus jpg, jpeg, png, atau webp" }
-
-// Ukuran gambar terlalu besar
-{ "message": "Ukuran gambar kuis maksimal 5 MB" }
-
 // Judul kosong
 { "message": "Judul kuis wajib diisi" }
 
-// Soal < 5
+// Public ID (image_id) kosong
+{ "message": "public_id gambar kuis wajib diisi" }
+
+// Format gambar (image_format) kosong
+{ "message": "format gambar kuis wajib diisi" }
+
+// Total item array pada questions < 5
 { "message": "Kuis harus memiliki minimal 5 soal" }
 
-// Soal ke-n tidak valid
+// Teks pertanyaan kosong pada indeks tertentu
 { "message": "Soal ke-1 wajib diisi" }
 
-// Opsi != 4
+// Jumlah opsi pilihan jawaban salah
 { "message": "Soal ke-1 harus memiliki tepat 4 opsi jawaban" }
 
-// correct_idx salah
+// Index kunci jawaban berada di luar rentang 0-3
 { "message": "correct_idx soal ke-1 tidak valid" }
 
-// Durasi salah
+// Durasi tidak sesuai dengan aturan float (1.5, 2, 3, 5)
 { "message": "durasi soal ke-1 harus salah satu dari: 1.5, 2, 3, atau 5 detik" }
 
-// Skor tidak valid
+// Skor berada di luar batas angka 1 - 50
 { "message": "skor soal ke-1 harus antara 1 sampai 50" }
 ```
 
-### 4.3 GET /api/quizzes
+
+### 4.5 GET /api/quizzes
 
 | Metode | Path | Auth |
 |---|---|---|
@@ -636,7 +772,7 @@ Authorization: Bearer <TOKEN>
       "host": "Budi Santoso",
       "title": "Kuis Pemrograman Mobile",
       "description": "Dasar Flutter & Dart",
-      "path": "https://res.cloudinary.com/quiz/image/upload/v123/galery-quiz/quiz-image/kuis-mobile.png",
+      "path": "https://res.cloudinary.com/quiz/image/authenticated/s--aBcD1234--/galery-quiz/quiz-image/kuis-mobile.png",
       "total_questions": 10,
       "total_duration": 20,
       "total_skor": 200,
@@ -657,7 +793,7 @@ Authorization: Bearer <TOKEN>
 }
 ```
 
-> `path` berisi URL gambar kuis hasil unggahan Cloudinary (lihat §4.2). `host` berisi nama pemilik kuis (field `nama` pada koleksi `users`, diambil dari `user_id` kuis); `user_id` tidak dikembalikan pada feed ini. Feed publik **tidak** mengembalikan daftar soal; sebagai gantinya dikirim ringkasan `total_questions` (jumlah soal), `total_duration` (jumlah durasi semua soal dalam detik), dan `total_skor` (jumlah skor semua soal). `status` di level kuis tidak dikembalikan pada endpoint ini (status room terbaru sudah direpresentasikan oleh nama grup). Kuis berstatus `waiting` maupun yang belum punya room tidak ditampilkan. Pin room (`kode`) **tidak** dikembalikan pada feed publik ini; klien harus memverifikasi pin lewat `POST /api/rooms/verify` (§5.3) untuk mendapat data room.
+> `path` berisi **signed URL** gambar kuis hasil unggahan Cloudinary (lihat §4.2–§4.4). `host` berisi nama pemilik kuis (field `nama` pada koleksi `users`, diambil dari `user_id` kuis); `user_id` tidak dikembalikan pada feed ini. Feed publik **tidak** mengembalikan daftar soal; sebagai gantinya dikirim ringkasan `total_questions` (jumlah soal), `total_duration` (jumlah durasi semua soal dalam detik), dan `total_skor` (jumlah skor semua soal). `status` di level kuis tidak dikembalikan pada endpoint ini (status room terbaru sudah direpresentasikan oleh nama grup). Kuis berstatus `waiting` maupun yang belum punya room tidak ditampilkan. Pin room (`kode`) **tidak** dikembalikan pada feed publik ini; klien harus memverifikasi pin lewat `POST /api/rooms/verify` (§5.3) untuk mendapat data room.
 
 **Contoh response — `401 Unauthorized`**
 
@@ -724,7 +860,7 @@ Content-Type: application/json
       "id": "6651a0ab...",
       "title": "Kuis Pemrograman Mobile",
       "description": "Dasar Flutter & Dart",
-      "path": "https://res.cloudinary.com/quiz/image/upload/v123/galery-quiz/quiz-image/kuis-mobile.png",
+      "path": "https://res.cloudinary.com/quiz/image/authenticated/s--aBcD1234--/galery-quiz/quiz-image/kuis-mobile.png",
       "total_questions": 10
     },
     "kode": "482913",
@@ -815,7 +951,7 @@ Content-Type: application/json
       "id": "6651a0ab...",
       "title": "Kuis Pemrograman Mobile",
       "description": "Dasar Flutter & Dart",
-      "path": "https://res.cloudinary.com/quiz/image/upload/v123/galery-quiz/quiz-image/kuis-mobile.png",
+      "path": "https://res.cloudinary.com/quiz/image/authenticated/s--aBcD1234--/galery-quiz/quiz-image/kuis-mobile.png",
       "total_questions": 10
     },
     "kode": "482913",
@@ -894,7 +1030,7 @@ Content-Type: application/json
       "id": "6651a0ab...",
       "title": "Kuis Pemrograman Mobile",
       "description": "Dasar Flutter & Dart",
-      "path": "https://res.cloudinary.com/quiz/image/upload/v123/galery-quiz/quiz-image/kuis-mobile.png",
+      "path": "https://res.cloudinary.com/quiz/image/authenticated/s--aBcD1234--/galery-quiz/quiz-image/kuis-mobile.png",
       "total_questions": 10
     },
     "kode": "482913",
@@ -1094,7 +1230,7 @@ Authorization: Bearer <TOKEN>
       "id": "6651a0ab...",
       "title": "Kuis Pemrograman Mobile",
       "description": "Dasar Flutter & Dart",
-      "path": "https://res.cloudinary.com/quiz/image/upload/v123/galery-quiz/quiz-image/kuis-mobile.png",
+      "path": "https://res.cloudinary.com/quiz/image/authenticated/s--aBcD1234--/galery-quiz/quiz-image/kuis-mobile.png",
       "total_questions": 10
     },
     "entries": [
@@ -1181,7 +1317,7 @@ Content-Type: application/json
       "id": "6651a0ab...",
       "title": "Kuis Pemrograman Mobile",
       "description": "Dasar Flutter & Dart",
-      "path": "https://res.cloudinary.com/quiz/image/upload/v123/galery-quiz/quiz-image/kuis-mobile.png",
+      "path": "https://res.cloudinary.com/quiz/image/authenticated/s--aBcD1234--/galery-quiz/quiz-image/kuis-mobile.png",
       "total_questions": 10
     },
     "entries": [
@@ -1543,9 +1679,9 @@ wscat -c "ws://localhost:8080/api/rooms?token=<JWT room>&name=klien-a" \
 | 403 | Otorisasi gagal (resource bukan milik Anda / perangkat lain) | `Anda tidak punya akses ke kuis ini` / `Token room bukan milik pengguna ini` / `Akun sudah terikat pada perangkat lain` |
 | 404 | Data tidak ditemukan | `Kuis tidak ditemukan` / `Room tidak ditemukan` / `Result tidak ditemukan` / `Emoji tidak ditemukan` |
 | 409 | Konflik data (duplikat) | `Username sudah terdaftar` / `Room sudah memiliki result` / `Emoji dengan path ini sudah ada` |
-| 413 | Body request terlalu besar (> 1 MiB; multipart unggahan > 5 MB) | `Body request terlalu besar (maksimal 1 MiB)` / `Ukuran unggahan terlalu besar (maksimal 5 MB)` |
+| 413 | Body request terlalu besar (> 1 MiB) | `Body request terlalu besar (maksimal 1 MiB)` |
 | 415 | Content-Type bukan JSON | `Content-Type harus application/json` |
 | 429 | Rate limit terlampaui | `Terlalu banyak percobaan login, coba lagi nanti` |
 | 500 | Error server | `Gagal membuat akun` / `Gagal membuat room` / `Gagal membuat token room` |
 
-> Selain endpoint multipart `POST /api/create/quiz`, semua endpoint yang menerima body JSON memakai validator yang sama sehingga dapat mengembalikan `413` dan `415` di luar daftar contoh per-endpoint di atas. Endpoint dengan `middleware.Auth` juga dapat mengembalikan `401` allowlist device.
+> Semua endpoint yang menerima body JSON memakai validator yang sama sehingga dapat mengembalikan `413` dan `415` di luar daftar contoh per-endpoint di atas. Endpoint dengan `middleware.Auth` juga dapat mengembalikan `401` allowlist device. Endpoint `POST /image/upload` (§4.3) disediakan Cloudinary, bukan oleh server ini.

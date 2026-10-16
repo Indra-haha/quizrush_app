@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
@@ -54,6 +55,16 @@ class _CreateQuizPageState extends State<CreateQuizPage> {
   bool _saving = false;
   bool _pickingImage = false;
 
+  /// Identitas aset gambar hasil unggah Cloudinary (public_id + format);
+  /// dikirim sebagai `image_id`/`image_format` saat save.
+  QuizImageAsset? _imageUpload;
+  bool _uploading = false;
+  bool _uploadFailed = false;
+  String? _uploadLabel;
+
+  /// Penanda urutan unggah supaya hasil upload gambar lama diabaikan.
+  int _uploadSeq = 0;
+
   @override
   void dispose() {
     _titleController.dispose();
@@ -84,7 +95,12 @@ class _CreateQuizPageState extends State<CreateQuizPage> {
       setState(() {
         _image = picked;
         _imageBytes = bytes;
+        _imageUpload = null;
+        _uploadFailed = false;
+        _uploading = true;
+        _uploadLabel = QuizImageUploadStage.requestingSignature.label;
       });
+      unawaited(_uploadImage());
     } catch (e) {
       if (!mounted) return;
       AppSnackBar.error(context, 'Gagal memilih gambar. ($e)');
@@ -93,10 +109,81 @@ class _CreateQuizPageState extends State<CreateQuizPage> {
     }
   }
 
+  /// Upload gambar terpilih ke Cloudinary: minta signature lalu unggah
+  /// langsung (§4.2–§4.3). Hasilnya disimpan ke [_imageUpload].
+  Future<void> _uploadImage() async {
+    final image = _image;
+    final bytes = _imageBytes;
+    if (image == null || bytes == null) return;
+    final seq = ++_uploadSeq;
+
+    final token = await SessionService.instance.getToken();
+    if (token == null) {
+      if (!mounted || seq != _uploadSeq) return;
+      setState(() {
+        _uploading = false;
+        _uploadFailed = true;
+        _uploadLabel = null;
+      });
+      AppSnackBar.error(context, 'Sesi login berakhir. Silakan login kembali.');
+      return;
+    }
+
+    try {
+      final upload = await QuizService.instance.uploadQuizImage(
+        token: token,
+        imageBytes: bytes,
+        imageFilename: _imageFilename(image),
+        onStage: (stage) {
+          if (!mounted || seq != _uploadSeq) return;
+          setState(() => _uploadLabel = stage.label);
+        },
+      );
+      if (!mounted || seq != _uploadSeq) return;
+      setState(() {
+        _imageUpload = upload;
+        _uploading = false;
+        _uploadFailed = false;
+        _uploadLabel = null;
+      });
+    } on ApiException catch (e) {
+      if (!mounted || seq != _uploadSeq) return;
+      setState(() {
+        _uploading = false;
+        _uploadFailed = true;
+        _uploadLabel = null;
+      });
+      AppSnackBar.error(context, e.message);
+    } catch (e) {
+      if (!mounted || seq != _uploadSeq) return;
+      setState(() {
+        _uploading = false;
+        _uploadFailed = true;
+        _uploadLabel = null;
+      });
+      AppSnackBar.error(context, 'Tidak dapat terhubung ke server. ($e)');
+    }
+  }
+
+  void _retryUpload() {
+    if (_uploading || _imageBytes == null) return;
+    setState(() {
+      _uploading = true;
+      _uploadFailed = false;
+      _uploadLabel = QuizImageUploadStage.requestingSignature.label;
+    });
+    unawaited(_uploadImage());
+  }
+
   void _removeImage() {
+    _uploadSeq++;
     setState(() {
       _image = null;
       _imageBytes = null;
+      _imageUpload = null;
+      _uploading = false;
+      _uploadFailed = false;
+      _uploadLabel = null;
     });
   }
 
@@ -133,9 +220,17 @@ class _CreateQuizPageState extends State<CreateQuizPage> {
   }
 
   Future<void> _save() async {
+    if (_uploading) return;
     final error = _validate();
     if (error != null) {
       AppSnackBar.error(context, error);
+      return;
+    }
+    if (_imageUpload == null) {
+      AppSnackBar.error(
+        context,
+        'Gambar belum berhasil diunggah. Ketuk "Coba lagi" pada gambar.',
+      );
       return;
     }
 
@@ -167,8 +262,8 @@ class _CreateQuizPageState extends State<CreateQuizPage> {
         title: _titleController.text.trim(),
         description: _descriptionController.text.trim(),
         questions: questions,
-        imageBytes: _imageBytes!,
-        imageFilename: _imageFilename(_image!),
+        imageId: _imageUpload!.id,
+        imageFormat: _imageUpload!.format,
       );
       if (!mounted) return;
       Navigator.of(context).pop(true);
@@ -196,7 +291,7 @@ class _CreateQuizPageState extends State<CreateQuizPage> {
         actions: [
           AppPrimaryButton(
             label: 'Simpan Quiz',
-            onPressed: _save,
+            onPressed: _uploading ? null : _save,
             loading: _saving,
             radius: 9999,
             padding: const EdgeInsets.symmetric(
@@ -230,8 +325,12 @@ class _CreateQuizPageState extends State<CreateQuizPage> {
                 QuizImagePicker(
                   bytes: _imageBytes,
                   picking: _pickingImage,
+                  uploading: _uploading,
+                  uploadLabel: _uploadLabel,
+                  uploadError: _uploadFailed,
                   onPick: _pickImage,
                   onRemove: _removeImage,
+                  onRetry: _retryUpload,
                 ),
                 const SizedBox(height: AppSpacing.space10),
                 for (var i = 0; i < _questions.length; i++) ...[

@@ -419,6 +419,54 @@ void main() {
       await tester.tap(find.byIcon(Icons.close));
       expect(removes, 1);
     });
+
+    testWidgets('mode uploading menampilkan overlay progres dengan label', (
+      WidgetTester tester,
+    ) async {
+      final bytes = base64Decode(
+        'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=',
+      );
+      await tester.pumpWidget(
+        _wrap(
+          QuizImagePicker(
+            bytes: bytes,
+            uploading: true,
+            uploadLabel: 'Minta signature ke server…',
+            onPick: () {},
+            onRemove: () {},
+          ),
+        ),
+      );
+
+      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+      expect(find.text('Minta signature ke server…'), findsOneWidget);
+      expect(find.byIcon(Icons.close), findsOneWidget);
+    });
+
+    testWidgets('mode error menampilkan tombol Coba lagi yang memanggil onRetry', (
+      WidgetTester tester,
+    ) async {
+      final bytes = base64Decode(
+        'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=',
+      );
+      var retries = 0;
+      await tester.pumpWidget(
+        _wrap(
+          QuizImagePicker(
+            bytes: bytes,
+            uploadError: true,
+            onPick: () {},
+            onRemove: () {},
+            onRetry: () => retries++,
+          ),
+        ),
+      );
+
+      expect(find.text('Gagal mengunggah ke Cloudinary'), findsOneWidget);
+      expect(find.text('Coba lagi'), findsOneWidget);
+      await tester.tap(find.text('Coba lagi'));
+      expect(retries, 1);
+    });
   });
 
   group('QuizQuestionEditor', () {

@@ -203,16 +203,150 @@ void main() {
       );
     });
 
-    test('createQuiz mengunggah multipart dan mem-parse quiz', () async {
-      String? method;
-      String? path;
+    test('uploadQuizImage: signature lalu upload authenticated lalu public_id/format', () async {
+      final calls = <String>[];
+      final stages = <QuizImageUploadStage>[];
+
+      final service = QuizService.withApi(
+        _api((request) async {
+          calls.add('${request.url.host}${request.url.path}');
+          if (request.url.path == '/api/create/signature') {
+            final body = jsonDecode(request.body) as Map<String, dynamic>;
+            expect(body['folder'], 'galery-quiz/quiz-image');
+            expect(request.headers['authorization'], 'Bearer token');
+            return _json(
+              '{"success":true,"signature":"abc123","timestamp":1792154580,'
+              '"apiKey":"123456789012345","cloudName":"dlxxyz123",'
+              '"type":"authenticated"}',
+              200,
+            );
+          }
+          expect(request.url.path, '/v1_1/dlxxyz123/image/upload');
+          expect(request.headers['content-type'], contains('multipart/form-data'));
+          final body = request.body;
+          expect(body, contains('name="api_key"'));
+          expect(body, contains('123456789012345'));
+          expect(body, contains('name="timestamp"'));
+          expect(body, contains('1792154580'));
+          expect(body, contains('name="signature"'));
+          expect(body, contains('abc123'));
+          expect(body, contains('name="folder"'));
+          expect(body, contains('galery-quiz/quiz-image'));
+          expect(body, contains('name="type"'));
+          expect(body, contains('authenticated'));
+          expect(body, contains('filename="cover.png"'));
+          return _json(
+            '{"public_id":"galery-quiz/quiz-image/cover","format":"png",'
+            '"secure_url":"https://res.cloudinary.com/dlxxyz123/image/'
+            'authenticated/v1792154580/galery-quiz/quiz-image/cover.png"}',
+            200,
+          );
+        }),
+      );
+
+      final asset = await service.uploadQuizImage(
+        token: 'token',
+        imageBytes: 'PNGDATA'.codeUnits,
+        imageFilename: 'cover.png',
+        onStage: stages.add,
+      );
+
+      expect(calls, [
+        'test.local/api/create/signature',
+        'api.cloudinary.com/v1_1/dlxxyz123/image/upload',
+      ]);
+      expect(stages, [
+        QuizImageUploadStage.requestingSignature,
+        QuizImageUploadStage.uploading,
+      ]);
+      expect(asset.id, 'galery-quiz/quiz-image/cover');
+      expect(asset.format, 'png');
+    });
+
+    test('uploadQuizImage menerima signature snake_case & timestamp string', () async {
+      final service = QuizService.withApi(
+        _api((request) async {
+          if (request.url.path == '/api/create/signature') {
+            return _json(
+              '{"signature":"abc","timestamp":"1792154580",'
+              '"api_key":"key","cloud_name":"cloud"}',
+              200,
+            );
+          }
+          expect(request.url.path, '/v1_1/cloud/image/upload');
+          expect(request.body, contains('name="type"'));
+          expect(request.body, contains('authenticated'));
+          return _json('{"public_id":"x","format":"png"}', 200);
+        }),
+      );
+
+      final asset = await service.uploadQuizImage(
+        token: 'token',
+        imageBytes: 'PNGDATA'.codeUnits,
+        imageFilename: 'x.png',
+      );
+
+      expect(asset.id, 'x');
+      expect(asset.format, 'png');
+    });
+
+    test('uploadQuizImage signature gagal melempar ApiException sebelum upload', () async {
+      var uploaded = false;
+      final service = QuizService.withApi(
+        _api((request) async {
+          if (request.url.host == 'api.cloudinary.com') {
+            uploaded = true;
+          }
+          return _json('{"message":"konfigurasi Cloudinary belum lengkap"}', 500);
+        }),
+      );
+      await expectLater(
+        () => service.uploadQuizImage(
+          token: 'token',
+          imageBytes: const [1, 2, 3],
+          imageFilename: 'c.png',
+        ),
+        throwsA(
+          isA<ApiException>()
+              .having((e) => e.statusCode, 'status', 500)
+              .having((e) => e.message, 'message', 'konfigurasi Cloudinary belum lengkap'),
+        ),
+      );
+      expect(uploaded, isFalse);
+    });
+
+    test('uploadQuizImage gagal upload Cloudinary melempar ApiException', () async {
+      final service = QuizService.withApi(
+        _api((request) async {
+          if (request.url.path == '/api/create/signature') {
+            return _json(
+              '{"signature":"abc","timestamp":1,"apiKey":"k","cloudName":"c"}',
+              200,
+            );
+          }
+          return _json('{"error":{"message":"Signature match invalid"}}', 401);
+        }),
+      );
+      expect(
+        () => service.uploadQuizImage(
+          token: 'token',
+          imageBytes: const [1, 2, 3],
+          imageFilename: 'c.png',
+        ),
+        throwsA(
+          isA<ApiException>()
+              .having((e) => e.statusCode, 'status', 401)
+              .having((e) => e.message, 'message', 'Signature match invalid'),
+        ),
+      );
+    });
+
+    test('createQuiz mengirim JSON berisi image_id/image_format dan mem-parse quiz', () async {
       String? contentType;
       String? body;
 
       final service = QuizService.withApi(
         _api((request) async {
-          method = request.method;
-          path = request.url.path;
           contentType = request.headers['content-type'];
           body = request.body;
           return _json('{"quiz":{"id":"q9","title":"Kuis Baru"}}', 201);
@@ -232,14 +366,14 @@ void main() {
             skor: 10,
           ),
         ],
-        imageBytes: 'PNGDATA'.codeUnits,
-        imageFilename: 'cover.png',
+        imageId: 'galery-quiz/quiz-image/cover',
+        imageFormat: 'png',
       );
 
-      expect(method, 'POST');
-      expect(path, '/api/create/quiz');
-      expect(contentType, contains('multipart/form-data'));
+      expect(contentType, 'application/json');
       expect(body, contains('"title":"Kuis Baru"'));
+      expect(body, contains('"image_id":"galery-quiz/quiz-image/cover"'));
+      expect(body, contains('"image_format":"png"'));
       expect(quiz.id, 'q9');
     });
 
@@ -252,8 +386,8 @@ void main() {
           token: 'token',
           title: 'Kuis',
           questions: const [],
-          imageBytes: const [1, 2, 3],
-          imageFilename: 'c.png',
+          imageId: 'galery-quiz/quiz-image/c',
+          imageFormat: 'png',
         ),
         throwsA(
           isA<ApiException>()

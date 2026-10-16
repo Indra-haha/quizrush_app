@@ -147,10 +147,12 @@ REST (bukan Supabase/Firebase) memakai `package:http`, dengan JSON dua arah dan 
 | Service | Endpoint |
 |---|---|
 | `AuthService` | `POST /api/login` · `POST /api/register` · `POST /api/logout` · `GET /api/session` |
-| `QuizService` | `GET /api/quizzes` · `GET /api/my-quizzes` · `POST /api/create/quiz` |
+| `QuizService` | `GET /api/quizzes` · `GET /api/my-quizzes` · `POST /api/create/signature` · unggah langsung ke Cloudinary · `POST /api/create/quiz` |
 | `RoomService` | `POST /api/create/room` · `PUT /api/room/{id}/status` |
 
 Semua request selain login/register mengirim `Authorization: Bearer <token>`; token berlaku 24 jam. `ApiException` dengan `statusCode == 401` diubah menjadi `needsAuth: true` yang memicu `LoginRedirect.go` ke halaman login.
+
+Gambar kuis **diunggah otomatis begitu dipilih**: aplikasi meminta signature ke `POST /api/create/signature`, mengunggah langsung ke Cloudinary sebagai aset `authenticated` (overlay progres 2 tahap tampil di atas gambar), lalu `POST /api/create/quiz` mengirim `image_id` (`public_id`) dan `image_format` hasilnya. Server menyimpan aset dan mengembalikan **signed URL** (field `path`) saat kuis dibaca, sehingga gambar hanya dapat diakses user yang login. Unggahan berjalan di latar belakang — tombol Simpan nonaktif sampai selesai, dan gagal unggah menampilkan tombol "Coba lagi" di atas gambar.
 
 Rujukan endpoint lengkap tersedia di **`API.md`**.
 
