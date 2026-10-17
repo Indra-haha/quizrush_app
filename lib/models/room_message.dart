@@ -1,6 +1,6 @@
 import '../helpers/json.dart';
 
-/// Satu frame pesan JSON dari WebSocket room (API.md §8, "Format pesan").
+/// Satu frame pesan JSON dari WebSocket room (API.md §9, "Format pesan").
 ///
 /// `type` paling sering dipakai: dari server `connected`, `join`, `leave`,
 /// `broadcast`; dari klien `ping`, `echo`, `count`, `broadcast`.

@@ -17,7 +17,7 @@ import '../../widgets/status_badge.dart';
 
 /// Ruang tunggu (lobby) quiz setelah PIN terverifikasi.
 ///
-/// Membuka WebSocket `GET /api/rooms?token=<JWT room>` (API.md §8.1) lalu
+/// Membuka WebSocket `GET /api/rooms?token=<JWT room>` (API.md §9.1) lalu
 /// menampilkan status koneksi, jumlah pemain di room (`users`), dan chat
 /// antar pemain (pesan `broadcast`).
 class WaitingRoomPage extends StatefulWidget {

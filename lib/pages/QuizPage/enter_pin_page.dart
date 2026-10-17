@@ -13,7 +13,7 @@ import '../../widgets/pin_input_field.dart';
 /// Halaman input PIN room: memverifikasi 6 digit PIN lewat
 /// `POST /api/rooms/verify` (API.md §5.3) lalu, kalau valid, mengganti halaman
 /// ini dengan ruang tunggu yang membuka WebSocket
-/// `GET /api/rooms?token=<JWT room>` (API.md §8.1).
+/// `GET /api/rooms?token=<JWT room>` (API.md §9.1).
 class EnterPinPage extends StatefulWidget {
   const EnterPinPage({super.key});
 

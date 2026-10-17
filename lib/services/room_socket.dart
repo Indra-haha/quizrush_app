@@ -11,7 +11,7 @@ import 'device_service.dart';
 /// menampilkan indikator "menyambung / tersambung / koneksi terputus".
 enum RoomSocketStatus { connecting, connected, reconnecting, disconnected }
 
-/// Klien WebSocket ruang tunggu (lobby) sesuai API.md §8.1:
+/// Klien WebSocket ruang tunggu (lobby) sesuai API.md §9.1:
 ///
 /// * handshake `GET /api/rooms?token=<JWT room>&name=<nama>` (scheme `http`→
 ///   `ws`, `https`→`wss`) dengan header `Authorization: Bearer <JWT login>`
@@ -62,7 +62,7 @@ class RoomSocket {
     _open(isRetry: false);
   }
 
-  /// Kirim pesan `broadcast` (API.md §8, "Pesan dari klien"). Pesan ini
+  /// Kirim pesan `broadcast` (API.md §9, "Pesan dari klien"). Pesan ini
   /// dibalikkan server ke klien **lain** di room yang sama, bukan ke pengirim.
   void sendBroadcast(String data) {
     final channel = _channel;

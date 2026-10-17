@@ -17,7 +17,7 @@ class RoomService {
   ///
   /// Berhasil (200) mengembalikan JWT ber-scope room + data room; token itulah
   /// yang lalu dipakai sebagai query `token` untuk handshake WebSocket
-  /// `GET /api/rooms?token=<JWT room>` (API.md §8.1).
+  /// `GET /api/rooms?token=<JWT room>` (API.md §9.1).
   Future<RoomVerifyResult> verifyPin({
     required String token,
     required String pin,
