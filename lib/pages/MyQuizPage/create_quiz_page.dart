@@ -20,6 +20,7 @@ import '../../widgets/app_secondary_button.dart';
 import '../../widgets/app_snackbar.dart';
 import '../../widgets/quiz_image_picker.dart';
 import '../../widgets/quiz_question_editor.dart';
+import '../../widgets/status_filter_chip.dart';
 
 class _QuestionData {
   final TextEditingController question = TextEditingController();
@@ -201,9 +202,9 @@ class _CreateQuizPageState extends State<CreateQuizPage> {
     setState(() => _questions.removeAt(index).dispose());
   }
 
-  /// Minta AI membuatkan soal dari [topic], lalu ganti seluruh daftar
+  /// Minta AI membuatkan [count] soal dari [topic], lalu ganti seluruh daftar
   /// pertanyaan di form dengan hasilnya. Balas `true` bila berhasil.
-  Future<bool> _suggest(String topic) async {
+  Future<bool> _suggest(String topic, int count) async {
     final token = await SessionService.instance.getToken();
     if (token == null) {
       if (!mounted) return false;
@@ -215,6 +216,7 @@ class _CreateQuizPageState extends State<CreateQuizPage> {
       final suggested = await AiService.instance.suggestQuestions(
         token: token,
         topic: topic,
+        count: count,
       );
       if (!mounted) return false;
       if (suggested.isEmpty) {
@@ -480,20 +482,24 @@ class _CreateQuizPageState extends State<CreateQuizPage> {
 }
 
 /// Sheet input topik untuk saran AI. Tombol "Buat Soal" memanggil
-/// [onSubmit]; bila sukses sheet ditutup dan editor pertanyaan di halaman
-/// utama sudah terisi hasil AI.
+/// [onSubmit] beserta jumlah soal yang dipilih; bila sukses sheet ditutup dan
+/// editor pertanyaan di halaman utama sudah terisi hasil AI.
 class _SuggestSheet extends StatefulWidget {
   const _SuggestSheet({required this.onSubmit});
 
-  final Future<bool> Function(String topic) onSubmit;
+  final Future<bool> Function(String topic, int count) onSubmit;
 
   @override
   State<_SuggestSheet> createState() => _SuggestSheetState();
 }
 
 class _SuggestSheetState extends State<_SuggestSheet> {
+  /// Pilihan jumlah soal yang didukung server (maksimal 30).
+  static const List<int> _countOptions = [5, 10, 20, 30];
+
   final _controller = TextEditingController();
   bool _loading = false;
+  int _count = 5;
 
   @override
   void dispose() {
@@ -512,7 +518,7 @@ class _SuggestSheetState extends State<_SuggestSheet> {
       return;
     }
     setState(() => _loading = true);
-    final success = await widget.onSubmit(topic);
+    final success = await widget.onSubmit(topic, _count);
     if (!mounted) return;
     if (success) {
       Navigator.of(context).pop();
@@ -544,8 +550,30 @@ class _SuggestSheetState extends State<_SuggestSheet> {
             minLines: 2,
             style: AppTextStyles.bodyLarge,
             decoration: const AppFieldDecoration.bordered(
-              hint: 'mis. "Sejarah Majapahit" atau "10 soal tentang Flutter"...',
+              hint: 'mis. "Sejarah Majapahit" atau "Kecerdasan emosional"...',
             ).build(),
+          ),
+          const SizedBox(height: AppSpacing.space8),
+          Text(
+            'Jumlah soal',
+            style: AppTextStyles.bodyMedium.copyWith(
+              color: AppColors.textSecondary,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.space4),
+          Row(
+            children: [
+              for (var i = 0; i < _countOptions.length; i++) ...[
+                if (i > 0) const SizedBox(width: AppSpacing.space4),
+                StatusFilterChip(
+                  label: '${_countOptions[i]}',
+                  selected: _count == _countOptions[i],
+                  onTap: _loading
+                      ? () {}
+                      : () => setState(() => _count = _countOptions[i]),
+                ),
+              ],
+            ],
           ),
           const SizedBox(height: AppSpacing.space8),
           AppPrimaryButton(
