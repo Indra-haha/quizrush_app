@@ -7,10 +7,12 @@ import 'package:image_picker/image_picker.dart';
 import '../../helpers/quiz_form_validator.dart';
 import '../../helpers/quiz_image.dart';
 import '../../models/quiz.dart';
+import '../../services/ai_service.dart';
 import '../../services/api_client.dart';
 import '../../services/quiz_service.dart';
 import '../../services/session_service.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/app_bottom_sheet.dart';
 import '../../widgets/app_field_decoration.dart';
 import '../../widgets/app_header_bar_with_actions.dart';
 import '../../widgets/app_primary_button.dart';
@@ -199,6 +201,75 @@ class _CreateQuizPageState extends State<CreateQuizPage> {
     setState(() => _questions.removeAt(index).dispose());
   }
 
+  /// Minta AI membuatkan soal dari [topic], lalu ganti seluruh daftar
+  /// pertanyaan di form dengan hasilnya. Balas `true` bila berhasil.
+  Future<bool> _suggest(String topic) async {
+    final token = await SessionService.instance.getToken();
+    if (token == null) {
+      if (!mounted) return false;
+      AppSnackBar.error(context, 'Sesi login berakhir. Silakan login kembali.');
+      return false;
+    }
+
+    try {
+      final suggested = await AiService.instance.suggestQuestions(
+        token: token,
+        topic: topic,
+      );
+      if (!mounted) return false;
+      if (suggested.isEmpty) {
+        AppSnackBar.error(
+          context,
+          'AI tidak menghasilkan soal yang valid. Coba topik lain.',
+        );
+        return false;
+      }
+      setState(() {
+        for (final question in _questions) {
+          question.dispose();
+        }
+        _questions
+          ..clear()
+          ..addAll(suggested.map(_questionFrom));
+      });
+      AppSnackBar.success(
+        context,
+        'Berhasil membuat ${suggested.length} soal dari saran AI.',
+      );
+      return true;
+    } on ApiException catch (e) {
+      if (!mounted) return false;
+      AppSnackBar.error(context, e.message);
+      return false;
+    } catch (e) {
+      if (!mounted) return false;
+      AppSnackBar.error(context, 'Tidak dapat terhubung ke server. ($e)');
+      return false;
+    }
+  }
+
+  /// Buka sheet input topik; hasil AI-nya mengisi editor pertanyaan.
+  void _openSuggestSheet() {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      builder: (_) => _SuggestSheet(onSubmit: _suggest),
+    );
+  }
+
+  /// Bangun controller form soal dari hasil AI.
+  _QuestionData _questionFrom(QuizQuestionInput input) {
+    final question = _QuestionData();
+    question.question.text = input.question;
+    for (var i = 0; i < input.options.length; i++) {
+      question.options[i].text = input.options[i];
+    }
+    question.correctIdx = input.correctIdx;
+    question.duration = input.duration;
+    question.skor.text = '${input.skor}';
+    return question;
+  }
+
   String? _validate() {
     final questions = _questions
         .map(
@@ -332,6 +403,8 @@ class _CreateQuizPageState extends State<CreateQuizPage> {
                   onRemove: _removeImage,
                   onRetry: _retryUpload,
                 ),
+                const SizedBox(height: AppSpacing.space9),
+                _buildSuggestButton(),
                 const SizedBox(height: AppSpacing.space10),
                 for (var i = 0; i < _questions.length; i++) ...[
                   _buildQuestionEditor(i),
@@ -373,6 +446,14 @@ class _CreateQuizPageState extends State<CreateQuizPage> {
     );
   }
 
+  Widget _buildSuggestButton() {
+    return AppSecondaryButton(
+      label: 'Buat Soal dengan AI',
+      icon: Icons.auto_awesome,
+      onPressed: _openSuggestSheet,
+    );
+  }
+
   Widget _buildQuestionEditor(int index) {
     final question = _questions[index];
 
@@ -394,6 +475,88 @@ class _CreateQuizPageState extends State<CreateQuizPage> {
       label: 'Tambah Pertanyaan',
       icon: Icons.add,
       onPressed: _addQuestion,
+    );
+  }
+}
+
+/// Sheet input topik untuk saran AI. Tombol "Buat Soal" memanggil
+/// [onSubmit]; bila sukses sheet ditutup dan editor pertanyaan di halaman
+/// utama sudah terisi hasil AI.
+class _SuggestSheet extends StatefulWidget {
+  const _SuggestSheet({required this.onSubmit});
+
+  final Future<bool> Function(String topic) onSubmit;
+
+  @override
+  State<_SuggestSheet> createState() => _SuggestSheetState();
+}
+
+class _SuggestSheetState extends State<_SuggestSheet> {
+  final _controller = TextEditingController();
+  bool _loading = false;
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    if (_loading) return;
+    final topic = _controller.text.trim();
+    if (topic.isEmpty) {
+      AppSnackBar.error(
+        context,
+        'Masukkan topik atau ide soal terlebih dahulu.',
+      );
+      return;
+    }
+    setState(() => _loading = true);
+    final success = await widget.onSubmit(topic);
+    if (!mounted) return;
+    if (success) {
+      Navigator.of(context).pop();
+    } else {
+      setState(() => _loading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
+      child: AppBottomSheet(
+        title: 'Buat Soal dengan AI',
+        children: [
+          Text(
+            'Masukkan topik/ide soal, hasilnya akan mengisi seluruh '
+            'pertanyaan di form.',
+            style: AppTextStyles.bodyMedium.copyWith(
+              color: AppColors.textSecondary,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.space8),
+          TextField(
+            controller: _controller,
+            autofocus: true,
+            enabled: !_loading,
+            maxLines: null,
+            minLines: 2,
+            style: AppTextStyles.bodyLarge,
+            decoration: const AppFieldDecoration.bordered(
+              hint: 'mis. "Sejarah Majapahit" atau "10 soal tentang Flutter"...',
+            ).build(),
+          ),
+          const SizedBox(height: AppSpacing.space8),
+          AppPrimaryButton(
+            label: 'Buat Soal',
+            icon: Icons.auto_awesome,
+            loading: _loading,
+            loadingLabel: 'Membuat soal...',
+            onPressed: _submit,
+          ),
+        ],
+      ),
     );
   }
 }

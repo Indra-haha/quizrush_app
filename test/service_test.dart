@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:quizrush/helpers/password_hasher.dart';
 import 'package:quizrush/models/quiz.dart';
+import 'package:quizrush/services/ai_service.dart';
 import 'package:quizrush/services/api_client.dart';
 import 'package:quizrush/services/auth_service.dart';
 import 'package:quizrush/services/quiz_service.dart';
@@ -457,6 +458,99 @@ void main() {
       );
       expect(method, 'PUT');
       expect(room.status, 'open');
+    });
+  });
+
+  group('AiService', () {
+    test('suggestQuestions mengirim topic dan mem-parse daftar soal', () async {
+      String? path;
+      String? auth;
+      Map<String, dynamic>? body;
+      final service = AiService.withApi(
+        _api((request) async {
+          path = request.url.path;
+          auth = request.headers['Authorization'];
+          body = jsonDecode(request.body) as Map<String, dynamic>;
+          return _json(
+            '''
+{
+  "message": "Saran soal berhasil dibuat",
+  "questions": [
+    {
+      "question": "Apa ibu kota Indonesia?",
+      "options": ["Bandung", "Jakarta", "Surabaya", "Medan"],
+      "correct_idx": 1,
+      "duration": 3,
+      "skor": 20
+    }
+  ]
+}''',
+            200,
+          );
+        }),
+      );
+
+      final result = await service.suggestQuestions(
+        token: 'tok',
+        topic: 'Geografi Indonesia',
+      );
+      expect(path, '/api/ai/suggest');
+      expect(auth, 'Bearer tok');
+      expect(body?['topic'], 'Geografi Indonesia');
+      expect(body?['count'], 5);
+      expect(result, hasLength(1));
+      expect(result.first.question, 'Apa ibu kota Indonesia?');
+      expect(result.first.options, hasLength(4));
+      expect(result.first.correctIdx, 1);
+      expect(result.first.duration, 3);
+      expect(result.first.skor, 20);
+    });
+
+    test('suggestQuestions membuang soal tidak valid dan menormalisasi', () async {
+      final service = AiService.withApi(
+        _api(
+          (_) async => _json(
+            '''
+{
+  "questions": [
+    { "question": "", "options": ["a","b","c","d"], "correct_idx": 0, "duration": 2, "skor": 10 },
+    { "question": "Opsi tidak 4", "options": ["a","b"], "correct_idx": 0, "duration": 2, "skor": 10 },
+    { "question": "Di luar batas", "options": ["a","b","c","d"], "correct_idx": 9, "duration": 7.5, "skor": 999 }
+  ]
+}''',
+            200,
+          ),
+        ),
+      );
+
+      final result = await service.suggestQuestions(token: 't', topic: 'x');
+      expect(result, hasLength(1));
+      expect(result.first.question, 'Di luar batas');
+      expect(result.first.correctIdx, 0);
+      expect(result.first.duration, 2.0);
+      expect(result.first.skor, 10);
+    });
+
+    test('suggestQuestions melempar ApiException saat gagal', () async {
+      final service = AiService.withApi(
+        _api((_) async => _json('{"message":"Model AI sedang sibuk"}', 502)),
+      );
+      expect(
+        () => service.suggestQuestions(token: 't', topic: 'x'),
+        throwsA(
+          isA<ApiException>()
+              .having((e) => e.statusCode, 'statusCode', 502)
+              .having((e) => e.message, 'message', 'Model AI sedang sibuk'),
+        ),
+      );
+    });
+
+    test('suggestQuestions mengembalikan list kosong saat questions bukan list', () async {
+      final service = AiService.withApi(
+        _api((_) async => _json('{"questions":"bukan-list"}', 200)),
+      );
+      final result = await service.suggestQuestions(token: 't', topic: 'x');
+      expect(result, isEmpty);
     });
   });
 }
