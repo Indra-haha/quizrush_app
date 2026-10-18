@@ -49,13 +49,15 @@ class QuizCacheService {
   }
 
   Future<Quizes?> getQuizById(String id) async {
-    final all = await readAll();
+    // Cache mine lebih dulu: feed publik hanya berisi ringkasan tanpa
+    // `questions[]`, sedangkan mine membawa soal mentah (/api/my-quizzes).
     final mine = await readMine();
-    if (all != null) {
-      final hit = _findById(all.all, id);
+    if (mine != null) {
+      final hit = _findById(mine.all, id);
       if (hit != null) return hit;
     }
-    if (mine != null) return _findById(mine.all, id);
+    final all = await readAll();
+    if (all != null) return _findById(all.all, id);
     return null;
   }
 

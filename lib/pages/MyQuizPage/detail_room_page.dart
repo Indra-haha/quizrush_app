@@ -60,7 +60,9 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
 
     final cached = await QuizFeed.readCachedQuizById(widget.quizId);
     if (!mounted) return;
-    if (cached == null) {
+    // Cache ringkasan (feed publik) tidak punya soal mentah — tarik mine
+    // feed dari server supaya preview pertanyaan tetap tampil.
+    if (cached == null || cached.questions.isEmpty) {
       await _sync();
       return;
     }
@@ -186,7 +188,7 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
       );
     }
 
-    final total = quiz.questions.length;
+    final total = quiz.questionCount;
     final preview = quiz.questions.take(_visibleCount).toList();
     final remaining = total - preview.length;
 
@@ -262,7 +264,7 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
           AppStatTile.detailed(
             icon: Icons.list_alt,
             iconBg: AppColors.primarySoft,
-            value: '${quiz.questions.length}',
+            value: '${quiz.questionCount}',
             label: 'Total Pertanyaan',
           ),
           const SizedBox(height: AppSpacing.space4),
