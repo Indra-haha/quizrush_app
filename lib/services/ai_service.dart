@@ -21,17 +21,16 @@ class AiService {
 
   /// Minta model AI membuatkan daftar soal dari [topic] (topik/ide teks bebas).
   ///
-  /// Jumlah soal dikembalikan mengikuti permintaan server/model; hasil yang
+  /// Jumlah soal ditentukan oleh server/model dari isi [topic]; hasil yang
   /// tidak valid (opsi tidak berjumlah 4, dsb.) dibuang, bukan dilempar error.
   Future<List<QuizQuestionInput>> suggestQuestions({
     required String token,
     required String topic,
-    int count = 5,
   }) async {
     final response = await _api.post(
       suggestPath,
       token: token,
-      body: {'topic': topic, 'count': count},
+      body: {'topic': topic},
       timeout: const Duration(seconds: 90),
     );
     final data = ApiClient.decode(response);

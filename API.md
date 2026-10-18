@@ -30,6 +30,9 @@ Semua endpoint yang dilindungi `middleware.Auth` (dan `POST /api/login`) menerap
 | `ALLOWED_ORIGINS` | ✗ | origin se-host | Daftar origin yang diizinkan untuk handshake WebSocket (pisahkan koma) |
 | `CLEANUP_ORPHAN_COLLECTIONS` | ✗ | `false` | `true` mengizinkan penghapusan koleksi orphan `anggota`/`anggotas` saat startup |
 | `CLOUDINARY_URL` | ✗ | — | Kredensial Cloudinary (`cloudinary://<api_key>:<api_secret>@<cloud_name>`); alternatif: `CLOUDINARY_CLOUD_NAME` + `CLOUDINARY_API_KEY` + `CLOUDINARY_API_SECRET`. Kosong = client media tidak aktif (server tetap berjalan) |
+| `AI_API_KEY` | ✗ | — | API key penyedia model AI (API gaya OpenAI-compatible). Kosong = `POST /api/ai/suggest` merespons 502 (server tetap berjalan) |
+| `AI_BASE_URL` | ✗ | `https://api.openai.com/v1` | Base URL API AI yang mendukung endpoint `/chat/completions` |
+| `AI_MODEL` | ✗ | `gpt-4o-mini` | Nama model AI yang dipakai untuk saran soal |
 
 ---
 
@@ -1415,8 +1418,11 @@ Authorization: Bearer <TOKEN>
 
 Endpoint ini dipanggil halaman **Create Quiz** dari aplikasi ketika pengguna
 menekan tombol "Buat Soal dengan AI" lalu mengirim topik lewat bottom sheet.
-Klien mengirim **topik/ide teks bebas** (mis. `"Sejarah Majapahit"` atau
-`"10 soal tentang Flutter"`), server meneruskannya ke model AI, lalu
+Klien hanya mengirim **topik/ide teks bebas** (mis. `"Sejarah Majapahit"` atau
+`"10 soal tentang Flutter"`). Server mengambil jumlah soal dari teks topik
+lewat pola `N soal` (mis. `"10 soal tentang Flutter"` → 10 soal); bila topik
+tidak memuat angka tersebut, dipakai **jumlah default 5** (maksimal 30; bila
+lebih dari 30 permintaan ditolak). Server lalu meneruskan topik ke model AI dan
 membalikkan daftar soal yang **sudah memenuhi aturan kuis (§4.4)**: tepat 4
 opsi, `correct_idx` 0–3, `duration` ∈ {`1.5`, `2`, `3`, `5`}, dan `skor`
 1–50.
@@ -1430,8 +1436,7 @@ timeout ≥ 60 detik.
 
 | No | Field | Tipe | Wajib | Deskripsi |
 |---|---|---|---|---|
-| 1 | `topic` | string | ✅ | Topik/ide soal dalam bentuk teks bebas |
-| 2 | `count` | int | ✗ | Jumlah soal yang diminta (default 5; server boleh membatasi maksimal) |
+| 1 | `topic` | string | ✅ | Topik/ide soal dalam bentuk teks bebas; jumlah soal diambil dari pola `N soal` (default 5, maksimal 30) |
 
 **Contoh request:**
 
@@ -1442,8 +1447,7 @@ Authorization: Bearer <TOKEN>
 Content-Type: application/json
 
 {
-  "topic": "Sejarah Majapahit",
-  "count": 5
+  "topic": "2 soal tentang Sejarah Majapahit"
 }
 ```
 
@@ -1452,7 +1456,7 @@ Content-Type: application/json
 | Status | Deskripsi |
 |---|---|
 | 200 | Berhasil; berisi daftar soal hasil AI |
-| 400 | `topic` kosong / `count` tidak valid |
+| 400 | `topic` kosong / jumlah soal pada topik di luar rentang 1–30 |
 | 401 | Token tidak valid / sesi berakhir / bukan smartphone |
 | 415 | Content-Type bukan JSON |
 | 502 | Model AI gagal merespons |
@@ -1488,7 +1492,7 @@ Content-Type: application/json
 // topic kosong
 { "message": "Topik soal wajib diisi" }
 
-// count di luar rentang yang diizinkan
+// jumlah soal pada topik di luar rentang yang diizinkan (mis. "50 soal tentang Flutter")
 { "message": "Jumlah soal tidak valid" }
 ```
 

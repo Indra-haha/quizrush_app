@@ -497,7 +497,7 @@ void main() {
       expect(path, '/api/ai/suggest');
       expect(auth, 'Bearer tok');
       expect(body?['topic'], 'Geografi Indonesia');
-      expect(body?['count'], 5);
+      expect(body!.containsKey('count'), isFalse);
       expect(result, hasLength(1));
       expect(result.first.question, 'Apa ibu kota Indonesia?');
       expect(result.first.options, hasLength(4));
