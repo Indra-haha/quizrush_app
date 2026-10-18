@@ -13,19 +13,19 @@ import '../../widgets/app_primary_button.dart';
 
 Future<Room?> showCreateRoomSheet(
   BuildContext context,
-  List<Quizes> quarantine,
+  List<Quizes> all,
 ) {
   return showModalBottomSheet<Room>(
     context: context,
     isScrollControlled: true,
-    builder: (_) => CreateRoomSheet(quarantine: quarantine),
+    builder: (_) => CreateRoomSheet(all: all),
   );
 }
 
 class CreateRoomSheet extends StatefulWidget {
-  final List<Quizes> quarantine;
+  final List<Quizes> all;
 
-  const CreateRoomSheet({super.key, required this.quarantine});
+  const CreateRoomSheet({super.key, required this.all});
 
   @override
   State<CreateRoomSheet> createState() => _CreateRoomSheetState();
@@ -39,7 +39,7 @@ class _CreateRoomSheetState extends State<CreateRoomSheet> {
   bool _submitting = false;
   String? _error;
 
-  List<Quizes> get _quarantine => widget.quarantine;
+  List<Quizes> get _quarantine => widget.all;
 
   @override
   void dispose() {

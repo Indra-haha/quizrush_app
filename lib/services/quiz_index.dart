@@ -26,6 +26,10 @@ class QuizCache {
 class QuizIndex {
   final DateTime savedAt;
 
+  /// Grup sintetis yang menggabungkan quiz dari semua status. Bukan status asli
+  /// dari server, dipakai supaya filter "All" tetap lewat satu pintu [group].
+  static const allGroup = 'all';
+
   final Map<String, Quizes> byId;
   final Map<String, List<Quizes>> byGroup;
   final Map<String, ({String quizId, String roomId})> byKode;
@@ -77,7 +81,12 @@ class QuizIndex {
 
   bool get isEmpty => byId.isEmpty;
 
-  List<Quizes> group(String status) => byGroup[status] ?? const <Quizes>[];
+  /// Quiz dalam satu status. [allGroup] mengumpulkan quiz dari semua status
+  /// (urutan cache: waiting → open → in-Game → ended → quarantine).
+  List<Quizes> group(String status) {
+    if (status == allGroup) return all;
+    return byGroup[status] ?? const <Quizes>[];
+  }
 
   Quizes? quizById(String id) => byId[id];
 
