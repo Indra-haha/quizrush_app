@@ -9,7 +9,7 @@
 | Header autentikasi | `Authorization: Bearer <token>` |
 | Token login | Diperoleh dari `POST /api/login`, berlaku 24 jam |
 | Token room | Diperoleh dari `POST /api/rooms/verify` (§5.4), berlaku 1 jam, hanya untuk WebSocket `GET /api/rooms` |
-| Koleksi DB | `users`, `quizzes`, `rooms`, `results`, `tokens`, `emojis` |
+| Koleksi DB | `users`, `quizzes`, `rooms`, `results`, `tokens`, `emojis`, `coins` |
 | Batas body | 1 MiB per request (`413` bila lebih) |
 | Hashing password | SHA-256 (hex lowercase), dilakukan di sisi klien sebelum dikirim |
 | Transport | HTTPS (produksi) melindungi password hash dan token |
@@ -50,12 +50,15 @@ Semua endpoint yang dilindungi `middleware.Auth` (dan `POST /api/login`) menerap
 | GET | `/api/quizzes` | ✓ | List kuis publik (grup: open, in-Game, ended; hanya room `public`, pin ikut; tanpa soal, berisi total soal/durasi/skor) |
 | POST | `/api/create/room` | ✓ | Membuat room baru (`type`: `public`/`private`) |
 | POST | `/api/rooms/verify` | ✓ | Memverifikasi pin (kode) room |
-| PUT | `/api/room/{id}/status` | ✓ | Mengubah status room |
+| PUT | `/api/room/{id}/status` | ✓ | Mengubah status room (memulai/menghentikan permainan) |
+| POST | `/api/room/{kode}/answer` | ✓ | Mengirim jawaban satu soal pada permainan yang berjalan |
 | POST | `/api/room/{kode}/result` | ✓ | Membuat result untuk room |
 | GET | `/api/room/{kode}/result` | ✓ | Melihat result berdasarkan kode room |
 | PUT | `/api/room/{kode}/result` | ✓ | Update/upsert scoreboard result |
 | GET | `/api/results` | ✓ | List semua result |
 | POST | `/api/ai/suggest` | ✓ | Membuat saran soal (AI) dari topik teks |
+| GET | `/api/me/points` | ✓ | Saldo poin user yang login |
+| GET | `/api/me/coins` | ✓ | Riwayat perolehan koin user yang login |
 | GET | `/api/emojis` | ✓ | List semua emoji |
 | GET | `/api/emojis/{id}` | ✓ | Melihat satu emoji berdasarkan ID |
 | POST | `/api/emojis` | ✓ | Membuat emoji baru |
@@ -209,7 +212,8 @@ Content-Type: application/json
   "user": {
     "username": "124240200",
     "nama": "Budi Santoso",
-    "kelas": "Pemrograman Mobile SI-B"
+    "kelas": "Pemrograman Mobile SI-B",
+    "points": 120
   }
 }
 ```
@@ -244,7 +248,7 @@ Content-Type: application/json
 
 > **Device binding:** saat login sukses, `device_id` disimpan pada user. Jika
 > user yang sama login kembali, `device_id` harus sama; bila berbeda, ditolak `403`.
-> `device_id` tidak dikembalikan pada objek `user`.
+> `device_id` tidak dikembalikan pada objek `user`. Objek `user` pada `POST /api/login`, `GET /api/session`, dan `POST /api/register` menyertakan `points` (saldo poin akrual dari permainan kuis; lihat §11).
 
 ### 3.3 POST /api/logout
 
@@ -328,7 +332,8 @@ Authorization: Bearer <TOKEN>
   "user": {
     "username": "124240200",
     "nama": "Budi Santoso",
-    "kelas": "Pemrograman Mobile SI-B"
+    "kelas": "Pemrograman Mobile SI-B",
+    "points": 120
   }
 }
 ```
@@ -1085,6 +1090,99 @@ Token yang dikembalikan `POST /api/rooms/verify` (§5.3) adalah JWT yang **berbe
 }
 ```
 
+### 5.5 POST /api/room/{kode}/answer
+
+| Metode | Path | Auth |
+|---|---|---|
+| POST | `/api/room/{kode}/answer` | ✓ |
+
+Dipakai klien untuk mengirim jawaban satu soal **selama permainan berjalan**. Permainan dibuka
+saat host mengubah status room menjadi `in-Game` (§5.2) dan soal disiarkan server lewat WebSocket
+(§9.1, pesan `question`). Klien menghitung sendiri **skor** soal (kecepatan menjawab × bobot ×
+ketepatan) lalu mengirimkannya; server hanya mengakumulasi dengan penjagaan ringan. Sesi
+permainan hidup **di memori** — server menjadi otoritas atas urutan soal, jeda papan peringkat,
+dan akumulasi skor.
+
+**Path parameter:**
+
+| No | Parameter | Tipe | Wajib | Deskripsi |
+|---|---|---|---|---|
+| 1 | `kode` | string (6 digit) | ✅ | Kode room yang sedang bermain |
+
+**Request body:**
+
+| No | Field | Tipe | Wajib | Deskripsi |
+|---|---|---|---|---|
+| 1 | `question_index` | int | ✅ | Indeks soal yang dijawab (0-based); wajib sama dengan soal yang sedang berjalan |
+| 2 | `selected_idx` | int | ✅ | Indeks opsi yang dipilih peserta (0–3) |
+| 3 | `is_correct` | bool | ✅ | Benar/tidaknya jawaban (dihitung klien) |
+| 4 | `elapsed_ms` | int | ✅ | Waktu menjawab dalam milidetik (dihitung klien) |
+| 5 | `score` | int | ✅ | Skor soal hasil hitung klien (lihat penjagaan di bawah) |
+
+**Contoh request:**
+
+```http
+POST /api/room/482913/answer HTTP/1.1
+Host: localhost:8080
+Authorization: Bearer <TOKEN>
+Content-Type: application/json
+
+{
+  "question_index": 0,
+  "selected_idx": 1,
+  "is_correct": true,
+  "elapsed_ms": 840,
+  "score": 17
+}
+```
+
+**Penjagaan skor (server),** karena skor dihitung klien:
+
+- `score` dijepit ke rentang `0 .. skor soal` (`skor` pada soal, 1–50).
+- Bila `elapsed_ms > duration×1000 + 2000` (toleransi latensi 2 detik), `score` dipaksa `0`.
+- Satu peserta hanya boleh menjawab **sekali** per soal.
+
+**Response:**
+
+| Status | Deskripsi |
+|---|---|
+| 200 | Jawaban tersimpan |
+| 400 | Kode room kosong |
+| 401 | Token tidak valid / sesi berakhir / bukan smartphone |
+| 404 | Permainan tidak sedang berjalan |
+| 409 | Soal sedang tidak berjalan / soal sudah berganti / jawaban sudah dikirim |
+| 415 | Content-Type bukan JSON |
+
+**Contoh response — `200 OK`** (akumulasi skor peserta setelah jawaban ini)
+
+```json
+{
+  "message": "Jawaban tersimpan",
+  "score": 51,
+  "correct": 3,
+  "answered": 4
+}
+```
+
+**Contoh response — `404 Not Found`**
+
+```json
+{ "message": "Permainan tidak sedang berjalan" }
+```
+
+**Contoh response — `409 Conflict`**
+
+```json
+// Soal sedang tidak berjalan (fase jeda)
+{ "message": "Soal sedang tidak berjalan" }
+
+// Mengirim indeks soal yang bukan soal berjalan
+{ "message": "Soal sudah berganti" }
+
+// Peserta sudah menjawab soal ini
+{ "message": "Jawaban sudah dikirim" }
+```
+
 ---
 
 ## 6. Result
@@ -1740,6 +1838,9 @@ Tipe lain diperlakukan sebagai `broadcast`. Payload yang bukan JSON dibalas deng
 | `connected` | Saat koneksi upgraded, sebelum apa pun. `users` sudah termasuk dirinya sendiri |
 | `join` | Saat klien lain masuk ke room yang sama |
 | `leave` | Saat klien lain keluar dari room |
+| `question` | Soal baru dibuka saat permainan berjalan (lihat §9.2) |
+| `round_result` | Satu ronde selesai; berisi kunci jawaban + papan peringkat sementara dan jeda sebelum soal berikutnya (lihat §9.2) |
+| `game_end` | Permainan selesai; berisi papan peringkat akhir (lihat §9.2) |
 
 #### Contoh respons
 
@@ -1759,6 +1860,85 @@ wscat -c "ws://localhost:8080/api/rooms?token=<JWT room>&name=klien-a" \
   -H "User-Agent: Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 Mobile Safari/537.36"
 ```
 
+### 9.2 Alur Permainan (Game)
+
+Permainan dimulai ketika host mengubah status room menjadi `in-Game` lewat `PUT /api/room/{id}/status`
+(§5.2). Server lalu menjalankan permainan secara **otoritatif** dan menyiarkannya ke semua klien di
+room lewat WebSocket:
+
+1. Server menyiarkan `question` (soal ke-`index`), lalu menunggu selama `duration` detik.
+2. Selama soal terbuka, tiap peserta mengirim jawaban lewat `POST /api/room/{kode}/answer` (§5.5).
+3. Saat waktu soal habis, server menyiarkan `round_result` (kunci jawaban + papan peringkat
+   sementara) dan berhenti selama `next_in_ms` (5000 ms) sebelum soal berikutnya.
+4. Langkah 1–3 diulang sampai soal habis; server menyiarkan `game_end`, menandai room `ended`,
+   lalu mengkreditkan **poin** (dan mencatat koin) ke tiap peserta sesuai skor (§11).
+
+Peserta yang baru terhubung saat permainan berjalan otomatis didaftarkan ke papan peringkat
+(ikut dari ronde berikutnya). Bila host mengubah status room ke `ended` sebelum permainan tamat,
+sesi dihentikan tanpa kredit poin.
+
+> `correct_idx` **sengaja ikut dikirim** pada `question` dan `round_result` karena skor soal
+> dihitung klien (§5.5). Papan peringkat diurutkan skor desc, lalu jumlah benar desc, lalu nama asc;
+> `rank` dimulai dari 1.
+
+**`question`**
+
+```json
+{
+  "type": "question",
+  "room": "482913",
+  "time": "2026-10-05T20:00:00+07:00",
+  "data": {
+    "index": 0,
+    "total": 10,
+    "question": "Bahasa pemrograman utama Flutter?",
+    "options": ["Kotlin", "Dart", "Swift", "Java"],
+    "correct_idx": 1,
+    "duration": 1.5,
+    "max_score": 20,
+    "expires_at": 1760000001500
+  }
+}
+```
+
+`expires_at` adalah epoch **milidetik** kapan soal ditutup. `max_score` = bobot (`skor`) soal.
+
+**`round_result`**
+
+```json
+{
+  "type": "round_result",
+  "room": "482913",
+  "time": "2026-10-05T20:00:02+07:00",
+  "data": {
+    "round": 0,
+    "total": 10,
+    "correct_idx": 1,
+    "next_in_ms": 5000,
+    "leaderboard": [
+      { "rank": 1, "username": "124240200", "nama": "Budi", "score": 20, "correct": 1, "answered": 1 }
+    ]
+  }
+}
+```
+
+**`game_end`**
+
+```json
+{
+  "type": "game_end",
+  "room": "482913",
+  "time": "2026-10-05T20:03:00+07:00",
+  "data": {
+    "total": 10,
+    "finished_at": "2026-10-05T20:03:00+07:00",
+    "leaderboard": [
+      { "rank": 1, "username": "124240200", "nama": "Budi", "score": 150, "correct": 8, "answered": 10 }
+    ]
+  }
+}
+```
+
 ---
 
 ## 10. Kode Error Umum
@@ -1769,11 +1949,117 @@ wscat -c "ws://localhost:8080/api/rooms?token=<JWT room>&name=klien-a" \
 | 401 | Autentikasi gagal atau sesi berakhir | `Token tidak valid` / `Sesi telah berakhir, silakan login kembali` / `Token tidak ditemukan` / `Token room tidak ditemukan` / `Token room tidak valid` |
 | 401 | Bukan dari perangkat smartphone (allowlist device) | `Akses hanya diizinkan dari perangkat smartphone` |
 | 403 | Otorisasi gagal (resource bukan milik Anda / perangkat lain) | `Anda tidak punya akses ke kuis ini` / `Token room bukan milik pengguna ini` / `Akun sudah terikat pada perangkat lain` |
-| 404 | Data tidak ditemukan | `Kuis tidak ditemukan` / `Room tidak ditemukan` / `Result tidak ditemukan` / `Emoji tidak ditemukan` |
-| 409 | Konflik data (duplikat) | `Username sudah terdaftar` / `Room sudah memiliki result` / `Emoji dengan path ini sudah ada` |
+| 404 | Data tidak ditemukan | `Kuis tidak ditemukan` / `Room tidak ditemukan` / `Result tidak ditemukan` / `Emoji tidak ditemukan` / `Permainan tidak sedang berjalan` |
+| 409 | Konflik data (duplikat / state permainan) | `Username sudah terdaftar` / `Room sudah memiliki result` / `Emoji dengan path ini sudah ada` / `Soal sedang tidak berjalan` / `Soal sudah berganti` / `Jawaban sudah dikirim` |
 | 413 | Body request terlalu besar (> 1 MiB) | `Body request terlalu besar (maksimal 1 MiB)` |
 | 415 | Content-Type bukan JSON | `Content-Type harus application/json` |
 | 429 | Rate limit terlampaui | `Terlalu banyak percobaan login, coba lagi nanti` |
 | 500 | Error server | `Gagal membuat akun` / `Gagal membuat room` / `Gagal membuat token room` |
 
 > Semua endpoint yang menerima body JSON memakai validator yang sama sehingga dapat mengembalikan `413` dan `415` di luar daftar contoh per-endpoint di atas. Endpoint dengan `middleware.Auth` juga dapat mengembalikan `401` allowlist device. Endpoint `POST /image/upload` (§4.3) disediakan Cloudinary, bukan oleh server ini.
+
+---
+
+## 11. Poin & Koin
+
+Poin adalah saldo akrual milik user (field `points` pada objek `user`, lihat §3.2–§3.4). Saldo ini
+bertambah otomatis saat sebuah permainan selesai (§9.2): tiap peserta menerima poin sebesar **total
+skor** yang dikumpulkannya. Setiap penambahan juga dicatat sebagai satu baris koin di koleksi `coins`
+dengan **rantai hash SHA-256** (`hash = SHA256(prev_hash + payload)`, terhubung per user) sehingga
+riwayat menjadi ledger yang tidak bisa diubah diam-diam tanpa memutus rantai.
+
+### 11.1 GET /api/me/points
+
+| Metode | Path | Auth |
+|---|---|---|
+| GET | `/api/me/points` | ✓ |
+
+Tidak ada request parameter. Mengembalikan saldo poin user yang login.
+
+**Contoh request:**
+
+```http
+GET /api/me/points HTTP/1.1
+Host: localhost:8080
+Authorization: Bearer <TOKEN>
+```
+
+**Response:**
+
+| Status | Deskripsi |
+|---|---|
+| 200 | Saldo poin |
+| 401 | Token tidak valid / sesi berakhir / bukan smartphone |
+
+**Contoh response — `200 OK`**
+
+```json
+{
+  "message": "Saldo poin",
+  "points": 120
+}
+```
+
+### 11.2 GET /api/me/coins
+
+| Metode | Path | Auth |
+|---|---|---|
+| GET | `/api/me/coins` | ✓ |
+
+Tidak ada request parameter. Mengembalikan riwayat perolehan koin user yang login, diurutkan dari
+yang **terbaru** (`created_at` desc, lalu `_id` desc).
+
+**Contoh request:**
+
+```http
+GET /api/me/coins HTTP/1.1
+Host: localhost:8080
+Authorization: Bearer <TOKEN>
+```
+
+**Response:**
+
+| Status | Deskripsi |
+|---|---|
+| 200 | Riwayat koin |
+| 401 | Token tidak valid / sesi berakhir / bukan smartphone |
+| 500 | Gagal membaca riwayat koin |
+
+**Contoh response — `200 OK`**
+
+```json
+{
+  "message": "Riwayat koin",
+  "coins": [
+    {
+      "id": "6700aa11bb22cc33dd44ee55",
+      "amount": 150,
+      "reason": "quiz_reward",
+      "room_kode": "482913",
+      "quiz_id": "6651a0ab0000000000000000",
+      "created_at": "2026-10-05T20:03:00Z",
+      "prev_hash": "9f2c...e1",
+      "hash": "3ab4...7d"
+    }
+  ]
+}
+```
+
+> `reason` bernilai `quiz_reward` untuk hadiah permainan kuis. `prev_hash` dan `hash` adalah rantai
+> SHA-256 untuk verifikasi integritas; baris pertama milik user memakai `prev_hash` string kosong.
+
+**Contoh response — `401 Unauthorized`**
+
+```json
+// Token tidak valid
+{ "message": "Token tidak valid" }
+
+// Sesi berakhir
+{ "message": "Sesi telah berakhir, silakan login kembali" }
+```
+
+**Contoh response — `500 Internal Server Error`**
+
+```json
+{ "message": "Gagal membaca riwayat koin" }
+```
