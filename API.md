@@ -1819,6 +1819,7 @@ Semua pesan berupa JSON dengan bentuk yang sama:
 | `time` | string | Waktu server format RFC3339 (dikirim server) |
 | `data` | any | Payload bebas (dikirim klien) |
 | `users` | number | Jumlah koneksi aktif di room (dikirim server) |
+| `names` | string[] | Daftar nickname klien yang sudah terhubung di room, dikirim server **hanya pada pesan `connected`** agar klien baru langsung mengenal penghuni room sebelumnya (klien menambahkan dirinya sendiri ke daftar) |
 
 #### Pesan dari klien
 
@@ -1835,7 +1836,7 @@ Tipe lain diperlakukan sebagai `broadcast`. Payload yang bukan JSON dibalas deng
 
 | `type` | Kapan dikirim |
 |---|---|
-| `connected` | Saat koneksi upgraded, sebelum apa pun. `users` sudah termasuk dirinya sendiri |
+| `connected` | Saat koneksi upgraded, sebelum apa pun. `users` sudah termasuk dirinya sendiri; `names` berisi nickname klien yang sudah terhubung sebelumnya |
 | `join` | Saat klien lain masuk ke room yang sama |
 | `leave` | Saat klien lain keluar dari room |
 | `question` | Soal baru dibuka saat permainan berjalan (lihat §9.2) |
@@ -1846,6 +1847,7 @@ Tipe lain diperlakukan sebagai `broadcast`. Payload yang bukan JSON dibalas deng
 
 ```json
 {"type":"connected","room":"482913","from":"klien-a","time":"2026-10-04T18:53:12+07:00","users":1}
+{"type":"connected","room":"482913","from":"klien-b","time":"2026-10-04T18:53:13+07:00","users":2,"names":["klien-a"]}
 {"type":"broadcast","room":"482913","from":"klien-b","time":"2026-10-04T18:53:14+07:00","data":"halo"}
 ```
 
@@ -1874,7 +1876,10 @@ room lewat WebSocket:
    lalu mengkreditkan **poin** (dan mencatat koin) ke tiap peserta sesuai skor (§11).
 
 Peserta yang baru terhubung saat permainan berjalan otomatis didaftarkan ke papan peringkat
-(ikut dari ronde berikutnya). Bila host mengubah status room ke `ended` sebelum permainan tamat,
+(ikut dari ronde berikutnya). **Host (pemilik kuis) tidak didaftarkan ke papan peringkat**:
+host hanya memandu sesi, tidak menjawab soal, tidak muncul di leaderboard, dan tidak menerima
+kredit poin; jawaban dari username host ditolak `409 Host tidak ikut bermain`. Bila host
+mengubah status room ke `ended` sebelum permainan tamat,
 sesi dihentikan tanpa kredit poin.
 
 > `correct_idx` **sengaja ikut dikirim** pada `question` dan `round_result` karena skor soal
