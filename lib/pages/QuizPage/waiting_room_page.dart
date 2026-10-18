@@ -63,8 +63,9 @@ class _WaitingRoomPageState extends State<WaitingRoomPage> {
 
   final _feed = <_FeedEntry>[];
 
-  /// Nama pemain yang pernah terlihat (event join / broadcast), berurutan
-  /// sejak masuk room. Backend tidak mengirim roster, jadi roster lokal.
+  /// Nama pemain yang terlihat di room. Roster awal diambil dari daftar
+  /// `names` pada pesan `connected` (API.md §9.1), lalu dirawat lewat event
+  /// join / leave / broadcast.
   final _players = <String>{};
 
   RoomSocket? _socket;
@@ -74,6 +75,10 @@ class _WaitingRoomPageState extends State<WaitingRoomPage> {
   int _users = 0;
   String _me = '';
   String _myNama = '';
+
+  /// Label diri sendiri di room: nama tampilan (dipakai sebagai nickname WS)
+  /// dengan jatuh ke username bila nama kosong.
+  String _myLabel = '';
   String _roomStatus = '';
   String _hostDisplay = '';
   bool _isOwner = false;
@@ -103,14 +108,18 @@ class _WaitingRoomPageState extends State<WaitingRoomPage> {
     final user = await SessionService.instance.getUser();
     _me = (user?['username'] as String?)?.trim() ?? '';
     _myNama = (user?['nama'] as String?)?.trim() ?? '';
-    if (_me.isNotEmpty) _players.add(_me);
+    _myLabel = _myNama.isNotEmpty ? _myNama : _me;
+    if (_myLabel.isNotEmpty) _players.add(_myLabel);
     if (!mounted) return;
     setState(() {});
 
+    // Nickname WS memakai nama tampilan supaya grid pemain menampilkan nama
+    // yang bisa dikenali (dan badge host dari `Quizes.host` bisa cocok);
+    // identitas game tetap username dari JWT login.
     final socket = RoomSocket(
       roomToken: widget.roomToken,
       loginToken: widget.loginToken,
-      name: _me,
+      name: _myLabel,
     );
     _socket = socket;
     _statusSub = socket.statuses.listen((status) {
@@ -154,15 +163,17 @@ class _WaitingRoomPageState extends State<WaitingRoomPage> {
   }
 
   /// Apakah [name] adalah host quiz: pemilik quiz (kita sendiri) atau nama
-  /// pemilik quiz dari feed. Peserta lain hanya dikenali lewat username, jadi
-  /// cocokkan juga nama lengkap diri sendiri terhadap `host` feed.
+  /// pemilik quiz dari feed. Peserta lain hanya dikenali lewat nickname WS
+  /// (nama tampilan), jadi cocokkan juga nama lengkap diri sendiri terhadap
+  /// `host` feed.
   bool _isHost(String name) {
     if (name.isEmpty) return false;
-    if (_isOwner && name == _me) return true;
+    final isSelf = name == _me || name == _myLabel;
+    if (_isOwner && isSelf) return true;
     if (_hostDisplay.isEmpty) return false;
     final lower = _hostDisplay.toLowerCase();
     if (name.toLowerCase() == lower) return true;
-    if (name == _me && _myNama.toLowerCase() == lower) return true;
+    if (isSelf && _myNama.toLowerCase() == lower) return true;
     return false;
   }
 
@@ -180,7 +191,13 @@ class _WaitingRoomPageState extends State<WaitingRoomPage> {
       if (message.users > 0) _users = message.users;
       switch (message.type) {
         case 'connected':
-          if (_me.isNotEmpty) _players.add(_me);
+          // Roster diganti penuh dari daftar server (`names`) plus diri
+          // sendiri, supaya klien yang masuk belakangan langsung melihat
+          // siapa yang sudah ada — dan reconnect menyegarkan daftar basi.
+          _players
+            ..clear()
+            ..addAll(message.names.where((n) => n.trim().isNotEmpty));
+          if (_myLabel.isNotEmpty) _players.add(_myLabel);
           _feed.add(
             _FeedEntry.system('Tersambung ke room. Menunggu peserta lain...'),
           );
@@ -249,7 +266,7 @@ class _WaitingRoomPageState extends State<WaitingRoomPage> {
 
   String _labelOf(String from) {
     if (from.isEmpty) return 'Seseorang';
-    if (from == _me) return 'Kamu';
+    if (from == _me || from == _myLabel) return 'Kamu';
     return from;
   }
 
