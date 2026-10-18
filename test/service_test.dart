@@ -440,6 +440,46 @@ void main() {
       expect(room.id, 'r1');
     });
 
+    test('createRoom mengirim type saat private', () async {
+      String? body;
+      final service = RoomService.withApi(
+        _api((request) async {
+          body = request.body;
+          return _json(
+            '{"room":{"id":"r1","kode":"123456","status":"waiting"}}',
+            201,
+          );
+        }),
+      );
+      await service.createRoom(
+        token: 'token',
+        quizId: 'q1',
+        judul: 'Room Private',
+        type: 'private',
+      );
+      final payload = jsonDecode(body!) as Map<String, dynamic>;
+      expect(payload['type'], 'private');
+      expect(payload['judul'], 'Room Private');
+      expect(payload.containsKey('isi'), isFalse);
+      expect(payload.containsKey('status'), isFalse);
+    });
+
+    test('createRoom tanpa type tidak mengirim field type', () async {
+      String? body;
+      final service = RoomService.withApi(
+        _api((request) async {
+          body = request.body;
+          return _json(
+            '{"room":{"id":"r1","kode":"123456","status":"waiting"}}',
+            201,
+          );
+        }),
+      );
+      await service.createRoom(token: 'token', quizId: 'q1');
+      final payload = jsonDecode(body!) as Map<String, dynamic>;
+      expect(payload.containsKey('type'), isFalse);
+    });
+
     test('updateRoomStatus memakai PUT dan mem-parse room', () async {
       String? method;
       final service = RoomService.withApi(

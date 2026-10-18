@@ -43,11 +43,18 @@ class RoomService {
     String? judul,
     String? isi,
     String? status,
+    String? type,
   }) async {
     final response = await _api.post(
       '/api/create/room',
       token: token,
-      body: {'quiz_id': quizId, 'judul': ?judul, 'isi': ?isi, 'status': ?status},
+      body: {
+        'quiz_id': quizId,
+        'judul': ?judul,
+        'isi': ?isi,
+        'status': ?status,
+        'type': ?type,
+      },
     );
     final data = ApiClient.decode(response);
     if (response.statusCode != 201) {
