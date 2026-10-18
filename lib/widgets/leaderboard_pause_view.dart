@@ -17,6 +17,10 @@ class LeaderboardPauseView extends StatefulWidget {
   final List<LiveLeaderboardEntry> leaderboard;
   final String myUsername;
 
+  /// True bila penampil adalah host: kartu "ANDA" disembunyikan karena host
+  /// bukan peserta dan tidak punya entri di papan peringkat.
+  final bool isHost;
+
   const LeaderboardPauseView({
     super.key,
     required this.round,
@@ -24,6 +28,7 @@ class LeaderboardPauseView extends StatefulWidget {
     required this.nextInMs,
     required this.leaderboard,
     required this.myUsername,
+    this.isHost = false,
   });
 
   @override
@@ -82,8 +87,10 @@ class _LeaderboardPauseViewState extends State<LeaderboardPauseView> {
           const SizedBox(height: AppSpacing.space6),
           _countdownPill(),
           const SizedBox(height: AppSpacing.space8),
-          _selfCard(),
-          const SizedBox(height: AppSpacing.space8),
+          if (!widget.isHost) ...[
+            _selfCard(),
+            const SizedBox(height: AppSpacing.space8),
+          ],
           _topFiveHeader(),
           const SizedBox(height: AppSpacing.space4),
           ..._topFiveRows(),

@@ -256,6 +256,7 @@ class _WaitingRoomPageState extends State<WaitingRoomPage> {
               myUsername: _me,
               myNama: _myNama,
               initialQuestion: question,
+              isHost: _isOwner,
             ),
           ),
         )

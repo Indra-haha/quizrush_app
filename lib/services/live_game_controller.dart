@@ -22,6 +22,7 @@ class LiveGameController extends ChangeNotifier {
     required this.roomKode,
     required this.loginToken,
     required this.myUsername,
+    this.isHost = false,
     GameService? gameService,
     LiveQuestion? initialQuestion,
   }) : _game = gameService ?? GameService.instance {
@@ -33,6 +34,10 @@ class LiveGameController extends ChangeNotifier {
   final String roomKode;
   final String loginToken;
   final String myUsername;
+
+  /// True bila pengguna ini host (pemilik kuis): tidak menjawab soal dan
+  /// tidak mengirim skor — host hanya memantau permainan.
+  final bool isHost;
   final GameService _game;
 
   StreamSubscription<RoomMessage>? _sub;
@@ -52,6 +57,7 @@ class LiveGameController extends ChangeNotifier {
   double _maxDuration = 0;
   LiveRoundResult? _roundResult;
   LiveGameEnd? _gameEnd;
+  List<LiveLeaderboardEntry> _lastLeaderboard = const [];
 
   LivePhase get phase => _phase;
   LiveQuestion? get question => _question;
@@ -65,6 +71,11 @@ class LiveGameController extends ChangeNotifier {
   int get timeLeft => _timeLeft;
   LiveRoundResult? get roundResult => _roundResult;
   LiveGameEnd? get gameEnd => _gameEnd;
+
+  /// Papan peringkat terakhir yang diterima (dari `round_result` /
+  /// `game_end`); bertahan antar soal agar view host bisa menampilkan
+  /// peringkat sementara selama sesi berjalan.
+  List<LiveLeaderboardEntry> get lastLeaderboard => _lastLeaderboard;
 
   /// Apakah soal aktif soal terakhir.
   bool get isLastQuestion {
@@ -87,12 +98,14 @@ class LiveGameController extends ChangeNotifier {
       case 'round_result':
         _ticker?.cancel();
         _roundResult = LiveRoundResult.fromJson(jsonMap(message.data));
+        _lastLeaderboard = _roundResult!.leaderboard;
         _phase = LivePhase.pause;
         notifyListeners();
       case 'game_end':
         _ticker?.cancel();
         _stopwatch.stop();
         _gameEnd = LiveGameEnd.fromJson(jsonMap(message.data));
+        _lastLeaderboard = _gameEnd!.leaderboard;
         _phase = LivePhase.ended;
         notifyListeners();
       default:
@@ -124,6 +137,9 @@ class LiveGameController extends ChangeNotifier {
       final left = (_maxDuration - elapsedSeconds).ceil();
       if (left <= 0) {
         _timeLeft = 0;
+        // Batalkan ticker dulu: bagi host answer() langsung return, jadi
+        // tanpa pembatalan ini timer akan terus berbunyi tiap 100 ms.
+        _ticker?.cancel();
         answer(-1);
         return;
       }
@@ -135,9 +151,11 @@ class LiveGameController extends ChangeNotifier {
   }
 
   /// Menjawab soal aktif. `index` di luar rentang berarti waktu habis.
+  /// Host tidak menjawab: server menolak jawaban host, jadi tidak ada
+  /// perhitungan maupun pengiriman skor.
   void answer(int index) {
     final question = _question;
-    if (question == null || _answered) return;
+    if (question == null || _answered || isHost) return;
 
     _ticker?.cancel();
     _stopwatch.stop();

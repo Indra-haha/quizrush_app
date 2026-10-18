@@ -9,7 +9,8 @@ import '../../widgets/app_primary_button.dart';
 
 /// Halaman hasil akhir setelah permainan live selesai: podium tiga besar,
 /// daftar lengkap peserta, ringkasan pencapaian diri, dan total poin yang
-/// didapatkan.
+/// didapatkan. Untuk host, ringkasan diri diganti kartu ringkas (host bukan
+/// peserta, jadi tidak punya rank/akurasi/poin).
 class QuizResultPage extends StatelessWidget {
   final LiveGameEnd result;
   final String myUsername;
@@ -17,6 +18,7 @@ class QuizResultPage extends StatelessWidget {
   final int myCorrect;
   final int myAnswered;
   final String roomTitle;
+  final bool isHost;
 
   const QuizResultPage({
     super.key,
@@ -26,6 +28,7 @@ class QuizResultPage extends StatelessWidget {
     required this.myCorrect,
     required this.myAnswered,
     required this.roomTitle,
+    this.isHost = false,
   });
 
   LiveLeaderboardEntry? get _self {
@@ -82,6 +85,8 @@ class QuizResultPage extends StatelessWidget {
   }
 
   Widget _summaryCard() {
+    if (isHost) return _hostSummaryCard();
+
     final self = _self;
     final rank = self?.rank ?? 0;
     final total = result.leaderboard.length;
@@ -140,6 +145,58 @@ class QuizResultPage extends StatelessWidget {
                 ),
               ),
             ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Ringkasan versi host: judul room + label HOST + jumlah peserta.
+  Widget _hostSummaryCard() {
+    final total = result.leaderboard.length;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(AppSpacing.space8),
+      decoration: BoxDecoration(
+        color: AppColors.primary,
+        borderRadius: AppRadius.lg,
+        boxShadow: AppShadows.card,
+      ),
+      child: Column(
+        children: [
+          Text(
+            roomTitle.toUpperCase(),
+            textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: AppTextStyles.statLabelOnPrimary.copyWith(letterSpacing: 1),
+          ),
+          const SizedBox(height: AppSpacing.space4),
+          Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.space5,
+              vertical: AppSpacing.space2,
+            ),
+            decoration: BoxDecoration(
+              color: AppColors.textOnPrimary.withValues(alpha: 0.22),
+              borderRadius: AppRadius.pill,
+            ),
+            child: Text(
+              'HOST',
+              style: AppTextStyles.statValueOnPrimary.copyWith(
+                fontSize: AppFontSize.caption,
+                letterSpacing: 1.2,
+              ),
+            ),
+          ),
+          const SizedBox(height: AppSpacing.space4),
+          Text(
+            total > 0 ? '$total peserta ikut bermain' : 'Tidak ada peserta',
+            textAlign: TextAlign.center,
+            style: AppTextStyles.statLabelOnPrimary.copyWith(
+              fontWeight: AppFontWeight.regular,
+            ),
           ),
         ],
       ),

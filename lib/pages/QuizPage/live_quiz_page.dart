@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 
+import '../../helpers/format.dart';
 import '../../models/live_game.dart';
 import '../../models/room.dart';
 import '../../services/live_game_controller.dart';
 import '../../services/room_socket.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/quiz_option_theme.dart';
+import '../../widgets/app_pill.dart';
 import '../../widgets/app_header_bar.dart';
 import '../../widgets/leaderboard_pause_view.dart';
 import '../../widgets/quiz_answer_banner.dart';
@@ -18,6 +20,10 @@ import 'quiz_result_page.dart';
 /// Halaman permainan live: merender soal aktif, timer, dan pilihan jawaban;
 /// menampilkan papan jeda antar soal; lalu berpindah ke hasil akhir saat kuis
 /// selesai. Seluruh aturan permainan ada di [LiveGameController].
+///
+/// Untuk host ([isHost] true), sesi soal tidak menampilkan view peserta
+/// (soal / opsi / jawaban); host hanya melihat progress soal dan papan
+/// peringkat sementara.
 class LiveQuizPage extends StatefulWidget {
   final Room room;
   final RoomSocket socket;
@@ -25,6 +31,7 @@ class LiveQuizPage extends StatefulWidget {
   final String myUsername;
   final String myNama;
   final LiveQuestion initialQuestion;
+  final bool isHost;
 
   const LiveQuizPage({
     super.key,
@@ -34,6 +41,7 @@ class LiveQuizPage extends StatefulWidget {
     required this.myUsername,
     required this.myNama,
     required this.initialQuestion,
+    this.isHost = false,
   });
 
   @override
@@ -52,6 +60,7 @@ class _LiveQuizPageState extends State<LiveQuizPage> {
       roomKode: widget.room.kode,
       loginToken: widget.loginToken,
       myUsername: widget.myUsername,
+      isHost: widget.isHost,
       initialQuestion: widget.initialQuestion,
     );
     _controller.addListener(_onChanged);
@@ -80,6 +89,7 @@ class _LiveQuizPageState extends State<LiveQuizPage> {
               myCorrect: _controller.correctCount,
               myAnswered: _controller.answeredCount,
               roomTitle: widget.room.displayTitle,
+              isHost: widget.isHost,
             ),
           ),
         );
@@ -124,9 +134,10 @@ class _LiveQuizPageState extends State<LiveQuizPage> {
           nextInMs: pause.nextInMs,
           leaderboard: pause.leaderboard,
           myUsername: widget.myUsername,
+          isHost: widget.isHost,
         ),
         LivePhase.ended => const Center(child: CircularProgressIndicator()),
-        _ => _buildQuestion(),
+        _ => widget.isHost ? _buildHostDashboard() : _buildQuestion(),
       },
     );
   }
@@ -192,4 +203,186 @@ class _LiveQuizPageState extends State<LiveQuizPage> {
       ],
     );
   }
+
+  /// Dashboard host selama sesi soal berjalan: progress soal + timer +
+  /// papan peringkat sementara (tanpa soal maupun opsi jawaban).
+  Widget _buildHostDashboard() {
+    final question = _controller.question;
+    if (question == null) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.space8,
+        AppSpacing.space4,
+        AppSpacing.space8,
+        AppSpacing.space10,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _hostHeader(question),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: AppSpacing.space4),
+            child: Center(
+              child: QuizCountdownDial(seconds: _controller.timeLeft),
+            ),
+          ),
+          _hostStandingsHeader(),
+          const SizedBox(height: AppSpacing.space4),
+          ..._hostStandingsRows(),
+        ],
+      ),
+    );
+  }
+
+  Widget _hostHeader(LiveQuestion question) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                widget.room.displayTitle.toUpperCase(),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: AppTextStyles.labelStrongSmall.copyWith(
+                  color: AppColors.primary,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.space2),
+              AppPill(
+                text: 'Soal ${question.index + 1}',
+                trailingText: '/ ${question.total}',
+                trailingColor: AppColors.textSecondary,
+                background: AppColors.surfaceSoft,
+                foreground: AppColors.textPrimary,
+                dot: AppColors.primary,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.space6,
+                  vertical: AppSpacing.space2,
+                ),
+              ),
+            ],
+          ),
+        ),
+        AppPill(
+          text: 'MODE HOST',
+          background: AppColors.primary,
+          foreground: AppColors.textOnPrimary,
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.space5,
+            vertical: AppSpacing.space2,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _hostStandingsHeader() {
+    return Row(
+      children: [
+        Text(
+          'PERINGKAT SEMENTARA',
+          style: AppTextStyles.accentCaption.copyWith(letterSpacing: 1.2),
+        ),
+        const Spacer(),
+        Text(
+          'Total ${_controller.lastLeaderboard.length} peserta',
+          style: AppTextStyles.bodyCaption,
+        ),
+      ],
+    );
+  }
+
+  List<Widget> _hostStandingsRows() {
+    final entries = _controller.lastLeaderboard;
+    if (entries.isEmpty) {
+      return [
+        Container(
+          padding: const EdgeInsets.symmetric(vertical: AppSpacing.space8),
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: AppColors.textOnPrimary,
+            border: Border.all(
+              color: AppColors.primaryBorder.withValues(alpha: 0.4),
+            ),
+            borderRadius: AppRadius.md,
+          ),
+          child: Text(
+            'Belum ada data peringkat. Menunggu ronde pertama selesai...',
+            style: AppTextStyles.bodyCaption,
+          ),
+        ),
+      ];
+    }
+    return [for (final entry in entries) _hostRankRow(entry)];
+  }
+
+  Widget _hostRankRow(LiveLeaderboardEntry entry) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: AppSpacing.space3),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.space5,
+        vertical: AppSpacing.space4,
+      ),
+      decoration: BoxDecoration(
+        color: AppColors.textOnPrimary,
+        border: Border.all(
+          color: AppColors.primaryBorder.withValues(alpha: 0.4),
+          width: AppBorderWidth.hairline,
+        ),
+        borderRadius: AppRadius.md,
+      ),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 28,
+            child: Text(
+              _medal(entry.rank),
+              textAlign: TextAlign.center,
+              style: AppTextStyles.labelStrong,
+            ),
+          ),
+          const SizedBox(width: AppSpacing.space3),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  entry.displayName,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTextStyles.labelStrong,
+                ),
+                Text(
+                  '${(entry.accuracy * 100).toStringAsFixed(1)}% '
+                  '(${entry.correct}/${entry.answered})',
+                  style: AppTextStyles.bodyCaption,
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: AppSpacing.space3),
+          Text(
+            '${formatPoints(entry.score)} PTS',
+            style: AppTextStyles.labelStrongSmall.copyWith(
+              color: AppColors.primaryDark,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _medal(int rank) => switch (rank) {
+    1 => '🥇',
+    2 => '🥈',
+    3 => '🥉',
+    _ => '#$rank',
+  };
 }
