@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../../helpers/room_launcher.dart';
 import '../../models/quiz.dart';
+import '../../services/api_client.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/app_header_bar.dart';
 import '../../widgets/app_snackbar.dart';
@@ -55,15 +57,27 @@ class DetailQuizRoomPage extends StatelessWidget {
             room: rooms[i],
             index: i,
             isFocused: rooms[i].kode == focusKode && focusKode != null,
-            onJoin: () => AppSnackBar.show(
-              context,
-              'Join Room ${rooms[i].kode} — fitur join menyusul.',
-            ),
+            onJoin: () => _joinRoom(context, rooms[i].kode),
           ),
         ],
         const SizedBox(height: AppSpacing.space10),
       ],
     );
+  }
+
+  Future<void> _joinRoom(BuildContext context, String pin) async {
+    try {
+      await RoomLauncher.enter(context: context, pin: pin);
+    } on ApiException catch (e) {
+      if (!context.mounted) return;
+      AppSnackBar.error(
+        context,
+        e.message.isNotEmpty ? e.message : 'Gagal masuk ke room.',
+      );
+    } catch (_) {
+      if (!context.mounted) return;
+      AppSnackBar.error(context, 'Tidak bisa terhubung ke server. Coba lagi.');
+    }
   }
 
   Widget _emptyRooms() {
