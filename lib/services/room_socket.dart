@@ -70,6 +70,30 @@ class RoomSocket {
     channel.sink.add(jsonEncode({'type': 'broadcast', 'data': data}));
   }
 
+  /// Kirim reaksi sorakan terstruktur. Server memperlakukan tipe tak dikenal
+  /// sebagai `broadcast` (server-tugas/handlers/ws_client.go), sehingga `data`
+  /// sampai apa adanya ke klien lain di room yang sama.
+  void sendReaction(String emoji) {
+    final channel = _channel;
+    if (channel == null) return;
+    channel.sink.add(
+      jsonEncode({
+        'type': 'reaction',
+        'data': {'emoji': emoji},
+      }),
+    );
+  }
+
+  /// Ambil emoji dari payload reaksi `broadcast` server; `null` bila bukan
+  /// reaksi (mis. payload string biasa dari klien lama).
+  static String? parseReaction(Object? data) {
+    if (data is Map) {
+      final emoji = data['emoji'];
+      if (emoji is String && emoji.isNotEmpty) return emoji;
+    }
+    return null;
+  }
+
   void dispose() {
     _disposed = true;
     _reconnectTimer?.cancel();
@@ -84,9 +108,7 @@ class RoomSocket {
   void _open({required bool isRetry}) {
     if (_disposed) return;
     _statuses.add(
-      isRetry
-          ? RoomSocketStatus.reconnecting
-          : RoomSocketStatus.connecting,
+      isRetry ? RoomSocketStatus.reconnecting : RoomSocketStatus.connecting,
     );
 
     try {
@@ -154,10 +176,7 @@ class RoomSocket {
       // `https://host:0/...` (rejected 400). Always pass the real port.
       port: base.port, // http -> 80, https -> 443, atau port eksplisit
       path: '/api/rooms',
-      queryParameters: {
-        'token': roomToken,
-        if (name.isNotEmpty) 'name': name,
-      },
+      queryParameters: {'token': roomToken, if (name.isNotEmpty) 'name': name},
     );
   }
 }

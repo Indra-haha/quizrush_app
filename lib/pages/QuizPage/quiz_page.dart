@@ -15,6 +15,7 @@ import '../../widgets/active_room_banner.dart';
 import '../../widgets/app_pill_button.dart';
 import '../../widgets/app_snackbar.dart';
 import '../../widgets/cache_info_bar.dart';
+import '../../widgets/points_indicator.dart';
 import '../../widgets/quiz_results_list.dart';
 import '../../widgets/quiz_search_field.dart';
 import '../../widgets/section_header.dart';
@@ -248,7 +249,12 @@ class _QuizPageState extends State<QuizPage> {
                 AppSpacing.space9,
                 AppSpacing.space6,
               ),
-              child: SectionHeader(title: 'Quiz'),
+              child: Row(
+                children: [
+                  const Expanded(child: SectionHeader(title: 'Quiz')),
+                  const PointsIndicator(),
+                ],
+              ),
             ),
             Padding(
               padding: const EdgeInsets.symmetric(

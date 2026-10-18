@@ -8,8 +8,9 @@ import '../services/biometric_service.dart';
 import '../services/quiz_cache_service.dart';
 import '../services/session_service.dart';
 import '../theme/app_theme.dart';
-import '../widgets/app_header_bar.dart';
+import '../widgets/app_header_bar_with_actions.dart';
 import '../widgets/app_primary_button.dart';
+import '../widgets/points_indicator.dart';
 import '../widgets/app_snackbar.dart';
 import '../widgets/auth_fields.dart';
 import 'login_redirect.dart';
@@ -164,7 +165,10 @@ class _ProfilePageState extends State<ProfilePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: const AppHeaderBar(title: 'Profile'),
+      appBar: const AppHeaderBarWithActions(
+        title: 'Profile',
+        actions: [PointsIndicator()],
+      ),
       body: ListView(
         padding: const EdgeInsets.all(AppSpacing.space9),
         children: [

@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../theme/app_theme.dart';
-import '../widgets/app_header_bar.dart';
+import '../widgets/app_header_bar_with_actions.dart';
 import '../widgets/app_pill_button.dart';
+import '../widgets/points_indicator.dart';
 import '../widgets/app_snackbar.dart';
 import '../widgets/app_text_field.dart';
 import '../widgets/empty_state_view.dart';
@@ -32,7 +33,10 @@ class _FriendPageState extends State<FriendPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: const AppHeaderBar(title: 'Friend'),
+      appBar: const AppHeaderBarWithActions(
+        title: 'Friend',
+        actions: [PointsIndicator()],
+      ),
       body: Column(
         children: [
           Padding(

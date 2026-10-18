@@ -14,6 +14,7 @@ import '../widgets/empty_state_view.dart';
 import '../widgets/error_state_view.dart';
 import '../widgets/home_greeting.dart';
 import '../widgets/home_stat_card.dart';
+import '../widgets/points_indicator.dart';
 import '../widgets/quiz_card.dart';
 import '../widgets/section_header.dart';
 import 'MyQuizPage/create_quiz_page.dart';
@@ -138,6 +139,7 @@ class _HomePageState extends State<HomePage> {
     return Scaffold(
       appBar: AppHeaderBarWithActions(
         actions: [
+          const PointsIndicator(),
           IconButton(
             tooltip: 'Refresh dari server',
             onPressed: _loading ? null : _sync,

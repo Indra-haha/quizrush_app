@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../services/points_store.dart';
 import '../theme/app_theme.dart';
 import 'home_page.dart';
 import 'QuizPage/quiz_page.dart';
@@ -17,6 +18,14 @@ class MainShell extends StatefulWidget {
 
 class _MainShellState extends State<MainShell> {
   int _index = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    // Sesi sudah memuat poin; tampilkan segera lalu segarkan dari server.
+    PointsStore.instance.setFromUser(widget.user);
+    PointsStore.instance.refresh();
+  }
 
   @override
   Widget build(BuildContext context) {

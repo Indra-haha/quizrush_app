@@ -19,6 +19,19 @@ String formatQDuration(double d) {
       : '${d.toStringAsFixed(1)} Detik';
 }
 
+/// Format angka poin dengan pemisah ribuan titik (gaya Indonesia):
+/// 7420 -> "7.420".
+String formatPoints(int value) {
+  final negative = value < 0;
+  final digits = value.abs().toString();
+  final buffer = StringBuffer();
+  for (var i = 0; i < digits.length; i++) {
+    if (i > 0 && (digits.length - i) % 3 == 0) buffer.write('.');
+    buffer.write(digits[i]);
+  }
+  return negative ? '-$buffer' : buffer.toString();
+}
+
 String formatKode(String kode) {
   if (kode.length == 6) {
     return '${kode.substring(0, 3)} ${kode.substring(3)}';
