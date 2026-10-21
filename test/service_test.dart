@@ -211,7 +211,7 @@ void main() {
       );
     });
 
-    test('uploadQuizImage: signature lalu upload authenticated lalu public_id/format', () async {
+    test('uploadQuizImage: signature lalu upload lalu secure_url', () async {
       final calls = <String>[];
       final stages = <QuizImageUploadStage>[];
 
@@ -240,8 +240,6 @@ void main() {
           expect(body, contains('abc123'));
           expect(body, contains('name="folder"'));
           expect(body, contains('galery-quiz/quiz-image'));
-          expect(body, contains('name="type"'));
-          expect(body, contains('authenticated'));
           expect(body, contains('filename="cover.png"'));
           return _json(
             '{"public_id":"galery-quiz/quiz-image/cover","format":"png",'
@@ -267,8 +265,12 @@ void main() {
         QuizImageUploadStage.requestingSignature,
         QuizImageUploadStage.uploading,
       ]);
-      expect(asset.id, 'galery-quiz/quiz-image/cover');
-      expect(asset.format, 'png');
+      expect(asset.path, isNotEmpty);
+      expect(
+        asset.path,
+        'https://res.cloudinary.com/dlxxyz123/image/authenticated/'
+        'v1792154580/galery-quiz/quiz-image/cover.png',
+      );
     });
 
     test('uploadQuizImage menerima signature snake_case & timestamp string', () async {
@@ -282,9 +284,11 @@ void main() {
             );
           }
           expect(request.url.path, '/v1_1/cloud/image/upload');
-          expect(request.body, contains('name="type"'));
-          expect(request.body, contains('authenticated'));
-          return _json('{"public_id":"x","format":"png"}', 200);
+          return _json(
+            '{"public_id":"x","format":"png",'
+            '"secure_url":"https://res.cloudinary.com/cloud/image/upload/x.png"}',
+            200,
+          );
         }),
       );
 
@@ -294,8 +298,7 @@ void main() {
         imageFilename: 'x.png',
       );
 
-      expect(asset.id, 'x');
-      expect(asset.format, 'png');
+      expect(asset.path, 'https://res.cloudinary.com/cloud/image/upload/x.png');
     });
 
     test('uploadQuizImage signature gagal melempar ApiException sebelum upload', () async {
@@ -349,7 +352,7 @@ void main() {
       );
     });
 
-    test('createQuiz mengirim JSON berisi image_id/image_format dan mem-parse quiz', () async {
+    test('createQuiz mengirim JSON berisi path dan mem-parse quiz', () async {
       String? contentType;
       String? body;
 
@@ -374,14 +377,17 @@ void main() {
             skor: 10,
           ),
         ],
-        imageId: 'galery-quiz/quiz-image/cover',
-        imageFormat: 'png',
+        path: 'https://res.cloudinary.com/cloud/image/upload/cover.png',
       );
 
       expect(contentType, 'application/json');
       expect(body, contains('"title":"Kuis Baru"'));
-      expect(body, contains('"image_id":"galery-quiz/quiz-image/cover"'));
-      expect(body, contains('"image_format":"png"'));
+      expect(
+        body,
+        contains(
+          '"path":"https://res.cloudinary.com/cloud/image/upload/cover.png"',
+        ),
+      );
       expect(quiz.id, 'q9');
     });
 
@@ -394,8 +400,7 @@ void main() {
           token: 'token',
           title: 'Kuis',
           questions: const [],
-          imageId: 'galery-quiz/quiz-image/c',
-          imageFormat: 'png',
+          path: 'https://res.cloudinary.com/cloud/image/upload/cover.png',
         ),
         throwsA(
           isA<ApiException>()
