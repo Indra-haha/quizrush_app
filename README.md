@@ -34,6 +34,7 @@ Aplikasi Flutter untuk **platform kuis kelas daring** lengkap dengan autentikasi
 - **Buat kuis** — gambar kuis (jpg/png/webp, maks 5 MB), judul, deskripsi, minimal 5 pertanyaan × 4 pilihan jawaban, toggle jawaban benar, durasi per soal (1,5 / 2 / 3 / 5 detik), dan poin (1–50).
 - **Buat room** — pilih kuis berstatus `quarantine`, isi judul & deskripsi room, dapatkan **kode room 6 digit** yang bisa disalin.
 - **Alur status room** — `waiting → open → in-Game → ended`, diendorse lewat tombol aksi pada detail room.
+- **Ruang tunggu live** — setelah PIN terverifikasi, ruang tunggu menampilkan hero berisi judul kuis, jumlah soal, total poin, dan GAME PIN (ketuk untuk menyalin), kartu ringkasan room (jumlah peserta, status room, kondisi koneksi), grid peserta, serta sorakan real-time. Host mem-*publish* room lalu memulai kuis; seluruh peserta berpindah otomatis ke layar permainan saat soal pertama dikirim lewat WebSocket.
 - **Tester kuis offline** — `QuizTestPage` menjalankan satu soal per layar dengan timer dial, penomoran waktu, dan penilaian skor tanpa menyentuh server.
 
 ### Peringkat Wilayah
@@ -89,14 +90,14 @@ Untuk.device/ emulator, ganti dengan host yang dapat dijangkau (mis. `10.0.2.2` 
 ```
 lib/
 ├── engine/      KalkulatorEngine — pohon Expr + hitung() & hitungSkorWaktu
-├── helpers/     Logika murni Dart: json, format, validators, pin, room_status_flow, quiz_play_session, quiz_image, room_launcher
+├── helpers/     Logika murni Dart: json, format, validators, pin, room_status_flow, quiz_play_session, quiz_image, room_launcher, room_roster, region_label
 ├── models/      User, Quizes, Room, RoomMessage, RoomVerify + serialisasi JSON
 ├── pages/       4 tab shell + auth
 │   ├── MyQuizPage/   Sisi host: kuis saya, room, detail room, sheet buat room, buat kuis, tester
 │   └── QuizPage/     Sisi peserta: jelajahi kuis, detail kuis
 ├── services/    Lapisan data: REST client, auth, kuis, room, sesi, cache
 ├── theme/       Design token (modul terpisah) + barrel app_theme.dart, palet status, palet opsi jawaban
-└── widgets/     50 widget presentational tanpa logika halaman
+└── widgets/     55 widget presentational tanpa logika halaman
 ```
 
 Pola yang dipakai:
@@ -115,11 +116,12 @@ Token design terbagi ke modul-modul di **`lib/theme/`** (`app_colors.dart`, `app
 
 | Kelas | Cakupan |
 |---|---|
-| `AppColors` | Brand, surface, teks, status, divider + palet 4 warna jawaban |
+| `AppColors` | Brand, surface, teks, status, divider + palet 4 warna jawaban + palet halaman menunggu |
 | `AppSpacing` | Skala numerik `space1`…`space16`, clearances, alias semantik `xxs`…`xxl` |
-| `AppRadius` | `sm 8`, `md 12`, `lg 16`, `xl 24`, `pill 999` |
-| `AppShadows` | 12 preset `List<BoxShadow>` (card, raised, hairline, layered, pillButton, brandGlow, …) |
+| `AppRadius` | `sm 8`, `md 12`, `lg 16`, `xl 24`, `xxl 32`, `pill 999` |
+| `AppShadows` | 14 preset `List<BoxShadow>` (card, raised, hairline, layered, pillButton, brandGlow, softCard, …) |
 | `AppElevation` | `none`, `subtle`, `medium`, `raised` |
+| `AppSizes` | Ukuran komponen tetap (tombol kembali, avatar, slot kosong, titik status) |
 | `AppTextStyles` | sekitar 45 style siap pakai |
 | `AppFontSize` · `AppFontWeight` | Skala ukuran & bobot font untuk API widget |
 | `AppIconSize` · `AppBorderWidth` | Ukuran glyph ikon & ketebalan border |
@@ -186,13 +188,15 @@ flutter test
 | `test/quiz_cache_test.dart` | `QuizCacheService` (scoping per-NIM & migrasi format lama) + `QuizIndex` (grouping, cari PIN, pencarian judul) |
 | `test/room_model_test.dart` | `Room.displayTitle` (urutan judul: room → kuis → default) |
 | `test/active_room_service_test.dart` | `ActiveRoomService` (set/clear + kontrak `ChangeNotifier`) |
-| `test/helpers_test.dart` | Helper murni: `json`, `pin`, `auth_validator`, `room_status_flow`, `quiz_image`, `quiz_form_validator` |
+| `test/helpers_test.dart` | Helper murni: `json`, `pin`, `auth_validator`, `room_status_flow`, `quiz_image`, `quiz_form_validator`, `room_roster` |
 | `test/format_test.dart` | `format` (durasi, kode, waktu relatif, tanggal lahir, `totalDuration`) |
+| `test/region_label_test.dart` | `formatRegionLabel` (slug wilayah `GET /api/location` → label terbaca) |
+| `test/quiz_waiting_test.dart` | Widget halaman menunggu (`QuizWaitingHero`, `QuizWaitingStats`, `QuizWaitingParticipant`, `QuizWaitingSlot`) |
 | `test/engine_score_test.dart` | `KalkulatorEngine.hitungSkorWaktu` |
 | `test/model_json_test.dart` | Serialisasi/deserialisasi model (`Quizes`, `Room`, `RoomMessage`, `User`, dll) |
 | `test/service_test.dart` | Lapisan service lewat `MockClient` (`ApiClient`, auth, quiz, room) |
 
-Total **178** test, semuanya lulus.
+Total **201** test, semuanya lulus.
 
 ---
 
@@ -200,8 +204,7 @@ Total **178** test, semuanya lulus.
 
 Hal-hal yang **belum** berfungsi dan perlu diketahui:
 
-- **Join room belum diimplementasikan.** Tombol "Masuk" pada detail kuis hanya menampilkan snackbar `fitur join menyusul`.
-- **Peringkat Wilayah bergantung pada izin lokasi.** Podium dan daftar berasal dari `GET /api/location` (lihat `API.md` §12). Tanpa izin lokasi atau bila grup wilayah kosong, halaman menampilkan pesan kosong; kartu lokasi memakai cache terakhir bila ada.
+- **Peringkat Wilayah bergantung pada izin lokasi.** Podium dan daftar berasal dari `GET /api/location` (lihat `API.md` §12). Tanpa izin lokasi atau bila grup wilayah kosong, halaman menampilkan pesan kosong; kartu lokasi memakai cache terakhir bila ada. Slug wilayah dari server (`kecamatan-pasteur`) dinormalisasi jadi label yang terbaca (`Pasteur`) oleh `lib/helpers/region_label.dart`.
 - **Aturan minimal 5 pertanyaan sudah divalidasi di sisi klien.** `CreateQuizPage` memeriksa judul, deskripsi, gambar (wajib, maks 5 MB), minimal 5 pertanyaan, 4 opsi, jawaban benar terpilih, dan `skor` 1–50.
 - **Belum ada mode gelap** dan belum ada halaman pengaturan/preferensi selain `ProfilePage`.
 - **Base URL backend hardcoded** di `lib/services/api_client.dart` — belum configurable via environment.
