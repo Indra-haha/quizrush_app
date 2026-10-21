@@ -48,6 +48,13 @@ void main() {
       expect(ApiClient.message(null), 'Terjadi kesalahan');
     });
 
+    test('message memakai status code saat body bukan JSON', () {
+      expect(
+        ApiClient.message('bukan json', statusCode: 504),
+        'Terjadi kesalahan pada server (HTTP 504)',
+      );
+    });
+
     test('get mengirim bearer token', () async {
       String? auth;
       final api = _api((request) async {
@@ -571,18 +578,72 @@ void main() {
       expect(result.first.skor, 10);
     });
 
-    test('suggestQuestions melempar ApiException saat gagal', () async {
+    test('suggestQuestions melempar ApiException non-transien dengan pesan server', () async {
       final service = AiService.withApi(
-        _api((_) async => _json('{"message":"Model AI sedang sibuk"}', 502)),
+        _api((_) async => _json('{"message":"Terjadi kesalahan server"}', 500)),
       );
       expect(
         () => service.suggestQuestions(token: 't', topic: 'x'),
         throwsA(
           isA<ApiException>()
-              .having((e) => e.statusCode, 'statusCode', 502)
-              .having((e) => e.message, 'message', 'Model AI sedang sibuk'),
+              .having((e) => e.statusCode, 'statusCode', 500)
+              .having((e) => e.message, 'message', 'Terjadi kesalahan server'),
         ),
       );
+    });
+
+    test('suggestQuestions mencoba ulang sekali saat provider sibuk', () async {
+      var calls = 0;
+      final service = AiService.withApi(
+        _api((_) async {
+          calls++;
+          if (calls == 1) {
+            return _json('{"message":"Model AI gagal merespons"}', 502);
+          }
+          return _json(
+            '''
+{
+  "questions": [
+    {
+      "question": "Apa ibu kota Indonesia?",
+      "options": ["Bandung", "Jakarta", "Surabaya", "Medan"],
+      "correct_idx": 1,
+      "duration": 3,
+      "skor": 20
+    }
+  ]
+}''',
+            200,
+          );
+        }),
+      );
+
+      final result = await service.suggestQuestions(token: 't', topic: 'x');
+      expect(calls, 2);
+      expect(result, hasLength(1));
+    });
+
+    test('suggestQuestions memberi pesan sibuk setelah ulangan transien habis', () async {
+      var calls = 0;
+      final service = AiService.withApi(
+        _api((_) async {
+          calls++;
+          return _json('{"message":"Model AI gagal merespons"}', 503);
+        }),
+      );
+      await expectLater(
+        service.suggestQuestions(token: 't', topic: 'x'),
+        throwsA(
+          isA<ApiException>()
+              .having((e) => e.statusCode, 'statusCode', 503)
+              .having(
+                (e) => e.message,
+                'message',
+                'Model AI sedang sibuk. Coba lagi sebentar lagi.',
+              ),
+        ),
+      );
+      expect(calls, AiService.maxAttempts);
     });
 
     test('suggestQuestions mengembalikan list kosong saat questions bukan list', () async {

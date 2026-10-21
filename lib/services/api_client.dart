@@ -98,9 +98,15 @@ class ApiClient {
     }
   }
 
-  static String message(dynamic data) {
+  /// Pesan kesalahan dari body JSON. Bila body bukan JSON (mis. halaman HTML
+  /// dari proxy/nginx saat timeout), dipakai pesan berbasis [statusCode] agar
+  /// pengguna tidak hanya melihat "Terjadi kesalahan".
+  static String message(dynamic data, {int? statusCode}) {
     if (data is Map && data['message'] is String) {
       return data['message'] as String;
+    }
+    if (statusCode != null && statusCode >= 500) {
+      return 'Terjadi kesalahan pada server (HTTP $statusCode)';
     }
     return 'Terjadi kesalahan';
   }

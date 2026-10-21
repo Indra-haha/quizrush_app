@@ -32,6 +32,9 @@ String formatPoints(int value) {
   return negative ? '-$buffer' : buffer.toString();
 }
 
+/// Format nilai rupiah dengan pemisah ribuan titik: 284500 -> "Rp 284.500".
+String formatRupiah(int value) => 'Rp ${formatPoints(value)}';
+
 String formatKode(String kode) {
   if (kode.length == 6) {
     return '${kode.substring(0, 3)} ${kode.substring(3)}';

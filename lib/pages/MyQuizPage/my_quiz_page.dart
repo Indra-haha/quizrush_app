@@ -1,23 +1,26 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
+import '../../helpers/format.dart';
+import '../../helpers/pin.dart';
 import '../../models/quiz.dart';
 import '../../models/room.dart';
 import '../../services/quiz_feed.dart';
 import '../../services/quiz_index.dart';
 import '../../theme/app_theme.dart';
-import '../../helpers/format.dart';
 import '../../widgets/app_header_bar_with_actions.dart';
 import '../../widgets/app_pill_button.dart';
 import '../../widgets/app_snackbar.dart';
 import '../../widgets/empty_state_view.dart';
+import '../../widgets/quiz_group_card.dart';
+import '../../widgets/quiz_search_field.dart';
 import '../../widgets/quarantine_card.dart';
-import '../../widgets/room_card.dart';
 import '../../widgets/room_code_dialog.dart';
 import '../../widgets/status_filter_row.dart';
 import '../login_redirect.dart';
 import 'create_room_sheet.dart';
 import 'detail_room_page.dart';
-import 'quiz_test_page.dart';
 import 'rooms_page.dart';
 
 const _statusFilters = ['waiting', 'open', 'in-Game', 'ended'];
@@ -35,19 +38,49 @@ class _MyQuizPageState extends State<MyQuizPage> {
   String _selectedStatus = 'waiting';
   late QuizIndex _index = widget.index;
   bool _syncing = false;
+  bool _notFound = false;
+  final _searchController = TextEditingController();
+  Timer? _notFoundTimer;
 
-  List<({Quizes quiz, RoomSummary room})> _roomsFor(String status) {
-    final entries = <({Quizes quiz, RoomSummary room})>[
-      for (final quiz in _index.all)
+  /// Jumlah digit PIN yang sudah diketik (1-5), atau null kalau kolom pencarian
+  /// tidak berisi PIN sebagian: kosong, ada huruf, atau sudah 6 digit.
+  int? get _pinProgress => Pin.progress(_searchController.text);
+
+  @override
+  void dispose() {
+    _notFoundTimer?.cancel();
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  /// Quiz yang punya minimal satu room berstatus [status], sudah difilter
+  /// lewat kolom pencarian. Tiap entri memuat daftar room yang cocok, diurutkan
+  /// dari yang terbaru; urutan kartu mengikuti room terbarunya.
+  List<({Quizes quiz, List<RoomSummary> rooms})> _groupedQuizzes(String status) {
+    final query = _searchController.text.trim();
+    final groups = <({Quizes quiz, List<RoomSummary> rooms})>[];
+
+    for (final quiz in _index.all) {
+      if (query.isNotEmpty && !_index.matches(quiz, query)) continue;
+      final rooms = <RoomSummary>[
         for (final room in quiz.rooms)
-          if (room.status == status) (quiz: quiz, room: room),
-    ];
-    entries.sort((a, b) {
-      final t = parseTimeOrEpoch(a.room.createdAt);
-      final o = parseTimeOrEpoch(b.room.createdAt);
-      return o.compareTo(t);
-    });
-    return entries;
+          if (room.status == status) room,
+      ];
+      if (rooms.isEmpty) continue;
+      rooms.sort(
+        (a, b) => parseTimeOrEpoch(
+          b.createdAt,
+        ).compareTo(parseTimeOrEpoch(a.createdAt)),
+      );
+      groups.add((quiz: quiz, rooms: rooms));
+    }
+
+    groups.sort(
+      (a, b) => parseTimeOrEpoch(
+        b.rooms.first.createdAt,
+      ).compareTo(parseTimeOrEpoch(a.rooms.first.createdAt)),
+    );
+    return groups;
   }
 
   Future<void> _openRooms(Quizes quiz) async {
@@ -60,18 +93,6 @@ class _MyQuizPageState extends State<MyQuizPage> {
       setState(() => _selectedStatus = result.previous);
       AppSnackBar.show(context, 'Status room menjadi ${result.next}.');
       await _sync();
-    }
-  }
-
-  Future<void> _testRoom(Quizes quiz, RoomSummary room) async {
-    final result = await Navigator.of(context).push<PublishResult>(
-      MaterialPageRoute<PublishResult>(
-        builder: (_) => QuizTestPage(quiz: quiz),
-      ),
-    );
-    if (mounted && result != null) {
-      setState(() => _selectedStatus = result.previous);
-      AppSnackBar.show(context, 'Status room menjadi ${result.next}.');
     }
   }
 
@@ -93,6 +114,38 @@ class _MyQuizPageState extends State<MyQuizPage> {
     if (room == null || !mounted) return;
     await showRoomCodeDialog(context, room.kode);
     await _sync();
+  }
+
+  void _onSearchChanged(String value) {
+    _notFoundTimer?.cancel();
+    final query = value.trim();
+    if (Pin.isComplete(query)) {
+      _openRoomByPin(query);
+      return;
+    }
+    setState(() => _notFound = false);
+  }
+
+  /// Cari room di index cache, lalu langsung buka detail room-nya. Kalau tidak
+  /// ada, tampilkan state "room tidak ditemukan" selama tiga detik lalu
+  /// kembalikan user ke daftar seperti biasa.
+  void _openRoomByPin(String kode) {
+    final found = _index.findRoomByKode(kode);
+    if (found == null) {
+      setState(() => _notFound = true);
+      _notFoundTimer?.cancel();
+      _notFoundTimer = Timer(const Duration(seconds: 3), () {
+        if (!mounted) return;
+        _searchController.clear();
+        setState(() => _notFound = false);
+      });
+      return;
+    }
+
+    _searchController.clear();
+    setState(() => _notFound = false);
+    FocusScope.of(context).unfocus();
+    _openRoomDetail(found.quiz, found.room);
   }
 
   /// Server hanya dihubungi lewat tombol refresh atau setelah ada mutasi
@@ -124,7 +177,7 @@ class _MyQuizPageState extends State<MyQuizPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.surface,
+      backgroundColor: AppColors.quizCanvas,
       appBar: AppHeaderBarWithActions(
         title: 'Quiz Saya',
         leading: IconButton(
@@ -132,13 +185,6 @@ class _MyQuizPageState extends State<MyQuizPage> {
           onPressed: () => Navigator.of(context).pop(),
           icon: const Icon(Icons.arrow_back),
         ),
-        actions: [
-          IconButton(
-            tooltip: 'Refresh dari server',
-            onPressed: _syncing ? null : _sync,
-            icon: const Icon(Icons.refresh),
-          ),
-        ],
       ),
       body: _buildBody(),
       floatingActionButton: AppPillButton(
@@ -151,68 +197,102 @@ class _MyQuizPageState extends State<MyQuizPage> {
   }
 
   Widget _buildBody() {
-    if (_index.isEmpty) return _buildEmpty();
-
     return ListView(
-      padding: const EdgeInsets.only(
-        left: AppSpacing.space9,
-        right: AppSpacing.space9,
-        top: AppSpacing.space8,
-        bottom: AppSpacing.scrollClearance,
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.space8,
+        AppSpacing.space8,
+        AppSpacing.space8,
+        AppSpacing.scrollClearance,
       ),
       children: [
-        if (_index.group('quarantine').isNotEmpty) ...[
-          for (final quiz in _index.group('quarantine'))
-            Padding(
-              padding: const EdgeInsets.only(bottom: AppSpacing.space6),
-              child: QuarantineCard(quiz: quiz, onTap: () => _openRooms(quiz)),
-            ),
-          const SizedBox(height: AppSpacing.space6),
-        ],
+        QuizSearchField(
+          controller: _searchController,
+          onChanged: _onSearchChanged,
+          onRefresh: _sync,
+          syncing: _syncing,
+          loading: _syncing,
+        ),
+        const SizedBox(height: AppSpacing.space4),
         StatusFilterRow(
           statuses: _statusFilters,
           selected: _selectedStatus,
           onChanged: (status) => setState(() => _selectedStatus = status),
         ),
-        const SizedBox(height: AppSpacing.space6),
-        _buildRoomList(_selectedStatus),
+        const SizedBox(height: AppSpacing.space4),
+        ..._buildContent(),
       ],
     );
   }
 
-  Widget _buildRoomList(String status) {
-    final entries = _roomsFor(status);
+  List<Widget> _buildContent() {
+    if (_notFound) return [_padded(const EmptyStateView.notFound())];
+    if (_pinProgress != null) {
+      return [_padded(EmptyStateView.searching(_pinProgress!))];
+    }
 
-    if (entries.isEmpty) {
-      return Padding(
-        padding: const EdgeInsets.symmetric(vertical: AppSpacing.space14),
-        child: EmptyStateView(
-          icon: Icons.meeting_room_outlined,
-          message: 'Tidak ada room dengan status "$status".',
+    final query = _searchController.text.trim();
+    final children = <Widget>[];
+
+    if (_index.isEmpty) {
+      children.add(
+        _padded(
+          const EmptyStateView(
+            icon: Icons.quiz_outlined,
+            message: 'Belum ada quiz untukmu.',
+          ),
+        ),
+      );
+      return children;
+    }
+
+    final quarantines = _index.group('quarantine');
+    if (quarantines.isNotEmpty) {
+      for (final quiz in quarantines) {
+        children.add(
+          Padding(
+            padding: const EdgeInsets.only(bottom: AppSpacing.space6),
+            child: QuarantineCard(quiz: quiz, onTap: () => _openRooms(quiz)),
+          ),
+        );
+      }
+      children.add(const SizedBox(height: AppSpacing.space6));
+    }
+
+    final groups = _groupedQuizzes(_selectedStatus);
+    if (groups.isEmpty) {
+      children.add(
+        _padded(
+          query.isEmpty
+              ? EmptyStateView(
+                  icon: Icons.meeting_room_outlined,
+                  message: 'Tidak ada room dengan status "$_selectedStatus".',
+                )
+              : EmptyStateView.noResult(query),
+        ),
+      );
+      return children;
+    }
+
+    for (final group in groups) {
+      children.add(
+        Padding(
+          padding: const EdgeInsets.only(bottom: AppSpacing.space6),
+          child: QuizGroupCard(
+            quiz: group.quiz,
+            rooms: group.rooms,
+            onTapHeader: () => _openRooms(group.quiz),
+            onTapRoom: (room) => _openRoomDetail(group.quiz, room),
+          ),
         ),
       );
     }
-
-    return Column(
-      children: [
-        for (final entry in entries)
-          Padding(
-            padding: const EdgeInsets.only(bottom: AppSpacing.space6),
-            child: RoomCard(
-              quiz: entry.quiz,
-              room: entry.room,
-              onTap: () => _openRoomDetail(entry.quiz, entry.room),
-              onTestPressed: () => _testRoom(entry.quiz, entry.room),
-            ),
-          ),
-      ],
-    );
+    return children;
   }
 
-  Widget _buildEmpty() {
-    return const EmptyStateView(
-      icon: Icons.quiz_outlined,
-      message: 'Belum ada quiz untukmu.',
+  Widget _padded(Widget child) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.space14),
+      child: child,
     );
   }
 }

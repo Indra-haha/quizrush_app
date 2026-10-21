@@ -280,6 +280,23 @@ class AppTextStyles {
     height: 1.5,
   );
 
+  /// Judul kartu quiz berkelompok (desain MyQuiz).
+  static final quizGroupTitle = GoogleFonts.plusJakartaSans(
+    color: AppColors.inkStrong,
+    fontSize: 18,
+    fontWeight: FontWeight.w600,
+    height: 1.33,
+  );
+
+  /// Meta mikro: durasi/soal, label pill jumlah room (desain MyQuiz).
+  static final metaMicro = GoogleFonts.plusJakartaSans(
+    color: AppColors.textSecondary,
+    fontSize: 11,
+    fontWeight: FontWeight.w600,
+    height: 1.27,
+    letterSpacing: 0.33,
+  );
+
   static final labelStrong = GoogleFonts.plusJakartaSans(
     color: AppColors.textPrimary,
     fontSize: 14,

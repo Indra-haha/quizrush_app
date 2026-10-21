@@ -17,13 +17,41 @@ class AiService {
   /// Durasi yang diizinkan server untuk sebuah soal (§4.4).
   static const List<double> allowedDurations = [1.5, 2.0, 3.0, 5.0];
 
+  /// Status yang menandakan provider AI sedang sibuk/transien, bukan kesalahan
+  /// permintaan klien. Nilai ini dicoba ulang sekali lalu diberi pesan khusus.
+  static const Set<int> transientStatuses = {502, 503, 504};
+
+  /// Jeda sebelum mencoba ulang saat provider sibuk.
+  static const Duration retryDelay = Duration(milliseconds: 1200);
+
+  /// Batas percobaan untuk status transien (1 percobaan awal + 1 ulangan).
+  static const int maxAttempts = 2;
+
   final ApiClient _api;
 
   /// Minta model AI membuatkan daftar soal dari [topic] (topik/ide teks bebas).
   ///
   /// Jumlah soal ditentukan oleh server/model dari isi [topic]; hasil yang
   /// tidak valid (opsi tidak berjumlah 4, dsb.) dibuang, bukan dilempar error.
+  /// Status transien ([transientStatuses]) dicoba ulang sekali karena provider
+  /// AI kerap membalas 503/504 sesaat.
   Future<List<QuizQuestionInput>> suggestQuestions({
+    required String token,
+    required String topic,
+  }) async {
+    for (var attempt = 1; ; attempt++) {
+      try {
+        return await _requestSuggestions(token: token, topic: topic);
+      } on ApiException catch (e) {
+        final canRetry =
+            attempt < maxAttempts && transientStatuses.contains(e.statusCode);
+        if (!canRetry) rethrow;
+        await Future<void>.delayed(retryDelay);
+      }
+    }
+  }
+
+  Future<List<QuizQuestionInput>> _requestSuggestions({
     required String token,
     required String topic,
   }) async {
@@ -36,12 +64,16 @@ class AiService {
     final data = ApiClient.decode(response);
     if (response.statusCode != 200) {
       throw ApiException(
-        ApiClient.message(data),
+        transientStatuses.contains(response.statusCode)
+            ? 'Model AI sedang sibuk. Coba lagi sebentar lagi.'
+            : ApiClient.message(data, statusCode: response.statusCode),
         statusCode: response.statusCode,
       );
     }
     final raw = data is Map ? data['questions'] : null;
-    return jsonMapList(raw).map(_parseQuestion).whereType<QuizQuestionInput>().toList();
+    return jsonMapList(
+      raw,
+    ).map(_parseQuestion).whereType<QuizQuestionInput>().toList();
   }
 
   /// Ubah satu objek JSON hasil AI menjadi [QuizQuestionInput].

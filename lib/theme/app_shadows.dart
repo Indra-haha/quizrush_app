@@ -55,6 +55,16 @@ class AppShadows {
     ),
   ];
 
+  /// Kartu quiz berkelompok (desain MyQuiz): glow indigo lembut.
+  static const quizCard = <BoxShadow>[
+    BoxShadow(
+      color: Color(0x0F4B49D6),
+      blurRadius: 18,
+      offset: Offset(0, 4),
+      spreadRadius: -2,
+    ),
+  ];
+
   /// Floating pill button (FAB).
   static const pillButton = <BoxShadow>[
     BoxShadow(

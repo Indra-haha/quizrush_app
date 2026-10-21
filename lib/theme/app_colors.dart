@@ -18,6 +18,30 @@ class AppColors {
   static const surface = Color(0xFFF9F9FF);
   static const surfaceSoft = Color(0xFFDEE8FF);
 
+  // Surface kanvas untuk halaman daftar quiz (desain MyQuiz).
+  static const quizCanvas = Color(0xFFFBF8FF);
+
+  // Aksen indigo (tombol aksi & pill utama pada desain MyQuiz).
+  static const indigoAction = Color(0xFF4B49D6);
+  static const indigoActionSoft = Color(0xFFE2DFFF);
+  static const indigoActionInk = Color(0xFF362EB9);
+
+  // Tint kartu & tile pada desain MyQuiz.
+  static const tintIcon = Color(0xFFEEECFF);
+  static const tintRoom = Color(0xFFF5F2FF);
+
+  // Tinta tambahan.
+  static const inkStrong = Color(0xFF171936);
+  static const inkMuted = Color(0xFF777586);
+
+  // Amber (badge WAITING pada desain MyQuiz).
+  static const amberSoft = Color(0xFFFEF3C7);
+  static const amberInk = Color(0xFF92400E);
+
+  // Indigo tipis (badge SELESAI & tombol "Lihat Hasil" pada desain MyQuiz).
+  static const endedTint = Color(0xFFE0E0FF);
+  static const endedInk = Color(0xFF444557);
+
   // Text
   static const textPrimary = Color(0xFF111C2D);
   static const textSecondary = Color(0xFF464554);

@@ -1,5 +1,5 @@
 name: quizrush
-description: "Quiz Rush — platform kuis kelas daring dengan autentikasi NIM, manajemen kuis & room, serta halaman teman dan profil pengguna."
+description: "Quiz Rush — platform kuis kelas daring dengan autentikasi NIM, manajemen kuis & room, serta halaman peringkat wilayah dan profil pengguna."
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
@@ -43,6 +43,7 @@ dependencies:
   crypto: ^3.0.6
   local_auth: ^2.3.0
   flutter_secure_storage: ^9.2.2
+  geolocator: ^14.0.2
 
 dev_dependencies:
   flutter_test:

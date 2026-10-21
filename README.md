@@ -1,6 +1,6 @@
 # Quiz Rush
 
-Aplikasi Flutter untuk **platform kuis kelas daring** lengkap dengan autentikasi NIM, manajemen kuis dan room, serta halaman **Friend** dan **Profile** pengguna.
+Aplikasi Flutter untuk **platform kuis kelas daring** lengkap dengan autentikasi NIM, manajemen kuis dan room, serta halaman **Peringkat Wilayah** dan **Profile** pengguna.
 
 > Nama paket: `quizrush` · Root widget: `QuizApp` · Judul aplikasi: `Aplikasi Quiz` · Android label: `Quiz Rush`
 
@@ -36,8 +36,8 @@ Aplikasi Flutter untuk **platform kuis kelas daring** lengkap dengan autentikasi
 - **Alur status room** — `waiting → open → in-Game → ended`, diendorse lewat tombol aksi pada detail room.
 - **Tester kuis offline** — `QuizTestPage` menjalankan satu soal per layar dengan timer dial, penomoran waktu, dan penilaian skor tanpa menyentuh server.
 
-### Friend
-Halaman daftar teman — saat ini masih berupa kerangka UI (kolom pencarian + empty state) dan belum tersambung ke backend.
+### Peringkat Wilayah
+Halaman peringkat user berdasarkan wilayah: podium tiga besar, daftar peringkat, dan baris posisi user sendiri. Podium/daftar masih memakai **data contoh**, sedangkan kartu lokasi terkini beserta chip filter wilayah (Kecamatan/Kota/Provinsi) direncanakan berasal dari `POST /api/location` — koordinat diambil lewat `geolocator` dan hasil terakhir di-cache di `SharedPreferences`.
 
 ### Profile
 Halaman profil pengguna yang menampilkan nama, username, kelas, dan tanggal lahir, serta tombol **Logout** untuk mengakhiri sesi.
@@ -50,9 +50,9 @@ Halaman profil pengguna yang menampilkan nama, username, kelas, dan tanggal lahi
 2. **Temukan kuis** → tab **Quiz** → cari judul atau ketik 6-digit PIN → lihat detail & kode room.
 3. **Buat kuis** → FAB **Create Quiz** di Home → isi form → buat room → bagikan kode 6 digit.
 4. **Jalankan** → detail room → `Publish` → `Mulai Game` → `Akhiri`.
-5. **Akun** → tab **Friend** untuk daftar teman (kerangka UI), tab **Profile** untuk melihat profil dan logout.
+5. **Akun** → tab **Peringkat** untuk peringkat wilayah (lokasi dari GPS), tab **Profile** untuk melihat profil dan logout.
 
-Navigasi memakai `MainShell` (`lib/pages/button.dart`) dengan 4 tab: **Home · Quiz · Friend · Profile**.
+Navigasi memakai `MainShell` (`lib/pages/button.dart`) dengan 4 tab: **Home · Quiz · Peringkat · Profile**.
 
 ---
 
@@ -149,12 +149,13 @@ REST (bukan Supabase/Firebase) memakai `package:http`, dengan JSON dua arah dan 
 | `AuthService` | `POST /api/login` · `POST /api/register` · `POST /api/logout` · `GET /api/session` |
 | `QuizService` | `GET /api/quizzes` · `GET /api/my-quizzes` · `POST /api/create/signature` · unggah langsung ke Cloudinary · `POST /api/create/quiz` |
 | `RoomService` | `POST /api/create/room` · `PUT /api/room/{id}/status` |
+| `LocationService` | `POST /api/location` (template — belum diimplementasi di server) |
 
 Semua request selain login/register mengirim `Authorization: Bearer <token>`; token berlaku 24 jam. `ApiException` dengan `statusCode == 401` diubah menjadi `needsAuth: true` yang memicu `LoginRedirect.go` ke halaman login.
 
 Gambar kuis **diunggah otomatis begitu dipilih**: aplikasi meminta signature ke `POST /api/create/signature`, mengunggah langsung ke Cloudinary sebagai aset `authenticated` (overlay progres 2 tahap tampil di atas gambar), lalu `POST /api/create/quiz` mengirim `image_id` (`public_id`) dan `image_format` hasilnya. Server menyimpan aset dan mengembalikan **signed URL** (field `path`) saat kuis dibaca, sehingga gambar hanya dapat diakses user yang login. Unggahan berjalan di latar belakang — tombol Simpan nonaktif sampai selesai, dan gagal unggah menampilkan tombol "Coba lagi" di atas gambar.
 
-Rujukan endpoint lengkap tersedia di **`API.md`**.
+Rujukan endpoint lengkap tersedia di **`API.md`**. Penjelasan alur token (asal, validasi, dan efek tiap token per endpoint) ada di **`docs/token_flow.md`**.
 
 ---
 
@@ -165,6 +166,7 @@ Rujukan endpoint lengkap tersedia di **`API.md`**.
 | `http` | `^1.2.0` | Panggilan REST ke Deera Server |
 | `shared_preferences` | `^2.3.0` | Penyimpanan sesi auth + cache kuis per-NIM |
 | `google_fonts` | `^8.2.1` | Memuat font Montserrat & Plus Jakarta Sans saat runtime |
+| `geolocator` | `^14.0.2` | Mengambil koordinat GPS untuk kartu lokasi wilayah |
 
 Dev: `flutter_test`, `flutter_lints ^6.0.0`, `flutter_launcher_icons ^0.13.1`.
 
@@ -180,7 +182,7 @@ flutter test
 |---|---|
 | `test/widget_test.dart` | Smoke test aplikasi: halaman login tampil, validasi field kosong |
 | `test/widgets_test.dart` | Widget bersama presentational (tombol, badge, kartu kuis/room, dsb.) + unit `QuizPlaySession` |
-| `test/pages_test.dart` | Halaman `FriendPage` (judul + empty state) dan `ProfilePage` (data user + tombol logout) |
+| `test/pages_test.dart` | Halaman `RankingRegionPage` (kartu lokasi + daftar peringkat) dan `ProfilePage` (data user + tombol logout) |
 | `test/quiz_cache_test.dart` | `QuizCacheService` (scoping per-NIM & migrasi format lama) + `QuizIndex` (grouping, cari PIN, pencarian judul) |
 | `test/room_model_test.dart` | `Room.displayTitle` (urutan judul: room → kuis → default) |
 | `test/active_room_service_test.dart` | `ActiveRoomService` (set/clear + kontrak `ChangeNotifier`) |
@@ -190,7 +192,7 @@ flutter test
 | `test/model_json_test.dart` | Serialisasi/deserialisasi model (`Quizes`, `Room`, `RoomMessage`, `User`, dll) |
 | `test/service_test.dart` | Lapisan service lewat `MockClient` (`ApiClient`, auth, quiz, room) |
 
-Total **158** test, semuanya lulus.
+Total **178** test, semuanya lulus.
 
 ---
 
@@ -199,6 +201,7 @@ Total **158** test, semuanya lulus.
 Hal-hal yang **belum** berfungsi dan perlu diketahui:
 
 - **Join room belum diimplementasikan.** Tombol "Masuk" pada detail kuis hanya menampilkan snackbar `fitur join menyusul`.
+- **Peringkat Wilayah masih memakai data contoh.** Podium dan daftar peringkat belum tersambung ke server; hanya kartu lokasi yang dirancang memakai `POST /api/location` (endpoint **belum diimplementasi di server**, lihat `API.md` §12). Tanpa izin lokasi, halaman menampilkan wilayah default/cache terakhir.
 - **Aturan minimal 5 pertanyaan sudah divalidasi di sisi klien.** `CreateQuizPage` memeriksa judul, deskripsi, gambar (wajib, maks 5 MB), minimal 5 pertanyaan, 4 opsi, jawaban benar terpilih, dan `skor` 1–50.
 - **Belum ada mode gelap** dan belum ada halaman pengaturan/preferensi selain `ProfilePage`.
 - **Base URL backend hardcoded** di `lib/services/api_client.dart` — belum configurable via environment.

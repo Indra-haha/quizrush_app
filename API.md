@@ -16,7 +16,9 @@
 
 Semua endpoint wajib menyertakan header `Authorization` **kecuali** `POST /api/register` dan `POST /api/login`. Endpoint WebSocket `GET /api/rooms?token=<JWT room>` (§9) mewajibkan header `Authorization` (token login) **dan** JWT ber-scope room pada query `token`.
 
-Semua endpoint yang dilindungi `middleware.Auth` (dan `POST /api/login`) menerapkan **allowlist perangkat**: request wajib berasal dari smartphone, dicek dari header `User-Agent`. Request dari selain smartphone ditolak `401 { "message": "Akses hanya diizinkan dari perangkat smartphone" }`.
+Semua endpoint yang dilindungi `middleware.Auth` (dan `POST /api/login`) menerapkan **allowlist perangkat**: request wajib berasal dari smartphone, dicek dari header `User-Agent`. Request dari selain smartphone ditolak `401`.
+
+Respons `401` dari `middleware.Auth` memakai envelope bersarang `{ "status": 401, "error": "Unauthorized", "message": "..." }`. Pesan `Missing or expired authorization token` dipakai untuk token yang hilang, rusak, atau kedaluwarsa; pesan lain (`Sesi telah berakhir, silakan login kembali`, allowlist device, `User tidak ditemukan`) dipertahankan per kasus. `POST /api/login` yang ditolak karena bukan smartphone masih memakai bentuk lama `{ "message": "..." }`.
 
 **Environment variables:**
 
@@ -26,7 +28,6 @@ Semua endpoint yang dilindungi `middleware.Auth` (dan `POST /api/login`) menerap
 | `MONGO_URI` | ✗* | — | URI MongoDB; *atau isi `DB_HOST/DB_PORT/DB_USER/DB_PASS/DB_NAME/DB_AUTH_SOURCE` |
 | `DB_NAME` | ✗ | `quizrush_app_db` | Nama database (hanya dipakai bila `MONGO_URI` tidak menentukan path) |
 | `PORT` | ✗ | `8080` | Port HTTP saat `cert.pem` tidak ada |
-| `SEED_ENABLED` | ✗ | `true` | `false` menonaktifkan semua seed data contoh |
 | `ALLOWED_ORIGINS` | ✗ | origin se-host | Daftar origin yang diizinkan untuk handshake WebSocket (pisahkan koma) |
 | `CLEANUP_ORPHAN_COLLECTIONS` | ✗ | `false` | `true` mengizinkan penghapusan koleksi orphan `anggota`/`anggotas` saat startup |
 | `CLOUDINARY_URL` | ✗ | — | Kredensial Cloudinary (`cloudinary://<api_key>:<api_secret>@<cloud_name>`); alternatif: `CLOUDINARY_CLOUD_NAME` + `CLOUDINARY_API_KEY` + `CLOUDINARY_API_SECRET`. Kosong = client media tidak aktif (server tetap berjalan) |
@@ -59,6 +60,7 @@ Semua endpoint yang dilindungi `middleware.Auth` (dan `POST /api/login`) menerap
 | POST | `/api/ai/suggest` | ✓ | Membuat saran soal (AI) dari topik teks |
 | GET | `/api/me/points` | ✓ | Saldo poin user yang login |
 | GET | `/api/me/coins` | ✓ | Riwayat perolehan koin user yang login |
+| GET | `/api/location` | ✓ | Grouped leaderboard per kecamatan/kota/provinsi dari koordinat GPS (lihat §12) |
 | GET | `/api/emojis` | ✓ | List semua emoji |
 | GET | `/api/emojis/{id}` | ✓ | Melihat satu emoji berdasarkan ID |
 | POST | `/api/emojis` | ✓ | Membuat emoji baru |
@@ -285,14 +287,11 @@ Authorization: Bearer <TOKEN>
 **Contoh response — `401 Unauthorized`**
 
 ```json
-// Token tidak ditemukan
-{ "message": "Token tidak ditemukan" }
-
-// Token tidak valid
-{ "message": "Token tidak valid" }
+// Token tidak ditemukan / tidak valid / kedaluwarsa
+{ "status": 401, "error": "Unauthorized", "message": "Missing or expired authorization token" }
 
 // Sesi sudah berakhir
-{ "message": "Sesi telah berakhir, silakan login kembali" }
+{ "status": 401, "error": "Unauthorized", "message": "Sesi telah berakhir, silakan login kembali" }
 ```
 
 **Contoh response — `500 Internal Server Error`**
@@ -341,14 +340,14 @@ Authorization: Bearer <TOKEN>
 **Contoh response — `401 Unauthorized`**
 
 ```json
-// Token tidak valid
-{ "message": "Token tidak valid" }
+// Token tidak valid / kedaluwarsa
+{ "status": 401, "error": "Unauthorized", "message": "Missing or expired authorization token" }
 
 // Sesi berakhir
-{ "message": "Sesi telah berakhir, silakan login kembali" }
+{ "status": 401, "error": "Unauthorized", "message": "Sesi telah berakhir, silakan login kembali" }
 
 // User tidak ditemukan
-{ "message": "User tidak ditemukan" }
+{ "status": 401, "error": "Unauthorized", "message": "User tidak ditemukan" }
 ```
 
 ---
@@ -447,17 +446,17 @@ Authorization: Bearer <TOKEN>
 **Contoh response — `401 Unauthorized`**
 
 ```json
-// Token tidak valid
-{ "message": "Token tidak valid" }
+// Token tidak valid / kedaluwarsa
+{ "status": 401, "error": "Unauthorized", "message": "Missing or expired authorization token" }
 
 // Sesi berakhir
-{ "message": "Sesi telah berakhir, silakan login kembali" }
+{ "status": 401, "error": "Unauthorized", "message": "Sesi telah berakhir, silakan login kembali" }
 
 // Bukan dari smartphone
-{ "message": "Akses hanya diizinkan dari perangkat smartphone" }
+{ "status": 401, "error": "Unauthorized", "message": "Akses hanya diizinkan dari perangkat smartphone" }
 
 // User tidak ditemukan
-{ "message": "User tidak ditemukan" }
+{ "status": 401, "error": "Unauthorized", "message": "User tidak ditemukan" }
 ```
 
 ---
@@ -791,7 +790,7 @@ Authorization: Bearer <TOKEN>
 **Contoh response — `401 Unauthorized`**
 
 ```json
-{ "message": "Token tidak valid" }
+{ "status": 401, "error": "Unauthorized", "message": "Missing or expired authorization token" }
 ```
 
 ---
@@ -1501,7 +1500,7 @@ Authorization: Bearer <TOKEN>
 **Contoh response — `401 Unauthorized`**
 
 ```json
-{ "message": "Token tidak valid" }
+{ "status": 401, "error": "Unauthorized", "message": "Missing or expired authorization token" }
 ```
 
 ---
@@ -1951,7 +1950,7 @@ sesi dihentikan tanpa kredit poin.
 | Kode | Arti | Contoh pesan |
 |---|---|---|
 | 400 | Request/atribut tidak valid | `Request tidak valid` / `Status room harus salah satu dari: waiting, open, in-Game, ended` / `Tipe room harus salah satu dari: public, private` |
-| 401 | Autentikasi gagal atau sesi berakhir | `Token tidak valid` / `Sesi telah berakhir, silakan login kembali` / `Token tidak ditemukan` / `Token room tidak ditemukan` / `Token room tidak valid` |
+| 401 | Autentikasi gagal atau sesi berakhir | `Missing or expired authorization token` / `Sesi telah berakhir, silakan login kembali` / `User tidak ditemukan` — envelope `{ "status": 401, "error": "Unauthorized", "message": "..." }` (endpoint dengan `middleware.Auth`) / `Token room tidak ditemukan` / `Token room tidak valid` (WebSocket, bentuk lama) |
 | 401 | Bukan dari perangkat smartphone (allowlist device) | `Akses hanya diizinkan dari perangkat smartphone` |
 | 403 | Otorisasi gagal (resource bukan milik Anda / perangkat lain) | `Anda tidak punya akses ke kuis ini` / `Token room bukan milik pengguna ini` / `Akun sudah terikat pada perangkat lain` |
 | 404 | Data tidak ditemukan | `Kuis tidak ditemukan` / `Room tidak ditemukan` / `Result tidak ditemukan` / `Emoji tidak ditemukan` / `Permainan tidak sedang berjalan` |
@@ -2056,11 +2055,11 @@ Authorization: Bearer <TOKEN>
 **Contoh response — `401 Unauthorized`**
 
 ```json
-// Token tidak valid
-{ "message": "Token tidak valid" }
+// Token tidak valid / kedaluwarsa
+{ "status": 401, "error": "Unauthorized", "message": "Missing or expired authorization token" }
 
 // Sesi berakhir
-{ "message": "Sesi telah berakhir, silakan login kembali" }
+{ "status": 401, "error": "Unauthorized", "message": "Sesi telah berakhir, silakan login kembali" }
 ```
 
 **Contoh response — `500 Internal Server Error`**
@@ -2068,3 +2067,170 @@ Authorization: Bearer <TOKEN>
 ```json
 { "message": "Gagal membaca riwayat koin" }
 ```
+
+---
+
+## 12. Grouped Leaderboard Wilayah (LBS)
+
+> Bagian ini mendefinisikan kontrak **LBS Grouped Leaderboard** yang dipakai klien
+> (`LocationService` di `lib/services/location_service.dart`) untuk halaman **Peringkat Wilayah**.
+> Koordinat diambil dari GPS perangkat (`geolocator`) lalu dikirim sebagai query parameter;
+> server menentukan wilayah administratif device, menyimpan lokasi terakhir user, lalu
+> mengembalikan leaderboard user yang dikelompokkan per kecamatan, kota, dan provinsi.
+> Server memakai **OpenStreetMap** (Nominatim) untuk reverse geocoding wilayah user. Hasil
+> di-cache di memori (TTL, `OSM_CACHE_TTL`, default 24 jam) dan permintaan Nominatim dijeda
+> minimal satu detik sesuai kebijakan penggunaan OSM, sehingga klien **wajib menampilkan
+> atribusi "© OpenStreetMap contributors"**.
+
+### 12.1 GET /api/location
+
+| Metode | Path | Auth |
+|---|---|---|
+| GET | `/api/location` | ✓ |
+
+**Headers:**
+
+| Header | Wajib | Keterangan |
+|---|---|---|
+| `Authorization` | ✓ | `Bearer <JWT_TOKEN>` |
+| `Accept` | ✗ | `application/json` (server selalu membalas JSON) |
+
+**Query parameters:**
+
+| Parameter | Tipe | Wajib | Keterangan | Contoh |
+|---|---|---|---|---|
+| `latitude` | float | ✓ | Lintang GPS device, rentang −90 s.d. 90 | `-7.795580` |
+| `longitude` | float | ✓ | Bujur GPS device, rentang −180 s.d. 180 | `110.369490` |
+
+**Contoh request:**
+
+```http
+GET /api/location?latitude=-7.795580&longitude=110.369490 HTTP/1.1
+Host: localhost:8080
+Authorization: Bearer <TOKEN>
+Accept: application/json
+```
+
+**Response:**
+
+| Status | Deskripsi |
+|---|---|
+| 200 | Grouped leaderboard berhasil dibuat |
+| 400 | `latitude`/`longitude` tidak dikirim, tidak dapat di-parse, atau di luar rentang |
+| 401 | Token hilang/rusak/kedaluwarsa / sesi berakhir / bukan smartphone |
+| 429 | Terlalu banyak permintaan (lihat header `Retry-After`; batas 10 permintaan per user per menit) |
+| 500 | Error server |
+| 502 | Layanan lokasi (OpenStreetMap) tidak tersedia / belum dikonfigurasi |
+
+**Contoh response — `200 OK`**
+
+```json
+{
+  "status": 200,
+  "message": "Grouped leaderboard successfully retrieved",
+  "metadata": {
+    "user_location": {
+      "latitude": -7.79558,
+      "longitude": 110.36949
+    },
+    "resolved_regions": {
+      "kecamatan": "kecamatan-depok",
+      "kota": "kota-sleman",
+      "provinsi": "provinsi-diy"
+    },
+    "timestamp": "2026-10-20T06:30:00Z"
+  },
+  "data": {
+    "kecamatan": [
+      {
+        "rank": 1,
+        "username": "ahmad_fauzi",
+        "nama": "Ahmad Fauzi",
+        "poin": 1450,
+        "jarak_meter": 350.2
+      }
+    ],
+    "kota": [
+      {
+        "rank": 1,
+        "username": "budi_sleman",
+        "nama": "Budi Santoso",
+        "poin": 4890,
+        "jarak_meter": 4500.0
+      }
+    ],
+    "provinsi": [
+      {
+        "rank": 1,
+        "username": "dewi_jogja",
+        "nama": "Dewi Lestari",
+        "poin": 18200,
+        "jarak_meter": 12500.0
+      }
+    ]
+  }
+}
+```
+
+> `metadata.user_location` meng-echo koordinat yang dikirim pemanggil.
+> `metadata.resolved_regions` berisi **slug** tiga wilayah hasil reverse geocoding
+> (`kecamatan-depok`, `kota-sleman`, `provinsi-diy`); ketiga kunci selalu ada dan bernilai
+> `""` bila wilayah tidak terdeteksi. `metadata.timestamp` adalah waktu server format
+> RFC 3339 (UTC).
+>
+> `data` selalu memuat ketiga grup sebagai array (bukan `null`). Tiap entri:
+> `rank` mulai 1, terurut `poin` menurun dengan tie-break `username` naik; `username`;
+> `nama`; `poin`; dan `jarak_meter` = jarak haversine dari koordinat device ke lokasi
+> terakhir user tersebut (`0` bila user belum pernah melaporkan lokasi). Maksimal **100
+> entri per grup**.
+>
+> Setiap pemanggilan endpoint menyimpan lokasi terakhir pemanggil (`last_lat`, `last_lon`,
+> dan slug ketiga wilayahnya) ke dokumen user, sehingga user otomatis masuk pada grup yang
+> sama pada permintaan berikutnya. Grup yang slug-nya kosong selalu `[]`.
+
+**Contoh response — `400 Bad Request`**
+
+```json
+{
+  "status": 400,
+  "error": "Bad Request",
+  "message": "Latitude and longitude query parameters are required"
+}
+```
+
+**Contoh response — `401 Unauthorized`**
+
+```json
+// Token hilang / tidak valid / kedaluwarsa
+{
+  "status": 401,
+  "error": "Unauthorized",
+  "message": "Missing or expired authorization token"
+}
+
+// Sesi berakhir
+{
+  "status": 401,
+  "error": "Unauthorized",
+  "message": "Sesi telah berakhir, silakan login kembali"
+}
+```
+
+**Contoh response — `500 Internal Server Error`**
+
+```json
+{ "message": "Gagal menentukan wilayah lokasi" }
+```
+
+**Contoh response — `502 Bad Gateway`**
+
+```json
+{ "message": "Layanan lokasi tidak tersedia" }
+```
+
+**Contoh response — `429 Too Many Requests`**
+
+```json
+{ "message": "Terlalu banyak permintaan lokasi, coba lagi nanti" }
+```
+
