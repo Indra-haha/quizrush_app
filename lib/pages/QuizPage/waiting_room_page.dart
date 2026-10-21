@@ -5,8 +5,10 @@ import 'package:flutter/services.dart';
 
 import '../../helpers/format.dart';
 import '../../helpers/json.dart';
+import '../../helpers/room_roster.dart';
 import '../../helpers/room_status_flow.dart';
 import '../../models/live_game.dart';
+import '../../models/quiz.dart';
 import '../../models/room.dart';
 import '../../models/room_message.dart';
 import '../../services/active_room_service.dart';
@@ -18,6 +20,7 @@ import '../../services/session_service.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/app_primary_button.dart';
 import '../../widgets/app_snackbar.dart';
+import '../../widgets/quiz_waiting.dart';
 import '../../widgets/reaction_overlay.dart';
 import '../login_redirect.dart';
 import 'live_quiz_page.dart';
@@ -25,9 +28,10 @@ import 'live_quiz_page.dart';
 /// Ruang tunggu (lobby) quiz setelah PIN terverifikasi.
 ///
 /// Membuka WebSocket `GET /api/rooms?token=<JWT room>` (API.md §9.1) lalu
-/// menampilkan status koneksi, pill status room, feed aktivitas (join /
-/// leave), kartu PIN + info kuis, grid pemain terhubung, sorakan emote
-/// (broadcast tanpa chat teks), dan aksi host (publish / mulai kuis).
+/// menampilkan hero berisi judul kuis, ringkasan jumlah soal & total poin,
+/// dan GAME PIN; kartu ringkasan room (jumlah peserta, status room, kondisi
+/// koneksi); grid pemain terhubung; sorakan emote (broadcast tanpa chat
+/// teks); serta aksi host (publish / mulai kuis).
 class WaitingRoomPage extends StatefulWidget {
   final Room room;
   final String roomToken;
@@ -44,24 +48,11 @@ class WaitingRoomPage extends StatefulWidget {
   State<WaitingRoomPage> createState() => _WaitingRoomPageState();
 }
 
-/// Baris feed aktivitas: join / leave peserta, atau baris sistem.
-class _FeedEntry {
-  final String? name;
-  final String text;
-  final bool join;
-  final DateTime at;
-
-  _FeedEntry.system(this.text) : name = null, join = false, at = DateTime.now();
-
-  _FeedEntry.join(this.name) : text = '', join = true, at = DateTime.now();
-
-  _FeedEntry.leave(this.name) : text = '', join = false, at = DateTime.now();
-}
-
 class _WaitingRoomPageState extends State<WaitingRoomPage> {
   static const _cheers = <String>['🔥', '⚡', '🧠', '🎉'];
 
-  final _feed = <_FeedEntry>[];
+  /// Minimal jumlah kartu di grid peserta (slot kosong ikut dihitung).
+  static const _minParticipantSlots = 4;
 
   /// Nama pemain yang terlihat di room. Roster awal diambil dari daftar
   /// `names` pada pesan `connected` (API.md §9.1), lalu dirawat lewat event
@@ -84,6 +75,14 @@ class _WaitingRoomPageState extends State<WaitingRoomPage> {
   bool _isOwner = false;
   bool _advancing = false;
 
+  /// True kalau kepemilikan belum bisa dipastikan karena sinkronisasi cache
+  /// gagal (bukan karena kuis memang bukan milik pengguna).
+  bool _ownershipUnknown = false;
+
+  /// Kuis room ini (dari cache feed), dipakai untuk menampilkan jumlah soal
+  /// dan total poin pada kartu hero.
+  Quizes? _quiz;
+
   /// True sejak soal pertama diterima sampai halaman live ditutup; mencegah
   /// berpindah dua kali ke halaman permainan.
   bool _inGame = false;
@@ -91,9 +90,10 @@ class _WaitingRoomPageState extends State<WaitingRoomPage> {
   @override
   void initState() {
     super.initState();
-    _roomStatus = widget.room.status;
+    // Status room dari server; `waiting` adalah default server (API.md §5.1)
+    // supaya status kosong tidak membuat alur publish kehilangan tombol.
+    _roomStatus = widget.room.status.isEmpty ? 'waiting' : widget.room.status;
     _connect();
-    _checkOwnership();
   }
 
   @override
@@ -125,9 +125,19 @@ class _WaitingRoomPageState extends State<WaitingRoomPage> {
     _statusSub = socket.statuses.listen((status) {
       if (!mounted) return;
       setState(() => _status = status);
+      // Kalau sync "my quizzes" tadi gagal (jaringan putus sesaat), coba lagi
+      // saat socket terhubung supaya tombol host tetap muncul.
+      if (status == RoomSocketStatus.connected && _ownershipUnknown) {
+        _ownershipUnknown = false;
+        _checkOwnership();
+      }
     });
     _messageSub = socket.messages.listen(_onMessage);
     socket.connect();
+
+    // Cek kepemilikan butuh identitas sesi (nama/username), jadi baru jalan
+    // setelah [_connect] selesai memuat sesi.
+    _checkOwnership();
   }
 
   void _reconnect() {
@@ -150,6 +160,9 @@ class _WaitingRoomPageState extends State<WaitingRoomPage> {
       if (!result.needsAuth) {
         mine = result.index?.quizById(widget.room.quizId);
       }
+      // Kuis memang bukan milik kita (cache sinkron tapi tidak ada) berbeda
+      // dengan "belum bisa dipastikan" karena jaringan gagal.
+      if (mine == null && result.error != null) _ownershipUnknown = true;
     }
 
     // Nama pemilik dari cache mana pun (milik sendiri atau feed publik).
@@ -157,9 +170,22 @@ class _WaitingRoomPageState extends State<WaitingRoomPage> {
 
     if (!mounted) return;
     setState(() {
-      _isOwner = mine != null;
+      _isOwner = mine != null || _hostIsSelf(any?.host ?? '');
       _hostDisplay = (any?.host ?? '').trim();
+      _quiz = any;
+      if (_isOwner) _ownershipUnknown = false;
     });
+  }
+
+  /// Cadangan deteksi host: nama host kuis dari feed dibandingkan dengan nama
+  /// tampilan/username sesi ini. Dipakai kalau kuis tidak ada di cache
+  /// "my quizzes" (mis. host masuk lewat PIN atau cache belum ter-sync).
+  bool _hostIsSelf(String host) {
+    final trimmed = host.trim();
+    if (trimmed.isEmpty) return false;
+    final lower = trimmed.toLowerCase();
+    if (_myNama.toLowerCase() == lower) return true;
+    return _me.toLowerCase() == lower;
   }
 
   /// Apakah [name] adalah host quiz: pemilik quiz (kita sendiri) atau nama
@@ -194,19 +220,16 @@ class _WaitingRoomPageState extends State<WaitingRoomPage> {
           // Roster diganti penuh dari daftar server (`names`) plus diri
           // sendiri, supaya klien yang masuk belakangan langsung melihat
           // siapa yang sudah ada — dan reconnect menyegarkan daftar basi.
+          //
+          // `names` hanya berisi klien yang SUDAH terhubung sebelumnya
+          // (API.md §9.1), jadi klien ini wajib menambah dirinya sendiri.
           _players
             ..clear()
-            ..addAll(message.names.where((n) => n.trim().isNotEmpty));
-          if (_myLabel.isNotEmpty) _players.add(_myLabel);
-          _feed.add(
-            _FeedEntry.system('Tersambung ke room. Menunggu peserta lain...'),
-          );
+            ..addAll(RoomRoster.merge(message.names, _myLabel));
         case 'join':
           if (message.from.isNotEmpty) _players.add(message.from);
-          _feed.add(_FeedEntry.join(_labelOf(message.from)));
         case 'leave':
           if (message.from.isNotEmpty) _players.remove(message.from);
-          _feed.add(_FeedEntry.leave(_labelOf(message.from)));
         case 'broadcast':
         case 'reaction':
           if (message.from.isNotEmpty) _players.add(message.from);
@@ -372,11 +395,9 @@ class _WaitingRoomPageState extends State<WaitingRoomPage> {
               AppSpacing.space12,
             ),
             children: [
-              _statusPill(),
-              const SizedBox(height: AppSpacing.space6),
-              _activityCard(),
-              const SizedBox(height: AppSpacing.space6),
-              _pinCard(),
+              _heroCard(),
+              const SizedBox(height: AppSpacing.space8),
+              _statsCard(),
               const SizedBox(height: AppSpacing.space8),
               _playersSection(),
               const SizedBox(height: AppSpacing.space6),
@@ -491,539 +512,101 @@ class _WaitingRoomPageState extends State<WaitingRoomPage> {
     );
   }
 
-  String get _roomStatusLabel => switch (_roomStatus) {
-    'waiting' || 'open' => 'MENUNGGU HOST MEMULAI',
-    'in-Game' => 'KUIS BERLANGSUNG',
-    'ended' => 'ROOM SELESAI',
-    _ => _roomStatus.toUpperCase(),
-  };
+  /// Kartu hero ruang tunggu: judul kuis, ringkasan jumlah soal & total poin,
+  /// serta GAME PIN (ketuk untuk menyalin kode).
+  Widget _heroCard() {
+    final questionCount =
+        _quiz?.questionCount ?? widget.room.quiz?.totalQuestions ?? 0;
+    final totalPoints = _quiz?.score ?? 0;
+    // Judul kuis (dari cache feed) lebih spesifik daripada judul room.
+    final quizTitle = _quiz?.title.trim() ?? '';
+    final title = quizTitle.isNotEmpty ? quizTitle : widget.room.displayTitle;
 
-  Widget _statusPill() {
-    return Row(
-      children: [
-        Container(
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.space6,
-            vertical: AppSpacing.space3,
+    return QuizWaitingHero(
+      title: title,
+      pin: widget.room.kode,
+      onCopyPin: _copyPin,
+      stats: [
+        if (questionCount > 0)
+          QuizWaitingHeroStat(
+            value: '$questionCount',
+            icon: Icons.list_alt,
+            background: AppColors.heroLime,
+            foreground: AppColors.primary,
           ),
-          decoration: BoxDecoration(
-            color: AppColors.primarySoft,
-            borderRadius: AppRadius.pill,
-            boxShadow: AppShadows.hairlineTight,
+        if (totalPoints > 0)
+          QuizWaitingHeroStat(
+            value: formatPoints(totalPoints),
+            icon: Icons.star_rounded,
+            background: AppColors.heroPeach,
+            foreground: AppColors.primary,
           ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: AppSpacing.space5,
-                height: AppSpacing.space5,
-                decoration: const BoxDecoration(
-                  color: AppColors.primary,
-                  shape: BoxShape.circle,
-                ),
-              ),
-              const SizedBox(width: AppSpacing.space2),
-              Text(
-                _roomStatusLabel,
-                style: AppTextStyles.bodyCaption.copyWith(
-                  color: AppColors.primaryDark,
-                  fontWeight: AppFontWeight.bold,
-                  letterSpacing: 0.55,
-                ),
-              ),
-            ],
-          ),
-        ),
       ],
     );
   }
 
-  Widget _activityCard() {
-    final entries = _feed.reversed.take(5).toList();
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(AppSpacing.space4),
-      decoration: BoxDecoration(
-        color: AppColors.textOnPrimary,
-        border: Border.all(
-          color: AppColors.primaryBorder.withValues(alpha: 0.4),
-        ),
-        borderRadius: AppRadius.md,
-        boxShadow: AppShadows.hairlineTight,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          for (final entry in entries) ...[
-            _feedRow(entry),
-            const SizedBox(height: AppSpacing.space3),
-          ],
-          _connectionFooter(),
-        ],
-      ),
+  /// Ringkasan room: jumlah peserta, status room, dan kondisi koneksi.
+  Widget _statsCard() {
+    return QuizWaitingStats(
+      participantCount: _participantCount,
+      statusLabel: RoomStatusFlow.label(_roomStatus),
+      connected: _status == RoomSocketStatus.connected,
+      onReconnect: _reconnect,
     );
   }
 
-  Widget _feedRow(_FeedEntry entry) {
-    if (entry.name == null) {
-      return Text(
-        entry.text,
-        style: AppTextStyles.bodyCaption.copyWith(
-          color: AppColors.textSecondary,
+  /// Jumlah peserta yang tampil: roster lokal bisa lebih lengkap daripada
+  /// angka server (mis. saat klien masuk belakangan), jadi ambil yang besar.
+  int get _participantCount =>
+      _users > _players.length ? _users : _players.length;
+
+  /// Grid peserta yang terhubung, diisi slot kosong sampai minimal
+  /// [_minParticipantSlots] kartu supaya layout tetap rapi saat room baru.
+  Widget _playersSection() {
+    final players = _players.toList();
+
+    if (players.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.symmetric(vertical: AppSpacing.space8),
+        decoration: BoxDecoration(
+          color: AppColors.textOnPrimary,
+          border: Border.all(
+            color: AppColors.primaryBorder.withValues(alpha: 0.4),
+          ),
+          borderRadius: AppRadius.md,
+        ),
+        child: Text(
+          'Belum ada pemain lain yang terhubung.',
+          textAlign: TextAlign.center,
+          style: AppTextStyles.bodyCaption,
         ),
       );
     }
 
-    final name = entry.name!;
-    final initial = name.trim().isEmpty ? '?' : name.trim()[0].toUpperCase();
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final cardWidth = (constraints.maxWidth - AppSpacing.space4) / 2;
+        final slots = players.length < _minParticipantSlots
+            ? _minParticipantSlots - players.length
+            : 0;
 
-    return Row(
-      children: [
-        Container(
-          width: AppIconSize.xxl,
-          height: AppIconSize.xxl,
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            color: AppColors.primarySoft,
-            shape: BoxShape.circle,
-          ),
-          child: Text(
-            initial,
-            style: AppTextStyles.labelStrongSmallOnPrimary.copyWith(
-              color: AppColors.primary,
-            ),
-          ),
-        ),
-        const SizedBox(width: AppSpacing.space4),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text.rich(
-                TextSpan(
-                  children: [
-                    TextSpan(
-                      text: name,
-                      style: AppTextStyles.bodyMeta.copyWith(
-                        color: AppColors.primary,
-                      ),
-                    ),
-                    TextSpan(
-                      text: entry.join ? ' bergabung!' : ' keluar.',
-                      style: AppTextStyles.bodyMeta.copyWith(
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Text(
-                relativeTime(entry.at.toIso8601String()),
-                style: AppTextStyles.bodyCaption.copyWith(
-                  color: AppColors.textSecondary,
-                  fontWeight: AppFontWeight.regular,
-                ),
-              ),
-            ],
-          ),
-        ),
-        if (entry.join)
-          Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.space2,
-              vertical: AppSpacing.space1,
-            ),
-            decoration: BoxDecoration(
-              color: AppColors.primarySoft,
-              borderRadius: AppRadius.pill,
-            ),
-            child: Text(
-              'BARU',
-              style: AppTextStyles.bodyCaption.copyWith(
-                color: AppColors.primaryDark,
-                fontWeight: AppFontWeight.bold,
-                letterSpacing: 0.28,
-              ),
-            ),
-          ),
-      ],
-    );
-  }
-
-  Widget _connectionFooter() {
-    final canRetry = _status == RoomSocketStatus.disconnected;
-
-    return GestureDetector(
-      onTap: canRetry ? _reconnect : null,
-      behavior: HitTestBehavior.opaque,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.space2,
-          vertical: AppSpacing.space1,
-        ),
-        child: Row(
+        return Wrap(
+          spacing: AppSpacing.space4,
+          runSpacing: AppSpacing.space4,
           children: [
-            Container(
-              width: AppSpacing.space4,
-              height: AppSpacing.space4,
-              decoration: BoxDecoration(
-                color: _statusColor,
-                shape: BoxShape.circle,
+            for (final name in players)
+              SizedBox(
+                width: cardWidth,
+                child: QuizWaitingParticipant(
+                  name: name,
+                  isHost: _isHost(name),
+                ),
               ),
-            ),
-            const SizedBox(width: AppSpacing.space3),
-            Text(
-              _statusLabel,
-              style: AppTextStyles.bodyCaption.copyWith(
-                color: AppColors.textSecondary,
-                fontWeight: AppFontWeight.medium,
-                letterSpacing: 0.33,
-              ),
-            ),
-            const Spacer(),
-            Text(
-              '•',
-              style: AppTextStyles.bodyCaption.copyWith(
-                color: AppColors.textSecondary,
-              ),
-            ),
-            const SizedBox(width: AppSpacing.space3),
-            Text(
-              canRetry ? 'Ketuk untuk sambung ulang' : 'Auto-sync ON',
-              style: AppTextStyles.bodyCaption.copyWith(
-                color: canRetry ? AppColors.error : AppColors.primary,
-                fontWeight: AppFontWeight.semibold,
-                letterSpacing: 0.33,
-              ),
-            ),
+            for (var i = 0; i < slots; i++)
+              SizedBox(width: cardWidth, child: const QuizWaitingSlot()),
           ],
-        ),
-      ),
-    );
-  }
-
-  Widget _pinCard() {
-    final quiz = widget.room.quiz;
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(AppSpacing.space4),
-      decoration: BoxDecoration(
-        color: AppColors.textOnPrimary,
-        border: Border.all(
-          color: AppColors.primaryBorder.withValues(alpha: 0.4),
-        ),
-        borderRadius: AppRadius.md,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text(
-            'KODE AKSES RUANGAN (PIN)',
-            textAlign: TextAlign.center,
-            style: AppTextStyles.bodyCaption.copyWith(
-              color: AppColors.textSecondary,
-              fontWeight: AppFontWeight.semibold,
-              letterSpacing: 1.1,
-            ),
-          ),
-          const SizedBox(height: AppSpacing.space2),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                formatKode(widget.room.kode),
-                textAlign: TextAlign.center,
-                style: AppTextStyles.code.copyWith(
-                  color: AppColors.primary,
-                  fontSize: AppFontSize.heading,
-                  letterSpacing: 1.4,
-                ),
-              ),
-              const SizedBox(width: AppSpacing.space4),
-              Tooltip(
-                message: 'Salin PIN',
-                child: IconButton(
-                  onPressed: _copyPin,
-                  icon: const Icon(Icons.copy_rounded),
-                  color: AppColors.primary,
-                  style: IconButton.styleFrom(
-                    backgroundColor: AppColors.primarySoft,
-                    shape: const CircleBorder(),
-                    elevation: 0,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.space5),
-          Container(
-            padding: const EdgeInsets.all(AppSpacing.space4),
-            decoration: BoxDecoration(
-              color: AppColors.background,
-              border: Border.all(
-                color: AppColors.primaryBorder.withValues(alpha: 0.2),
-              ),
-              borderRadius: AppRadius.sm,
-            ),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  width: AppIconSize.xxl + 8,
-                  height: AppIconSize.xxl + 8,
-                  decoration: BoxDecoration(
-                    color: AppColors.primary,
-                    borderRadius: AppRadius.sm,
-                    boxShadow: AppShadows.hairlineTight,
-                  ),
-                  child: const Icon(
-                    Icons.quiz_outlined,
-                    color: AppColors.textOnPrimary,
-                    size: AppIconSize.lg,
-                  ),
-                ),
-                const SizedBox(width: AppSpacing.space4),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        widget.room.displayTitle,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: AppTextStyles.heading3,
-                      ),
-                      if (quiz != null && quiz.description.isNotEmpty) ...[
-                        const SizedBox(height: AppSpacing.space1),
-                        Text(
-                          quiz.description,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: AppTextStyles.bodySmall.copyWith(
-                            fontWeight: AppFontWeight.regular,
-                          ),
-                        ),
-                      ],
-                      if (quiz != null) ...[
-                        const SizedBox(height: AppSpacing.space3),
-                        Wrap(
-                          spacing: AppSpacing.space4,
-                          runSpacing: AppSpacing.space2,
-                          children: [
-                            _infoChip('${quiz.totalQuestions} Soal'),
-                            _infoChip('PIN ${formatKode(widget.room.kode)}'),
-                          ],
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _infoChip(String label) {
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.space4,
-        vertical: AppSpacing.space1,
-      ),
-      decoration: BoxDecoration(
-        color: AppColors.textOnPrimary,
-        border: Border.all(
-          color: AppColors.primaryBorder.withValues(alpha: 0.2),
-        ),
-        borderRadius: AppRadius.sm,
-      ),
-      child: Text(
-        label,
-        style: AppTextStyles.bodyCaption.copyWith(
-          fontWeight: AppFontWeight.medium,
-          letterSpacing: 0.33,
-        ),
-      ),
-    );
-  }
-
-  Widget _playersSection() {
-    final players = _players.toList();
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Row(
-          children: [
-            Expanded(
-              child: Text('Pemain Terhubung', style: AppTextStyles.heading3),
-            ),
-            Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppSpacing.space5,
-                vertical: AppSpacing.space1,
-              ),
-              decoration: BoxDecoration(
-                color: AppColors.primary,
-                borderRadius: AppRadius.pill,
-                boxShadow: AppShadows.hairlineTight,
-              ),
-              child: Text(
-                '$_users',
-                style: AppTextStyles.bodyCaption.copyWith(
-                  color: AppColors.textOnPrimary,
-                  fontWeight: AppFontWeight.bold,
-                  letterSpacing: 0.33,
-                ),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: AppSpacing.space4),
-        if (players.isEmpty)
-          Container(
-            padding: const EdgeInsets.symmetric(vertical: AppSpacing.space8),
-            decoration: BoxDecoration(
-              color: AppColors.textOnPrimary,
-              border: Border.all(
-                color: AppColors.primaryBorder.withValues(alpha: 0.4),
-              ),
-              borderRadius: AppRadius.md,
-            ),
-            child: Text(
-              'Belum ada pemain lain yang terhubung.',
-              textAlign: TextAlign.center,
-              style: AppTextStyles.bodyCaption,
-            ),
-          )
-        else
-          LayoutBuilder(
-            builder: (context, constraints) {
-              final cardWidth = (constraints.maxWidth - AppSpacing.space8) / 3;
-              return Wrap(
-                spacing: AppSpacing.space4,
-                runSpacing: AppSpacing.space4,
-                children: [
-                  for (final name in players)
-                    _playerCard(name, cardWidth, isHost: _isHost(name)),
-                ],
-              );
-            },
-          ),
-      ],
-    );
-  }
-
-  Widget _playerCard(String name, double width, {required bool isHost}) {
-    final trimmed = name.trim();
-    final initial = trimmed.isEmpty ? '?' : trimmed[0].toUpperCase();
-
-    return Container(
-      width: width,
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.space2,
-        vertical: AppSpacing.space4,
-      ),
-      decoration: BoxDecoration(
-        color: AppColors.textOnPrimary,
-        border: Border.all(
-          color: isHost
-              ? AppColors.primary.withValues(alpha: 0.6)
-              : AppColors.primaryBorder.withValues(alpha: 0.4),
-          width: isHost ? AppBorderWidth.thin : AppBorderWidth.hairline,
-        ),
-        borderRadius: AppRadius.md,
-        boxShadow: isHost ? AppShadows.subtle : AppShadows.hairlineTight,
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Stack(
-            clipBehavior: Clip.none,
-            children: [
-              Container(
-                width: AppIconSize.hero,
-                height: AppIconSize.hero,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: isHost ? AppColors.primary : AppColors.primarySoft,
-                  shape: BoxShape.circle,
-                ),
-                child: Text(
-                  initial,
-                  style: AppTextStyles.heading3.copyWith(
-                    color: isHost ? AppColors.textOnPrimary : AppColors.primary,
-                  ),
-                ),
-              ),
-              Positioned(
-                right: -2,
-                bottom: -2,
-                child: Container(
-                  width: AppIconSize.md,
-                  height: AppIconSize.md,
-                  decoration: BoxDecoration(
-                    color: AppColors.primary,
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: AppColors.textOnPrimary,
-                      width: AppBorderWidth.regular,
-                    ),
-                  ),
-                ),
-              ),
-              if (isHost)
-                Positioned(
-                  top: -6,
-                  right: -4,
-                  child: Container(
-                    width: AppIconSize.md,
-                    height: AppIconSize.md,
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      color: AppColors.primarySoft,
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: AppColors.textOnPrimary,
-                        width: AppBorderWidth.regular,
-                      ),
-                      boxShadow: AppShadows.hairlineTight,
-                    ),
-                    child: const Text(
-                      '👑',
-                      style: TextStyle(fontSize: AppFontSize.micro),
-                    ),
-                  ),
-                ),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.space3),
-          Text(
-            trimmed,
-            textAlign: TextAlign.center,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            softWrap: false,
-            style: AppTextStyles.bodyMeta,
-          ),
-          Text(
-            isHost ? 'Host' : 'Partisipan',
-            textAlign: TextAlign.center,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: AppTextStyles.bodyCaption.copyWith(
-              fontSize: AppFontSize.caption,
-              color: isHost ? AppColors.primary : AppColors.textMuted,
-              fontWeight: isHost ? AppFontWeight.bold : AppFontWeight.medium,
-              letterSpacing: isHost ? 0.5 : null,
-            ),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 
@@ -1101,7 +684,7 @@ class _WaitingRoomPageState extends State<WaitingRoomPage> {
   Widget _startBox() {
     final starting = _roomStatus == 'open';
     final label = starting
-        ? 'Mulai Kuis Sekarang ($_users Siap)'
+        ? 'Mulai Kuis Sekarang ($_participantCount Siap)'
         : RoomStatusFlow.publishMeta(_nextStatus).$1;
     final subtitle = starting
         ? 'Kuis akan otomatis dimulai pada layar semua peserta seketika.'
@@ -1138,18 +721,4 @@ class _WaitingRoomPageState extends State<WaitingRoomPage> {
       ),
     );
   }
-
-  Color get _statusColor => switch (_status) {
-    RoomSocketStatus.connecting ||
-    RoomSocketStatus.reconnecting => AppColors.warning,
-    RoomSocketStatus.connected => AppColors.success,
-    RoomSocketStatus.disconnected => AppColors.error,
-  };
-
-  String get _statusLabel => switch (_status) {
-    RoomSocketStatus.connecting => 'Menyambung...',
-    RoomSocketStatus.reconnecting => 'Menyambung ulang...',
-    RoomSocketStatus.connected => 'Server Aktif',
-    RoomSocketStatus.disconnected => 'Koneksi terputus',
-  };
 }

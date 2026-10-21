@@ -165,6 +165,14 @@ class AppTextStyles {
     letterSpacing: -0.8,
   );
 
+  /// Judul besar 36pt (hero halaman menunggu).
+  static final displayTitle = GoogleFonts.montserrat(
+    color: AppColors.textPrimary,
+    fontSize: 36,
+    fontWeight: FontWeight.w700,
+    height: 1.2,
+  );
+
   static final display2 = GoogleFonts.montserrat(
     color: AppColors.textPrimary,
     fontSize: 24,

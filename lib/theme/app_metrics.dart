@@ -44,5 +44,26 @@ class AppRadius {
   static const md = BorderRadius.all(Radius.circular(12));
   static const lg = BorderRadius.all(Radius.circular(16));
   static const xl = BorderRadius.all(Radius.circular(24));
+  static const xxl = BorderRadius.all(Radius.circular(32));
   static const pill = BorderRadius.all(Radius.circular(999));
+}
+
+/// Fixed component sizes that are neither spacing nor icon glyphs.
+class AppSizes {
+  AppSizes._();
+
+  /// Circular back button on the waiting room hero.
+  static const backButton = 36.0;
+
+  /// Avatar circle of a participant tile.
+  static const avatar = 56.0;
+
+  /// Placeholder circle of an empty participant slot.
+  static const emptySlot = 64.0;
+
+  /// Status dot of the waiting room summary card.
+  static const statusDot = 16.0;
+
+  /// Maximum width of the glass card inside the waiting room hero.
+  static const heroCard = 350.0;
 }

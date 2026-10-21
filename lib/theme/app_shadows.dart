@@ -86,6 +86,23 @@ class AppShadows {
     BoxShadow(color: Color(0x144648D4), blurRadius: 24, offset: Offset(0, 10)),
   ];
 
+  /// Kartu permukaan tinggi dengan dua lapis bayangan (desain halaman
+  /// menunggu).
+  static const softCard = <BoxShadow>[
+    BoxShadow(
+      color: Color(0x19000000),
+      blurRadius: 6,
+      offset: Offset(0, 4),
+      spreadRadius: -4,
+    ),
+    BoxShadow(
+      color: Color(0x19000000),
+      blurRadius: 15,
+      offset: Offset(0, 10),
+      spreadRadius: -3,
+    ),
+  ];
+
   /// Floating / overlay surface.
   static const floating = <BoxShadow>[
     BoxShadow(color: Color(0x33000000), blurRadius: 16, offset: Offset(0, 6)),

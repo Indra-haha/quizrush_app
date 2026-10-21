@@ -3,6 +3,7 @@ import 'package:quizrush/helpers/auth_validator.dart';
 import 'package:quizrush/helpers/pin.dart';
 import 'package:quizrush/helpers/quiz_form_validator.dart';
 import 'package:quizrush/helpers/quiz_image.dart';
+import 'package:quizrush/helpers/room_roster.dart';
 import 'package:quizrush/helpers/room_status_flow.dart';
 
 QuizFormQuestion _q({String skor = '20', int? correctIdx = 0}) {
@@ -14,7 +15,8 @@ QuizFormQuestion _q({String skor = '20', int? correctIdx = 0}) {
   );
 }
 
-void main() {  group('Pin', () {
+void main() {
+  group('Pin', () {
     test('isComplete menerima tepat 6 digit', () {
       expect(Pin.isComplete('123456'), isTrue);
       expect(Pin.isComplete(' 123456 '), isTrue);
@@ -82,10 +84,7 @@ void main() {  group('Pin', () {
     });
 
     test('menolak password tidak cocok', () {
-      expect(
-        call(password: 'a', confirmPassword: 'b'),
-        'Password tidak cocok',
-      );
+      expect(call(password: 'a', confirmPassword: 'b'), 'Password tidak cocok');
     });
   });
 
@@ -103,6 +102,36 @@ void main() {  group('Pin', () {
       expect(RoomStatusFlow.publishMeta('in-Game').$1, 'Mulai Game');
       expect(RoomStatusFlow.publishMeta('ended').$1, 'Akhiri');
       expect(RoomStatusFlow.publishMeta(null).$1, 'Selesai');
+    });
+
+    test('label memberi deskripsi singkat tiap status room', () {
+      expect(RoomStatusFlow.label('waiting'), 'Menunggu host');
+      expect(RoomStatusFlow.label('open'), 'Siap dimulai');
+      expect(RoomStatusFlow.label('in-Game'), 'Kuis berlangsung');
+      expect(RoomStatusFlow.label('ended'), 'Room selesai');
+      expect(RoomStatusFlow.label('tidak-dikenal'), 'Menunggu host');
+    });
+  });
+
+  group('RoomRoster', () {
+    test('menambah nama klien sendiri saat server mengirim daftar kosong', () {
+      // `names` di pesan `connected` hanya berisi klien sebelumnya (API.md
+      // §9.1); di room baru daftarnya kosong dan klien harus menambahkan diri.
+      final roster = RoomRoster.merge(const [], 'Siti');
+
+      expect(roster, {'Siti'});
+    });
+
+    test('menggabungkan daftar server dengan nama sendiri', () {
+      final roster = RoomRoster.merge(const ['Budi', 'Andi'], 'Siti');
+
+      expect(roster, {'Budi', 'Andi', 'Siti'});
+    });
+
+    test('mengabaikan nama kosong dan tidak menambah nama sendiri kosong', () {
+      final roster = RoomRoster.merge(const ['', '  ', 'Budi'], '   ');
+
+      expect(roster, {'Budi'});
     });
   });
 

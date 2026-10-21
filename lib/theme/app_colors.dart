@@ -34,6 +34,14 @@ class AppColors {
   static const inkStrong = Color(0xFF171936);
   static const inkMuted = Color(0xFF777586);
 
+  // Palet halaman menunggu (desain "test waiting"): chip meta di hero,
+  // kartu peserta, dan avatar.
+  static const heroLime = Color(0xFF96DB0A);
+  static const heroPeach = Color(0xFFFFDDB8);
+  static const participantTile = Color(0xFFE7EEFF);
+  static const avatarSoft = Color(0xFFE9DDFF);
+  static const accentOrange = Color(0xFFF57710);
+
   // Amber (badge WAITING pada desain MyQuiz).
   static const amberSoft = Color(0xFFFEF3C7);
   static const amberInk = Color(0xFF92400E);

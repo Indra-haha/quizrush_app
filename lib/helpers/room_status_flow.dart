@@ -29,4 +29,20 @@ class RoomStatusFlow {
         return ('Selesai', Icons.check_circle_outline);
     }
   }
+
+  /// Label singkat status room untuk ditampilkan pada UI.
+  static String label(String status) {
+    switch (status) {
+      case 'waiting':
+        return 'Menunggu host';
+      case 'open':
+        return 'Siap dimulai';
+      case 'in-Game':
+        return 'Kuis berlangsung';
+      case 'ended':
+        return 'Room selesai';
+      default:
+        return 'Menunggu host';
+    }
+  }
 }
