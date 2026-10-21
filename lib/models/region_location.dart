@@ -1,8 +1,10 @@
 import '../helpers/json.dart';
+import '../helpers/region_label.dart';
 
 /// Metadata lokasi hasil `GET /api/location` (API.md §12).
 class LocationMetadata {
   final Map<String, dynamic> userLocation;
+  /// Slug mentah hasil reverse geocoding, misalnya `kecamatan-depok`.
   final Map<String, String> resolvedRegions;
   final String timestamp;
 
@@ -25,6 +27,10 @@ class LocationMetadata {
     );
   }
 
+  /// Label wilayah untuk UI: slug mentah dari server dibersihkan dulu lewat
+  /// [formatRegionLabel], misalnya
+  /// `kecamatan-pasteur, kota-bandung, provinsi-jabar` menjadi
+  /// `Pasteur, kota Bandung, provinsi Jabar`.
   String get display {
     final parts = <String>[
       if (resolvedRegions['kecamatan']?.isNotEmpty == true)
@@ -34,7 +40,7 @@ class LocationMetadata {
         resolvedRegions['provinsi']!,
     ];
     if (parts.isEmpty) return 'Kecamatan, Kota, Provinsi';
-    return parts.join(', ');
+    return formatRegionLabel(parts.join(', '));
   }
 }
 
@@ -86,7 +92,9 @@ class LocationResult {
       kecamatan: jsonMapList(data['kecamatan'])
           .map(RegionLeaderboardEntry.fromJson)
           .toList(),
-      kota: jsonMapList(data['kota']).map(RegionLeaderboardEntry.fromJson).toList(),
+      kota: jsonMapList(data['kota'])
+          .map(RegionLeaderboardEntry.fromJson)
+          .toList(),
       provinsi: jsonMapList(data['provinsi'])
           .map(RegionLeaderboardEntry.fromJson)
           .toList(),
@@ -102,31 +110,4 @@ class LocationResult {
   }
 
   String get displayName => metadata.display;
-
-  /// Backward compatible defaults
-  static const defaultFilters = <RegionFilter>[
-    RegionFilter(level: 'kecamatan', label: 'Kecamatan', active: true),
-    RegionFilter(level: 'kota', label: 'Kota'),
-    RegionFilter(level: 'provinsi', label: 'Provinsi'),
-  ];
-}
-
-/// For backward compatibility
-class RegionFilter {
-  final String level;
-  final String label;
-  final bool active;
-
-  const RegionFilter({
-    required this.level,
-    required this.label,
-    this.active = false,
-  });
-}
-
-/// Legacy compatibility
-class RegionLocation {
-  final String display;
-  const RegionLocation({required this.display});
-  String get displayOrFallback => display;
 }

@@ -19,7 +19,10 @@ Widget _wrap(Widget child) {
 PointsService _saldoService() {
   final client = MockClient((request) async {
     final body = switch (request.url.path) {
-      '/api/me/points' => jsonEncode({'message': 'Saldo poin', 'points': 28450}),
+      '/api/me/points' => jsonEncode({
+        'message': 'Saldo poin',
+        'points': 28450,
+      }),
       '/api/me/coins' => jsonEncode({
         'message': 'Riwayat koin',
         'coins': [
@@ -111,8 +114,10 @@ void main() {
 
       expect(find.text('Peringkat'), findsOneWidget);
       expect(find.text('Lokasi Sekarang'), findsOneWidget);
+      // Slug wilayah dinormalisasi lewat `formatRegionLabel`
+      // (lihat lib/helpers/region_label.dart).
       expect(
-        find.text('kecamatan-pasteur, kota-bandung, provinsi-jabar'),
+        find.text('Pasteur, kota Bandung, provinsi Jabar'),
         findsOneWidget,
       );
       expect(find.text('Peringkat Wilayah'), findsOneWidget);

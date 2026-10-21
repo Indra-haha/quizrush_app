@@ -212,6 +212,7 @@ class _RankingRegionPageState extends State<RankingRegionPage> {
             onLocate: _refreshLocation,
           ),
           const SizedBox(height: AppSpacing.space1),
+          // Atribusi wajib sesuai syarat lisensi OpenStreetMap (API.md §12).
           Align(
             alignment: Alignment.centerRight,
             child: Text(
