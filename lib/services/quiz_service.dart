@@ -136,15 +136,18 @@ class QuizService {
     required List<QuizQuestionInput> questions,
     required String path,
   }) async {
+    final body = <String, dynamic>{
+      'title': title,
+      'path': path,
+      'questions': questions.map((q) => q.toJson()).toList(),
+    };
+    if (description != null && description.isNotEmpty) {
+      body['description'] = description;
+    }
     final response = await _api.post(
       '/api/create/quiz',
       token: token,
-      body: {
-        'title': title,
-        'description': description,
-        'path': path,
-        'questions': questions.map((q) => q.toJson()).toList(),
-      },
+      body: body,
       timeout: const Duration(seconds: 30),
     );
     final data = ApiClient.decode(response);
