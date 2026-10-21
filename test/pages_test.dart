@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'package:quizrush/pages/QuizPage/enter_pin_page.dart';
 import 'package:quizrush/pages/ranking_region_page.dart';
 import 'package:quizrush/pages/profile_page.dart';
 import 'package:quizrush/pages/saldo/saldo_page.dart';
@@ -171,6 +172,43 @@ void main() {
       expect(find.text('Kecamatan, Kota, Provinsi'), findsOneWidget);
       expect(find.text('Belum ada data peringkat wilayah.'), findsOneWidget);
       expect(find.text('Peringkat Wilayah'), findsNothing);
+    });
+  });
+
+  group('EnterPinPage', () {
+    testWidgets('menampilkan hero, form PIN, nama panggilan, dan tombol gabung', (
+      WidgetTester tester,
+    ) async {
+      tester.view.physicalSize = const Size(390, 844);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
+      await tester.pumpWidget(_wrap(const EnterPinPage()));
+      await tester.pump();
+
+      expect(find.text('Siap Main?'), findsOneWidget);
+      expect(
+        find.text('Masukkan PIN permainan untuk bergabung'),
+        findsOneWidget,
+      );
+      expect(find.text('PIN PERMAINAN'), findsOneWidget);
+      expect(find.text('NAMA PANGGILAN'), findsOneWidget);
+      expect(find.text('GABUNG'), findsOneWidget);
+      expect(find.text('1,240+ orang sedang bermain saat ini'), findsOneWidget);
+    });
+
+    testWidgets('tetap rapi pada layar sempit 320px', (
+      WidgetTester tester,
+    ) async {
+      tester.view.physicalSize = const Size(320, 640);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
+      await tester.pumpWidget(_wrap(const EnterPinPage()));
+      await tester.pump();
+
+      expect(find.text('GABUNG'), findsOneWidget);
+      expect(tester.takeException(), isNull);
     });
   });
 

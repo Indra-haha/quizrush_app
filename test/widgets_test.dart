@@ -13,9 +13,9 @@ import 'package:quizrush/widgets/app_stat_tile.dart';
 import 'package:quizrush/widgets/auth_fields.dart';
 import 'package:quizrush/widgets/cache_info_bar.dart';
 import 'package:quizrush/widgets/empty_state_view.dart';
-import 'package:quizrush/widgets/enter_pin_intro_card.dart';
 import 'package:quizrush/widgets/home_greeting.dart';
 import 'package:quizrush/widgets/home_stat_card.dart';
+import 'package:quizrush/widgets/join_game_header.dart';
 import 'package:quizrush/widgets/load_more_button.dart';
 import 'package:quizrush/widgets/pin_input_field.dart';
 import 'package:quizrush/widgets/quiz_answer_banner.dart';
@@ -35,6 +35,7 @@ import 'package:quizrush/widgets/room_code_dialog.dart';
 import 'package:quizrush/widgets/room_detail_card.dart';
 import 'package:quizrush/widgets/room_list_header.dart';
 import 'package:quizrush/widgets/room_list_tile.dart';
+import 'package:quizrush/widgets/social_proof_pill.dart';
 import 'package:quizrush/widgets/status_filter_row.dart';
 
 Widget _wrap(Widget child) {
@@ -943,7 +944,7 @@ void main() {
     });
   });
 
-  group('Widget enter pin', () {
+  group('Widget gabung room', () {
     testWidgets('PinInputField menerima hanya 6 digit angka', (
       WidgetTester tester,
     ) async {
@@ -956,12 +957,43 @@ void main() {
       expect(controller.text, '123456');
     });
 
-    testWidgets('EnterPinIntroCard menampilkan ajakan gabung', (
+    testWidgets('PinInputField menampilkan digit di dalam kotak PIN', (
       WidgetTester tester,
     ) async {
-      await tester.pumpWidget(_wrap(const EnterPinIntroCard()));
+      final controller = TextEditingController(text: '123');
+      await tester.pumpWidget(
+        _wrap(PinInputField(controller: controller)),
+      );
 
-      expect(find.text('Gabung ke Room'), findsOneWidget);
+      expect(find.text('1'), findsOneWidget);
+      expect(find.text('2'), findsOneWidget);
+      expect(find.text('3'), findsOneWidget);
+    });
+
+    testWidgets('JoinGameHeader menampilkan wordmark dan memanggil onBack', (
+      WidgetTester tester,
+    ) async {
+      var tapped = false;
+      await tester.pumpWidget(
+        _wrap(JoinGameHeader(onBack: () => tapped = true)),
+      );
+
+      expect(find.text('bolt'), findsOneWidget);
+      expect(find.text('QUIZRUSH'), findsOneWidget);
+
+      await tester.tap(find.byIcon(Icons.arrow_back));
+      expect(tapped, isTrue);
+    });
+
+    testWidgets('SocialProofPill menampilkan jumlah pemain yang bermain', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(_wrap(const SocialProofPill()));
+
+      expect(
+        find.text('1,240+ orang sedang bermain saat ini'),
+        findsOneWidget,
+      );
     });
   });
 

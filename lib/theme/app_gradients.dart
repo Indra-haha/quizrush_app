@@ -19,4 +19,18 @@ class AppGradients {
     end: Alignment.bottomRight,
     colors: [Color(0xFF4648D4), Color(0xFF4648D4)],
   );
+
+  /// Tombol aksi utama pada halaman gabung room (desain "Siap Main?").
+  static const joinButton = LinearGradient(
+    begin: Alignment(0.20, -0.92),
+    end: Alignment(0.80, 1.92),
+    colors: [Color(0xFF4648D4), Color(0xFF8455EF)],
+  );
+
+  /// Kotak logo pada hero halaman gabung room.
+  static const logoTile = LinearGradient(
+    begin: Alignment(0.00, 0.00),
+    end: Alignment(1.00, 1.00),
+    colors: [Color(0xFF4648D4), Color(0xFF6B38D4)],
+  );
 }

@@ -382,4 +382,47 @@ class AppTextStyles {
     height: 1.33,
     letterSpacing: 1.2,
   );
+
+  /// Wordmark "bolt" pada header halaman gabung room.
+  static final wordmark = GoogleFonts.montserrat(
+    color: AppColors.primary,
+    fontSize: 24,
+    fontWeight: FontWeight.w700,
+    height: 1.33,
+  );
+
+  /// Wordmark "QUIZRUSH" (miring) pada header halaman gabung room.
+  static final wordmarkItalic = GoogleFonts.montserrat(
+    color: AppColors.primary,
+    fontSize: 24,
+    fontStyle: FontStyle.italic,
+    fontWeight: FontWeight.w700,
+    height: 1.33,
+    letterSpacing: -1.2,
+  );
+
+  /// Judul utama halaman gabung room ("Siap Main?").
+  static final joinTitle = GoogleFonts.montserrat(
+    color: AppColors.textPrimary,
+    fontSize: 28,
+    fontWeight: FontWeight.w700,
+    height: 1.21,
+    letterSpacing: -0.7,
+  );
+
+  /// Subjudul halaman gabung room.
+  static final joinSubtitle = GoogleFonts.plusJakartaSans(
+    color: AppColors.textSecondary,
+    fontSize: 16,
+    fontWeight: FontWeight.w400,
+    height: 1.5,
+  );
+
+  /// Label tombol besar halaman gabung room ("GABUNG").
+  static final joinButtonLabel = GoogleFonts.montserrat(
+    color: AppColors.textOnPrimary,
+    fontSize: 24,
+    fontWeight: FontWeight.w700,
+    height: 1.33,
+  );
 }

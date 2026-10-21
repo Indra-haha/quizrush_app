@@ -21,6 +21,16 @@ class AppColors {
   // Surface kanvas untuk halaman daftar quiz (desain MyQuiz).
   static const quizCanvas = Color(0xFFFBF8FF);
 
+  // Halaman gabung room (desain "Siap Main?"): pil header, isian PIN/nama,
+  // dan pil bukti sosial.
+  static const surfaceTint = Color(0xFFE7EEFF);
+  static const inputFill = Color(0xFFF0F3FF);
+  static const socialTint = Color(0x7FE7EEFF);
+
+  // Aksen ungu untuk tile logo dan tombol gabung.
+  static const accentViolet = Color(0xFF6B38D4);
+  static const accentPurple = Color(0xFF8455EF);
+
   // Aksen indigo (tombol aksi & pill utama pada desain MyQuiz).
   static const indigoAction = Color(0xFF4B49D6);
   static const indigoActionSoft = Color(0xFFE2DFFF);

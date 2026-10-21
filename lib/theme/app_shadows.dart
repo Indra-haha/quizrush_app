@@ -100,4 +100,14 @@ class AppShadows {
       spreadRadius: -2,
     ),
   ];
+
+  /// Kartu utama halaman gabung room: bayangan lebar lembut di bawah kartu.
+  static const joinCard = <BoxShadow>[
+    BoxShadow(
+      color: Color(0x19000000),
+      blurRadius: 40,
+      offset: Offset(0, 12),
+      spreadRadius: 0,
+    ),
+  ];
 }

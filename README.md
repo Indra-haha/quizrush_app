@@ -96,7 +96,7 @@ lib/
 │   └── QuizPage/     Sisi peserta: jelajahi kuis, detail kuis
 ├── services/    Lapisan data: REST client, auth, kuis, room, sesi, cache
 ├── theme/       Design token (modul terpisah) + barrel app_theme.dart, palet status, palet opsi jawaban
-└── widgets/     50 widget presentational tanpa logika halaman
+└── widgets/     59 widget presentational tanpa logika halaman
 ```
 
 Pola yang dipakai:
@@ -192,7 +192,7 @@ flutter test
 | `test/model_json_test.dart` | Serialisasi/deserialisasi model (`Quizes`, `Room`, `RoomMessage`, `User`, dll) |
 | `test/service_test.dart` | Lapisan service lewat `MockClient` (`ApiClient`, auth, quiz, room) |
 
-Total **178** test, semuanya lulus.
+Total **152** test lulus. `test/service_test.dart` belum bisa dimuat karena masih memakai API `QuizImageAsset` lama (`id`, `format`, `imageId`, `imageFormat`) — sudah gagal sebelum perubahan halaman gabung room.
 
 ---
 
