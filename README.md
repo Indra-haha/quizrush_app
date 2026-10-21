@@ -37,7 +37,7 @@ Aplikasi Flutter untuk **platform kuis kelas daring** lengkap dengan autentikasi
 - **Tester kuis offline** — `QuizTestPage` menjalankan satu soal per layar dengan timer dial, penomoran waktu, dan penilaian skor tanpa menyentuh server.
 
 ### Peringkat Wilayah
-Halaman peringkat user berdasarkan wilayah: podium tiga besar, daftar peringkat, dan baris posisi user sendiri. Podium/daftar masih memakai **data contoh**, sedangkan kartu lokasi terkini beserta chip filter wilayah (Kecamatan/Kota/Provinsi) direncanakan berasal dari `POST /api/location` — koordinat diambil lewat `geolocator` dan hasil terakhir di-cache di `SharedPreferences`.
+Halaman peringkat user berdasarkan wilayah: podium tiga besar, daftar peringkat, dan baris posisi user sendiri — semuanya dari grup `kecamatan`/`kota`/`provinsi` respons `GET /api/location`. Koordinat diambil lewat `geolocator`, hasil terakhir di-cache di `SharedPreferences`, dan baris "Kamu" ditandai lewat perbandingan `username` dengan sesi berjalan. Menampilkan atribusi "© OpenStreetMap contributors".
 
 ### Profile
 Halaman profil pengguna yang menampilkan nama, username, kelas, dan tanggal lahir, serta tombol **Logout** untuk mengakhiri sesi.
@@ -149,7 +149,7 @@ REST (bukan Supabase/Firebase) memakai `package:http`, dengan JSON dua arah dan 
 | `AuthService` | `POST /api/login` · `POST /api/register` · `POST /api/logout` · `GET /api/session` |
 | `QuizService` | `GET /api/quizzes` · `GET /api/my-quizzes` · `POST /api/create/signature` · unggah langsung ke Cloudinary · `POST /api/create/quiz` |
 | `RoomService` | `POST /api/create/room` · `PUT /api/room/{id}/status` |
-| `LocationService` | `POST /api/location` (template — belum diimplementasi di server) |
+| `LocationService` | `GET /api/location` (grouped leaderboard wilayah dari koordinat GPS, API.md §12) |
 
 Semua request selain login/register mengirim `Authorization: Bearer <token>`; token berlaku 24 jam. `ApiException` dengan `statusCode == 401` diubah menjadi `needsAuth: true` yang memicu `LoginRedirect.go` ke halaman login.
 
@@ -201,7 +201,7 @@ Total **178** test, semuanya lulus.
 Hal-hal yang **belum** berfungsi dan perlu diketahui:
 
 - **Join room belum diimplementasikan.** Tombol "Masuk" pada detail kuis hanya menampilkan snackbar `fitur join menyusul`.
-- **Peringkat Wilayah masih memakai data contoh.** Podium dan daftar peringkat belum tersambung ke server; hanya kartu lokasi yang dirancang memakai `POST /api/location` (endpoint **belum diimplementasi di server**, lihat `API.md` §12). Tanpa izin lokasi, halaman menampilkan wilayah default/cache terakhir.
+- **Peringkat Wilayah bergantung pada izin lokasi.** Podium dan daftar berasal dari `GET /api/location` (lihat `API.md` §12). Tanpa izin lokasi atau bila grup wilayah kosong, halaman menampilkan pesan kosong; kartu lokasi memakai cache terakhir bila ada.
 - **Aturan minimal 5 pertanyaan sudah divalidasi di sisi klien.** `CreateQuizPage` memeriksa judul, deskripsi, gambar (wajib, maks 5 MB), minimal 5 pertanyaan, 4 opsi, jawaban benar terpilih, dan `skor` 1–50.
 - **Belum ada mode gelap** dan belum ada halaman pengaturan/preferensi selain `ProfilePage`.
 - **Base URL backend hardcoded** di `lib/services/api_client.dart` — belum configurable via environment.

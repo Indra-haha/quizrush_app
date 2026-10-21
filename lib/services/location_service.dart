@@ -28,7 +28,7 @@ enum LocationAccess {
   unavailable,
 }
 
-/// Klien lokasi wilayah (template `POST /api/location`, lihat API.md §12).
+/// Klien lokasi wilayah (`GET /api/location`, lihat API.md §12).
 ///
 /// Mengambil koordinat GPS perangkat lalu mengirimnya ke server untuk
 /// memperoleh wilayah terkini + opsi filter; hasil terakhir di-cache di
@@ -50,7 +50,8 @@ class LocationService {
   final ApiClient _api;
   final PositionProvider _positionProvider;
 
-  /// Kirim koordinat user; respons berisi wilayah terkini + opsi filter.
+  /// Kirim koordinat user; respons berisi metadata wilayah + grouped
+  /// leaderboard (kecamatan/kota/provinsi).
   Future<LocationResult> submit({
     required String token,
     required double latitude,

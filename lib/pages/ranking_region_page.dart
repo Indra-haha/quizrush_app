@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../helpers/format.dart';
 import '../models/region_location.dart';
 import '../models/region_ranking.dart';
 import '../services/api_client.dart';
@@ -13,9 +14,10 @@ import '../widgets/status_filter_row.dart';
 
 /// Halaman "Peringkat Wilayah".
 ///
-/// Podium & daftar peringkat masih memakai data contoh
-/// ([RegionRankingSample]). Kartu lokasi dan chip filter wilayah diambil dari
-/// `POST /api/location` (template, lihat API.md §12) memakai koordinat GPS.
+/// Podium, daftar peringkat, dan baris user diambil dari grup wilayah
+/// (`kecamatan`/`kota`/`provinsi`) respons `GET /api/location` (API.md §12)
+/// memakai koordinat GPS. Baris "Kamu" ditandai dengan membandingkan
+/// `username` entri terhadap sesi berjalan.
 class RankingRegionPage extends StatefulWidget {
   /// Apakah tab ini sedang aktif/dibuka. Izin lokasi hanya diminta saat
   /// halaman benar-benar dibuka (bukan saat dibuat di dalam `IndexedStack`).
@@ -29,15 +31,18 @@ class RankingRegionPage extends StatefulWidget {
 
 class _RankingRegionPageState extends State<RankingRegionPage> {
   static const String _placeholderRegion = 'Kecamatan, Kota, Provinsi';
+  static const List<String> _levels = ['kecamatan', 'kota', 'provinsi'];
 
   LocationResult? _location;
-  String _activeLevel = LocationResult.defaultFilters.first.level;
+  String _activeLevel = _levels.first;
+  String _meUsername = '';
   bool _locating = false;
   bool _opened = false;
 
   @override
   void initState() {
     super.initState();
+    _loadMe();
     _loadCached();
     if (widget.isActive) _onOpened();
   }
@@ -46,6 +51,14 @@ class _RankingRegionPageState extends State<RankingRegionPage> {
   void didUpdateWidget(covariant RankingRegionPage oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (!oldWidget.isActive && widget.isActive) _onOpened();
+  }
+
+  Future<void> _loadMe() async {
+    final user = await SessionService.instance.getUser();
+    if (!mounted) return;
+    final username = (user?['username'] as String?)?.trim() ?? '';
+    if (username.isEmpty) return;
+    setState(() => _meUsername = username);
   }
 
   Future<void> _loadCached() async {
@@ -143,10 +156,41 @@ class _RankingRegionPageState extends State<RankingRegionPage> {
     }
   }
 
+  /// Entri grup wilayah sesuai chip yang aktif, sudah diadaptasi ke baris UI.
+  List<RegionRankingEntry> _entriesForLevel() {
+    final location = _location;
+    if (location == null) return const [];
+    final List<RegionLeaderboardEntry> source;
+    switch (_activeLevel) {
+      case 'kota':
+        source = location.kota;
+      case 'provinsi':
+        source = location.provinsi;
+      default:
+        source = location.kecamatan;
+    }
+    return [
+      for (final e in source)
+        RegionRankingEntry.fromLeaderboard(
+          e,
+          isCurrentUser: _meUsername.isNotEmpty && e.username == _meUsername,
+        ),
+    ];
+  }
+
   @override
   Widget build(BuildContext context) {
-    final podium = RegionRankingSample.podium;
     final location = _location;
+    final entries = _entriesForLevel();
+    final hasData = location != null && entries.isNotEmpty;
+    final podium = entries.length >= 3
+        ? entries.sublist(0, 3)
+        : const <RegionRankingEntry>[];
+    final listEntries = entries.length > 3
+        ? entries.sublist(3, entries.length < 10 ? entries.length : 10)
+        : const <RegionRankingEntry>[];
+    final meIndex = entries.indexWhere((e) => e.isCurrentUser);
+    final meEntry = meIndex >= 10 ? entries[meIndex] : null;
     return Scaffold(
       backgroundColor: AppColors.quizCanvas,
       appBar: const AppHeaderBarWithActions(
@@ -167,23 +211,42 @@ class _RankingRegionPageState extends State<RankingRegionPage> {
             locating: _locating,
             onLocate: _refreshLocation,
           ),
+          const SizedBox(height: AppSpacing.space1),
+          Align(
+            alignment: Alignment.centerRight,
+            child: Text(
+              '© OpenStreetMap contributors',
+              style: AppTextStyles.metaMicro,
+            ),
+          ),
           const SizedBox(height: AppSpacing.space8),
           StatusFilterRow(
-            statuses: const ['kecamatan', 'kota', 'provinsi'],
+            statuses: _levels,
             selected: _activeLevel,
             onChanged: (level) => setState(() => _activeLevel = level),
           ),
           const SizedBox(height: AppSpacing.space8),
-          _Podium(entries: podium),
-          const SizedBox(height: AppSpacing.space8),
-          const _ListHeader(),
-          const SizedBox(height: AppSpacing.space4),
-          for (final entry in RegionRankingSample.followers) ...[
-            _RankRow(entry: entry),
-            const SizedBox(height: AppSpacing.space4),
+          if (!hasData)
+            const _EmptyHint()
+          else ...[
+            _Podium(entries: podium),
+            if (podium.isNotEmpty) const SizedBox(height: AppSpacing.space8),
+            if (listEntries.isNotEmpty) ...[
+              _ListHeader(
+                total: entries.length,
+                updatedAt: location.metadata.timestamp,
+              ),
+              const SizedBox(height: AppSpacing.space4),
+              for (final entry in listEntries) ...[
+                _RankRow(entry: entry),
+                const SizedBox(height: AppSpacing.space4),
+              ],
+            ],
+            if (meEntry != null) ...[
+              const _DotDivider(),
+              _RankRow(entry: meEntry),
+            ],
           ],
-          const _DotDivider(),
-          _RankRow(entry: RegionRankingSample.currentUser),
         ],
       ),
     );
@@ -386,7 +449,6 @@ class _PodiumColumn extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final badge = entry.badge;
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -459,23 +521,6 @@ class _PodiumColumn extends StatelessWidget {
           textAlign: TextAlign.center,
           style: AppTextStyles.bodySmall,
         ),
-        if (badge != null) ...[
-          const SizedBox(height: AppSpacing.space2),
-          Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.space3,
-              vertical: AppSpacing.space1,
-            ),
-            decoration: const BoxDecoration(
-              color: AppColors.endedTint,
-              borderRadius: AppRadius.pill,
-            ),
-            child: Text(
-              badge,
-              style: AppTextStyles.metaMicro.copyWith(color: AppColors.primary),
-            ),
-          ),
-        ],
         const SizedBox(height: AppSpacing.space2),
         Container(
           padding: const EdgeInsets.symmetric(
@@ -521,10 +566,16 @@ class _PodiumColumn extends StatelessWidget {
 }
 
 class _ListHeader extends StatelessWidget {
-  const _ListHeader();
+  final int total;
+  final String updatedAt;
+
+  const _ListHeader({required this.total, required this.updatedAt});
 
   @override
   Widget build(BuildContext context) {
+    final updatedLabel = updatedAt.trim().isEmpty
+        ? null
+        : 'Update: ${relativeTime(updatedAt)}';
     return Row(
       children: [
         Text('Peringkat Wilayah', style: AppTextStyles.quizGroupTitle),
@@ -539,12 +590,13 @@ class _ListHeader extends StatelessWidget {
             borderRadius: AppRadius.pill,
           ),
           child: Text(
-            'Top 20',
+            'Top $total',
             style: AppTextStyles.metaMicro.copyWith(color: AppColors.primary),
           ),
         ),
         const Spacer(),
-        Text('Update: 5 mnt lalu', style: AppTextStyles.metaMicro),
+        if (updatedLabel != null)
+          Text(updatedLabel, style: AppTextStyles.metaMicro),
       ],
     );
   }
@@ -560,7 +612,6 @@ class _RankRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final isMe = entry.isCurrentUser;
     final accent = isMe ? AppColors.indigoActionInk : AppColors.textSecondary;
-    final tierHighlighted = entry.tier == 'Master Tier';
 
     return Container(
       padding: const EdgeInsets.all(AppSpacing.space6),
@@ -622,37 +673,11 @@ class _RankRow extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: AppTextStyles.labelStrong,
                 ),
-                Row(
-                  children: [
-                    Flexible(
-                      child: Text(
-                        entry.subtitle,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: AppTextStyles.bodySmall.copyWith(color: accent),
-                      ),
-                    ),
-                    if (entry.tier.isNotEmpty) ...[
-                      const SizedBox(width: AppSpacing.space4),
-                      Container(
-                        width: 4,
-                        height: 4,
-                        decoration: const BoxDecoration(
-                          color: AppColors.primaryBorder,
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                      const SizedBox(width: AppSpacing.space4),
-                      Text(
-                        entry.tier,
-                        style: AppTextStyles.metaMicro.copyWith(
-                          color: tierHighlighted
-                              ? AppColors.primary
-                              : AppColors.textSecondary,
-                        ),
-                      ),
-                    ],
-                  ],
+                Text(
+                  entry.subtitle,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTextStyles.bodySmall.copyWith(color: accent),
                 ),
               ],
             ),
@@ -696,6 +721,47 @@ class _DotDivider extends StatelessWidget {
             decoration: BoxDecoration(
               color: AppColors.indigoActionInk.withValues(alpha: 0.45),
               shape: BoxShape.circle,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Pesan bila lokasi belum terdeteksi atau grup wilayah masih kosong.
+class _EmptyHint extends StatelessWidget {
+  const _EmptyHint();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(AppSpacing.space8),
+      decoration: const BoxDecoration(
+        color: AppColors.textOnPrimary,
+        borderRadius: AppRadius.md,
+        boxShadow: AppShadows.card,
+      ),
+      child: Column(
+        children: [
+          const Icon(
+            Icons.public_off_outlined,
+            size: AppIconSize.lg,
+            color: AppColors.textMuted,
+          ),
+          const SizedBox(height: AppSpacing.space4),
+          Text(
+            'Belum ada data peringkat wilayah.',
+            style: AppTextStyles.labelStrong,
+          ),
+          const SizedBox(height: AppSpacing.space1),
+          Text(
+            'Aktifkan izin lokasi lalu muat ulang untuk melihat peringkat '
+            'terkini di sekitarmu.',
+            textAlign: TextAlign.center,
+            style: AppTextStyles.bodySmall.copyWith(
+              color: AppColors.textMuted,
             ),
           ),
         ],

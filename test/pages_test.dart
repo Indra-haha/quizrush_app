@@ -53,18 +53,73 @@ void main() {
     SharedPreferences.setMockInitialValues(<String, Object>{});
   });
 
+  Map<String, Object> locationCache({
+    required List<Map<String, Object>> kecamatan,
+    String timestamp = '2026-10-20T06:30:00Z',
+  }) {
+    return {
+      'region_location': jsonEncode({
+        'metadata': {
+          'user_location': {'latitude': -7.79558, 'longitude': 110.36949},
+          'resolved_regions': {
+            'kecamatan': 'kecamatan-pasteur',
+            'kota': 'kota-bandung',
+            'provinsi': 'provinsi-jabar',
+          },
+          'timestamp': timestamp,
+        },
+        'data': {
+          'kecamatan': kecamatan,
+          'kota': <Map<String, Object>>[],
+          'provinsi': <Map<String, Object>>[],
+        },
+      }),
+    };
+  }
+
+  Map<String, Object> entry(int rank, String username, String nama, int poin) {
+    return {
+      'rank': rank,
+      'username': username,
+      'nama': nama,
+      'poin': poin,
+      'jarak_meter': 100.0 * rank,
+    };
+  }
+
   group('RankingRegionPage', () {
-    testWidgets('menampilkan kartu lokasi dan daftar peringkat', (
+    testWidgets('menampilkan podium & daftar dari cache /api/location', (
       WidgetTester tester,
     ) async {
+      SharedPreferences.setMockInitialValues(<String, Object>{
+        'auth_token': 'token',
+        'auth_user': jsonEncode({'username': 'dimas', 'nama': 'Dimas Arya'}),
+        ...locationCache(
+          kecamatan: [
+            entry(1, 'arka', 'Arka Pratama', 14850),
+            entry(2, 'nadia', 'Nadia Putri', 12400),
+            entry(3, 'rian', 'Rian Setiawan', 11900),
+            entry(4, 'faris', 'Faris Alfarisi', 10850),
+            entry(5, 'dimas', 'Dimas Arya', 8950),
+          ],
+        ),
+      });
+
       await tester.pumpWidget(_wrap(const RankingRegionPage()));
+      await tester.pump();
       await tester.pump();
 
       expect(find.text('Peringkat'), findsOneWidget);
       expect(find.text('Lokasi Sekarang'), findsOneWidget);
-      expect(find.text('Kecamatan, Kota, Provinsi'), findsOneWidget);
+      expect(
+        find.text('kecamatan-pasteur, kota-bandung, provinsi-jabar'),
+        findsOneWidget,
+      );
       expect(find.text('Peringkat Wilayah'), findsOneWidget);
+      expect(find.text('Top 5'), findsOneWidget);
       expect(find.text('Arka Pratama'), findsOneWidget);
+      expect(find.text('@arka'), findsOneWidget);
+      expect(find.text('Juara 1'), findsOneWidget);
 
       final me = find.text('Kamu (Dimas Arya)');
       await tester.scrollUntilVisible(
@@ -73,6 +128,49 @@ void main() {
         scrollable: find.byType(Scrollable).first,
       );
       expect(me, findsOneWidget);
+      expect(find.text('@dimas'), findsOneWidget);
+    });
+
+    testWidgets('menempelkan baris "Kamu" di luar 10 besar', (
+      WidgetTester tester,
+    ) async {
+      SharedPreferences.setMockInitialValues(<String, Object>{
+        'auth_token': 'token',
+        'auth_user': jsonEncode({'username': 'dimas', 'nama': 'Dimas Arya'}),
+        ...locationCache(
+          kecamatan: [
+            for (var i = 1; i <= 12; i++)
+              entry(i, 'user$i', 'User $i', 20000 - i * 100),
+            entry(13, 'dimas', 'Dimas Arya', 8950),
+          ],
+        ),
+      });
+
+      await tester.pumpWidget(_wrap(const RankingRegionPage()));
+      await tester.pump();
+      await tester.pump();
+
+      expect(find.text('Top 13'), findsOneWidget);
+
+      final me = find.text('Kamu (Dimas Arya)');
+      await tester.scrollUntilVisible(
+        me,
+        300,
+        scrollable: find.byType(Scrollable).first,
+      );
+      expect(me, findsOneWidget);
+    });
+
+    testWidgets('menampilkan pesan kosong tanpa data lokasi', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(_wrap(const RankingRegionPage()));
+      await tester.pump();
+
+      expect(find.text('Lokasi Sekarang'), findsOneWidget);
+      expect(find.text('Kecamatan, Kota, Provinsi'), findsOneWidget);
+      expect(find.text('Belum ada data peringkat wilayah.'), findsOneWidget);
+      expect(find.text('Peringkat Wilayah'), findsNothing);
     });
   });
 
