@@ -73,7 +73,6 @@ class AuthService {
         'kelas': kelas,
         'tanggal_lahir': tanggalLahir,
         'password': hashPassword(password),
-        'device_id': DeviceService.instance.getId(),
       },
     );
 

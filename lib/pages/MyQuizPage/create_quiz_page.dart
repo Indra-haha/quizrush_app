@@ -57,8 +57,8 @@ class _CreateQuizPageState extends State<CreateQuizPage> {
   bool _saving = false;
   bool _pickingImage = false;
 
-  /// Identitas aset gambar hasil unggah Cloudinary (public_id + format);
-  /// dikirim sebagai `image_id`/`image_format` saat save.
+  /// URL aset gambar hasil unggah Cloudinary (secure_url);
+  /// dikirim sebagai `path` saat save.
   QuizImageAsset? _imageUpload;
   bool _uploading = false;
   bool _uploadFailed = false;
@@ -241,9 +241,12 @@ class _CreateQuizPageState extends State<CreateQuizPage> {
       if (!mounted) return false;
       AppSnackBar.error(context, e.message);
       return false;
-    } catch (e) {
+    } catch (_) {
       if (!mounted) return false;
-      AppSnackBar.error(context, 'Tidak dapat terhubung ke server. ($e)');
+      AppSnackBar.error(
+        context,
+        'Tidak dapat terhubung ke server. Periksa koneksi lalu coba lagi.',
+      );
       return false;
     }
   }
@@ -333,8 +336,7 @@ class _CreateQuizPageState extends State<CreateQuizPage> {
         title: _titleController.text.trim(),
         description: _descriptionController.text.trim(),
         questions: questions,
-        imageId: _imageUpload!.id,
-        imageFormat: _imageUpload!.format,
+        path: _imageUpload!.path,
       );
       if (!mounted) return;
       Navigator.of(context).pop(true);

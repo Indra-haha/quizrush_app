@@ -16,13 +16,12 @@ enum QuizImageUploadStage {
   final String label;
 }
 
-/// Identitas aset gambar kuis di Cloudinary: `id` (public_id) dan `format`.
-/// Dikirim ke server sebagai `image_id`/`image_format` saat membuat kuis.
+/// Identitas aset gambar kuis di Cloudinary: URL `path` (secure_url).
+/// Dikirim ke server sebagai `path` saat membuat kuis.
 class QuizImageAsset {
-  const QuizImageAsset({required this.id, required this.format});
+  const QuizImageAsset({required this.path});
 
-  final String id;
-  final String format;
+  final String path;
 }
 
 /// Hasil endpoint `POST /api/create/signature` (§4.2) untuk upload langsung
@@ -33,17 +32,12 @@ class _CloudinarySignature {
     required this.timestamp,
     required this.apiKey,
     required this.cloudName,
-    required this.type,
   });
 
   final String signature;
   final int timestamp;
   final String apiKey;
   final String cloudName;
-
-  /// Tipe delivery yang ditandatangani server (mis. `authenticated`); wajib
-  /// dikirim balik sebagai field `type` saat upload.
-  final String type;
 
   factory _CloudinarySignature.fromJson(Map<String, dynamic> json) {
     final signature = json['signature'];
@@ -66,13 +60,11 @@ class _CloudinarySignature {
     } else {
       throw const FormatException('timestamp tidak valid');
     }
-    final type = json['type'];
     return _CloudinarySignature(
       signature: signature,
       timestamp: parsedTimestamp,
       apiKey: apiKey,
       cloudName: cloudName,
-      type: type is String && type.isNotEmpty ? type : 'authenticated',
     );
   }
 }
@@ -116,9 +108,8 @@ class QuizService {
     return MyQuizzes.fromJson(jsonMap(data));
   }
 
-  /// Unggah gambar kuis ke Cloudinary (§4.2–§4.3) dan kembalikan identitas
-  /// aset (`id` + `format`) yang akan dikirim sebagai `image_id`/`image_format`
-  /// pada [createQuiz].
+  /// Unggah gambar kuis ke Cloudinary (§4.2–§4.3) dan kembalikan URL
+  /// aset (`secure_url`) yang akan dikirim sebagai `path` pada [createQuiz].
   ///
   /// [onStage] dipanggil di awal setiap tahap agar UI bisa menampilkan
   /// progresnya.
@@ -143,17 +134,15 @@ class QuizService {
     required String title,
     String? description,
     required List<QuizQuestionInput> questions,
-    required String imageId,
-    required String imageFormat,
+    required String path,
   }) async {
     final response = await _api.post(
       '/api/create/quiz',
       token: token,
       body: {
         'title': title,
-        'description': ?description,
-        'image_id': imageId,
-        'image_format': imageFormat,
+        'description': description,
+        'path': path,
         'questions': questions.map((q) => q.toJson()).toList(),
       },
       timeout: const Duration(seconds: 30),
@@ -189,9 +178,8 @@ class QuizService {
     }
   }
 
-  /// Unggah gambar langsung ke Cloudinary (§4.3), kembalikan identitas aset
-  /// (`public_id` + `format`). Gambar disimpan sebagai `authenticated` sehingga
-  /// hanya dapat disajikan lewat signed URL dari server.
+  /// Unggah gambar langsung ke Cloudinary (§4.3), kembalikan URL aset
+  /// (`secure_url`).
   Future<QuizImageAsset> _uploadToCloudinary({
     required _CloudinarySignature signature,
     required List<int> imageBytes,
@@ -207,7 +195,6 @@ class QuizService {
     request.fields['timestamp'] = '${signature.timestamp}';
     request.fields['signature'] = signature.signature;
     request.fields['folder'] = quizImageFolder;
-    request.fields['type'] = signature.type;
     request.files.add(
       http.MultipartFile.fromBytes(
         'file',
@@ -228,12 +215,11 @@ class QuizService {
         statusCode: response.statusCode,
       );
     }
-    final id = data['public_id'];
-    final format = data['format'];
-    if (id is! String || id.isEmpty || format is! String || format.isEmpty) {
+    final secureUrl = data['secure_url'];
+    if (secureUrl is! String || secureUrl.isEmpty) {
       throw const ApiException('Respons Cloudinary tidak valid');
     }
-    return QuizImageAsset(id: id, format: format);
+    return QuizImageAsset(path: secureUrl);
   }
 
   /// Pesan error Cloudinary berbentuk `{"error":{"message":"..."}}`.
