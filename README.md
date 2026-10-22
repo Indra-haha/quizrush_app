@@ -29,6 +29,12 @@ Aplikasi Flutter untuk **platform kuis kelas daring** lengkap dengan autentikasi
 - **Syarat & Ketentuan** wajib dicentang sebelum pendaftaran berhasil; checkbox dan tautannya memakai token warna/ketebalan garis yang sama dengan desain.
 - **Restore sesi otomatis** — token yang tersimpan divalidasi lewat `GET /api/session`; jika masih valid pengguna langsung masuk ke aplikasi.
 
+### Beranda
+- **Header & poin** — appbar surface berisi pill poin bergaya beranda (`1.240 Pts`); ketuk untuk membuka riwayat koin.
+- **Sapaan & statistik** — "Halo, Budi! 👋" dan grid 2x2 kartu statistik (Total Main, Rating Rata-rata bergradien, Host Aktif, Terakhir Update) dengan lingkar ikon bertint.
+- **Quiz Saya** — kartu kuis terbaru (gambar Cloudinary atau gradien placeholder, badge kategori & jumlah soal, kotak ikon) plus tautan "Lihat Semua"; daftar disegarkan dengan pull-to-refresh.
+- **Buat kuis** — tombol "Create Quiz" bergradien sebagai FAB.
+
 ### Kuis
 - **Berbrowse & mencari kuis** — dikelompokkan berdasarkan status (`open`, `in-Game`, `ended`), dengan pencarian judul.
 - **Cari room via PIN** — kolom pencarian mendeteksi 6 digit angka dan langsung menuju room tersebut.
@@ -120,14 +126,14 @@ Token design terbagi ke modul-modul di **`lib/theme/`** (`app_colors.dart`, `app
 | `AppColors` | Brand, surface, teks, status, divider + palet 4 warna jawaban + palet halaman menunggu |
 | `AppSpacing` | Skala numerik `space1`…`space16`, clearances, alias semantik `xxs`…`xxl` |
 | `AppRadius` | `sm 8`, `md 12`, `lg 16`, `xl 24`, `xxl 32`, `pill 999` |
-| `AppShadows` | 17 preset `List<BoxShadow>` (card, raised, hairline, layered, pillButton, brandGlow, softCard, navBar, authCard, authAction, …) |
+| `AppShadows` | 19 preset `List<BoxShadow>` (card, raised, hairline, layered, pillButton, brandGlow, softCard, navBar, authCard, authAction, homeQuizCard, homeAction, …) |
 | `AppElevation` | `none`, `subtle`, `medium`, `raised` |
-| `AppSizes` | Ukuran komponen tetap (tombol kembali, avatar, slot kosong, titik status) |
-| `AppTextStyles` | sekitar 60 style siap pakai |
+| `AppSizes` | Ukuran komponen tetap (tombol kembali, avatar, slot kosong, titik status, lingkar ikon & gambar kartu kuis beranda) |
+| `AppTextStyles` | sekitar 70 style siap pakai |
 | `AppFontSize` · `AppFontWeight` | Skala ukuran & bobot font untuk API widget |
 | `AppIconSize` · `AppBorderWidth` | Ukuran glyph ikon & ketebalan border |
 | `AppDecorations` | `BoxDecoration` siap pakai (card, statTile, pill, input, …) |
-| `AppGradients` | `heroGradient`, `solidHero`, `authHero`, `authAction` |
+| `AppGradients` | `heroGradient`, `solidHero`, `homeStatHighlight`, `homeAction`, `authHero`, `authAction` |
 | `AppButtons` | `ButtonStyle`: `primary`, `primaryLarge`, `primaryCompact`, `outline`, `text`, `destructive` |
 | `AppStatus` | `danger`, `onLightAlpha` |
 | `AppTheme` | Satu-satunya tempat `ThemeData` dibangun (`AppTheme.light`) |
@@ -199,7 +205,7 @@ flutter test
 | `test/model_json_test.dart` | Serialisasi/deserialisasi model (`Quizes`, `Room`, `RoomMessage`, `User`, dll) |
 | `test/service_test.dart` | Lapisan service lewat `MockClient` (`ApiClient`, auth, quiz, room) |
 
-Total **216** test, semuanya lulus.
+Total **218** test, semuanya lulus.
 
 ---
 

@@ -1,11 +1,15 @@
 import '../helpers/json.dart';
 
 class Quizes {
+  /// Kategori bawaan saat API belum mengirim `kategori`.
+  static const defaultKategori = 'Umum';
+
   final String id;
   final String userId;
   final String host;
   final String title;
   final String description;
+  final String kategori;
   final String path;
   final List<QuizQuestion> questions;
   final int totalQuestions;
@@ -23,6 +27,7 @@ class Quizes {
     required this.questions,
     required this.createdAt,
     this.host = '',
+    this.kategori = '',
     this.totalQuestions = 0,
     this.totalDuration = 0,
     this.totalSkor = 0,
@@ -30,6 +35,13 @@ class Quizes {
     this.status = '',
     this.rooms = const [],
   });
+
+  /// Kategori yang aman ditampilkan: pakai isi API bila ada, kalau tidak
+  /// [defaultKategori].
+  String get kategoriLabel {
+    final value = kategori.trim();
+    return value.isEmpty ? defaultKategori : value;
+  }
 
   /// Jumlah soal: pakai ringkasan `total_questions` kalau ada, kalau tidak
   /// dihitung dari daftar soal mentah (`/api/my-quizzes`).
@@ -44,8 +56,9 @@ class Quizes {
 
   /// Total skor: pakai ringkasan `total_skor` kalau ada, kalau tidak
   /// dijumlahkan dari skor tiap soal.
-  int get score =>
-      totalSkor > 0 ? totalSkor : questions.fold<int>(0, (sum, q) => sum + q.skor);
+  int get score => totalSkor > 0
+      ? totalSkor
+      : questions.fold<int>(0, (sum, q) => sum + q.skor);
 
   factory Quizes.fromJson(Map<String, dynamic> json) {
     return Quizes(
@@ -54,6 +67,7 @@ class Quizes {
       host: jsonString(json['host']),
       title: jsonString(json['title']),
       description: jsonString(json['description']),
+      kategori: jsonString(json['kategori']),
       path: jsonString(json['path']),
       questions: jsonMapList(
         json['questions'],
@@ -63,9 +77,7 @@ class Quizes {
       totalSkor: jsonInt(json['total_skor']),
       createdAt: jsonString(json['created_at']),
       status: jsonString(json['status']),
-      rooms: jsonMapList(
-        json['rooms'],
-      ).map(RoomSummary.fromJson).toList(),
+      rooms: jsonMapList(json['rooms']).map(RoomSummary.fromJson).toList(),
     );
   }
 
@@ -87,6 +99,7 @@ class Quizes {
     };
     if (userId.isNotEmpty) map['user_id'] = userId;
     if (status.isNotEmpty) map['status'] = status;
+    if (kategori.isNotEmpty) map['kategori'] = kategori;
     if (questions.isNotEmpty) {
       map['questions'] = questions.map((q) => q.toJson()).toList();
     }

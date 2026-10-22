@@ -101,4 +101,16 @@ class AppSizes {
 
   /// Diameter tombol bulat biometrik pada halaman login.
   static const authBiometric = 64.0;
+
+  /// Diameter lingkaran ikon kartu statistik beranda.
+  static const homeStatIcon = 36.0;
+
+  /// Tinggi area gambar kartu kuis beranda.
+  static const homeQuizCover = 192.0;
+
+  /// Sisi kotak ikon di tengah gambar kartu kuis beranda.
+  static const homeQuizIconBox = 80.0;
+
+  /// Tinggi tombol aksi "Create Quiz" di beranda.
+  static const homeActionHeight = 56.0;
 }

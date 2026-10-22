@@ -137,31 +137,33 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.pageBase,
       appBar: AppHeaderBarWithActions(
-        actions: [
-          const PointsIndicator(),
-          IconButton(
-            tooltip: 'Refresh dari server',
-            onPressed: _loading ? null : _sync,
-            icon: const Icon(Icons.refresh),
-          ),
-        ],
+        actions: const [PointsIndicator(style: PointsIndicatorStyle.home)],
       ),
       body: _buildBody(),
       floatingActionButton: AppPillButton(
         label: 'Create Quiz',
-        icon: Icons.add,
         onPressed: _onCreateQuiz,
       ),
     );
   }
 
   Widget _buildBody() {
+    return RefreshIndicator(
+      color: AppColors.primary,
+      onRefresh: _sync,
+      child: _buildList(),
+    );
+  }
+
+  Widget _buildList() {
     final section = _currentSection();
 
     return ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.only(
-        top: AppSpacing.space10,
+        top: AppSpacing.space8,
         left: AppSpacing.space9,
         right: AppSpacing.space9,
         bottom: AppSpacing.fabClearance,
@@ -181,9 +183,13 @@ class _HomePageState extends State<HomePage> {
           _buildEmpty()
         else ...[
           const SizedBox(height: AppSpacing.space8),
-          SectionHeader(title: 'Quiz saya', onSeeAll: _openAll),
+          SectionHeader(title: 'Quiz Saya', onSeeAll: _openAll),
           const SizedBox(height: AppSpacing.space8),
-          QuizCard(quiz: section.quiz, onTap: () => _openRooms(section.quiz)),
+          QuizCard(
+            quiz: section.quiz,
+            style: QuizCardStyle.home,
+            onTap: () => _openRooms(section.quiz),
+          ),
         ],
         if (!_loading && _error == null) _buildCacheInfo(),
       ],
@@ -217,6 +223,7 @@ class _HomePageState extends State<HomePage> {
                 label: 'Total Main',
                 value: '1.2k',
                 icon: Icons.sports_esports,
+                iconBackground: AppColors.homeTotalTint,
               ),
             ),
             const SizedBox(width: AppSpacing.md),
@@ -239,6 +246,8 @@ class _HomePageState extends State<HomePage> {
                 label: 'Host Aktif',
                 value: '12',
                 icon: Icons.person,
+                largeValue: true,
+                iconBackground: AppColors.homeHostTint,
               ),
             ),
             const SizedBox(width: AppSpacing.md),
@@ -247,6 +256,7 @@ class _HomePageState extends State<HomePage> {
                 label: 'Terakhir Update',
                 value: _savedAtLabel(),
                 icon: Icons.access_time,
+                iconBackground: AppColors.homeUpdateTint,
               ),
             ),
           ],

@@ -28,6 +28,16 @@ class AppColors {
   // Surface kanvas untuk halaman daftar quiz (desain MyQuiz).
   static const quizCanvas = Color(0xFFFBF8FF);
 
+  // Beranda (desain baru): tint ikon kartu statistik, overlay di atas gambar
+  // kuis, dan border kartu kuis.
+  static const homeTotalTint = primarySoft;
+  static const homeHostTint = participantTile;
+  static const homeUpdateTint = errorSoft;
+  static const homeCardBorder = Color(0x4CC7C4D7);
+  static const overlayLight = Color(0x33FFFFFF);
+  static const overlayBorder = Color(0x4DFFFFFF);
+  static const onPrimaryMuted = Color(0xE6FFFFFF);
+
   // Aksen indigo (tombol aksi & pill utama pada desain MyQuiz).
   static const indigoAction = Color(0xFF4B49D6);
   static const indigoActionSoft = Color(0xFFE2DFFF);

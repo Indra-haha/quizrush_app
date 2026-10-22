@@ -88,12 +88,38 @@ void main() {
       expect(quiz.rooms.single.kode, '123456');
     });
 
+    test('fromJson membaca kategori dan fallback ke nilai default', () {
+      final quiz = Quizes.fromJson({
+        'id': 'q1',
+        'title': 'Kuis',
+        'description': '',
+        'kategori': 'Sejarah',
+        'created_at': '2026-09-17T10:00:00Z',
+        'questions': <Map<String, dynamic>>[],
+        'rooms': <Map<String, dynamic>>[],
+      });
+      expect(quiz.kategori, 'Sejarah');
+      expect(quiz.kategoriLabel, 'Sejarah');
+
+      final tanpaKategori = Quizes.fromJson({
+        'id': 'q2',
+        'title': 'Kuis',
+        'description': '',
+        'created_at': '2026-09-17T10:00:00Z',
+        'questions': <Map<String, dynamic>>[],
+        'rooms': <Map<String, dynamic>>[],
+      });
+      expect(tanpaKategori.kategoriLabel, Quizes.defaultKategori);
+      expect(tanpaKategori.toJson().containsKey('kategori'), isFalse);
+    });
+
     test('toJson/fromJson round-trip', () {
       const quiz = Quizes(
         id: 'q1',
         userId: 'u1',
         title: 'Kuis',
         description: 'Deskripsi',
+        kategori: 'Sejarah',
         path: 'uploads/cover.png',
         createdAt: '2026-09-17T10:00:00Z',
         status: 'open',
@@ -107,6 +133,7 @@ void main() {
 
       final kembali = Quizes.fromJson(quiz.toJson());
       expect(kembali.id, quiz.id);
+      expect(kembali.kategoriLabel, 'Sejarah');
       expect(kembali.path, quiz.path);
       expect(kembali.questions.single.skor, 5);
       expect(kembali.questions.single.duration, 1.5);

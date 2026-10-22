@@ -14,7 +14,7 @@ class SectionHeader extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Expanded(child: Text(title, style: AppTextStyles.heading1)),
+        Expanded(child: Text(title, style: AppTextStyles.heading6)),
         if (onSeeAll != null)
           TextButton(
             onPressed: onSeeAll,
@@ -27,12 +27,7 @@ class SectionHeader extends StatelessWidget {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(
-                  'Lihat Semua',
-                  style: AppTextStyles.bodyLarge.copyWith(
-                    color: AppColors.primary,
-                  ),
-                ),
+                Text('Lihat Semua', style: AppTextStyles.sectionLink),
                 const SizedBox(width: AppSpacing.space2),
                 const Icon(
                   Icons.arrow_forward,

@@ -19,6 +19,7 @@ import 'package:quizrush/widgets/home_stat_card.dart';
 import 'package:quizrush/widgets/load_more_button.dart';
 import 'package:quizrush/widgets/pin_input_field.dart';
 import 'package:quizrush/widgets/quiz_answer_banner.dart';
+import 'package:quizrush/widgets/quiz_card.dart';
 import 'package:quizrush/widgets/quiz_countdown_dial.dart';
 import 'package:quizrush/widgets/quiz_detail_hero.dart';
 import 'package:quizrush/widgets/quiz_image_picker.dart';
@@ -771,7 +772,7 @@ void main() {
     ) async {
       await tester.pumpWidget(_wrap(const HomeGreeting(name: 'Budi')));
 
-      expect(find.text('Halo, Budi!'), findsOneWidget);
+      expect(find.text('Halo, Budi! 👋'), findsOneWidget);
     });
 
     testWidgets('HomeGreeting tanpa nama memakai sapaan umum', (
@@ -779,7 +780,28 @@ void main() {
     ) async {
       await tester.pumpWidget(_wrap(const HomeGreeting(name: '')));
 
-      expect(find.text('Halo!'), findsOneWidget);
+      expect(find.text('Halo! 👋'), findsOneWidget);
+    });
+
+    testWidgets('QuizCard varian home memakai kategori default', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(
+        _wrap(
+          SizedBox(
+            width: 350,
+            child: QuizCard(
+              quiz: _quiz(),
+              style: QuizCardStyle.home,
+              onTap: () {},
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text('Umum'), findsOneWidget);
+      expect(find.text('1 Soal'), findsOneWidget);
+      expect(find.byIcon(Icons.menu_book_rounded), findsOneWidget);
     });
   });
 

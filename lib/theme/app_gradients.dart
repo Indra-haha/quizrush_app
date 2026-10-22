@@ -27,6 +27,20 @@ class AppGradients {
     colors: [Color(0xFF4648D4), Color(0xFF6B38D4)],
   );
 
+  /// Kartu statistik unggulan beranda (desain baru).
+  static const homeStatHighlight = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [Color(0xFF4648D4), Color(0xFF6063EE)],
+  );
+
+  /// Gradien tombol aksi beranda (horizontal).
+  static const homeAction = LinearGradient(
+    begin: Alignment(0, 0.5),
+    end: Alignment(1, 0.5),
+    colors: [Color(0xFF4648D4), Color(0xFF6B38D4)],
+  );
+
   /// Gradien tombol aksi halaman auth (horizontal).
   static const authAction = LinearGradient(
     begin: Alignment(0, 0.5),

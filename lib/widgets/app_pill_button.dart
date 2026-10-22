@@ -19,21 +19,21 @@ class AppPillButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: AppSpacing.space14,
+      height: AppSizes.homeActionHeight,
       child: DecoratedBox(
         decoration: BoxDecoration(
-          color: AppColors.primary,
-          borderRadius: AppRadius.md,
-          boxShadow: AppShadows.pillButton,
+          gradient: AppGradients.homeAction,
+          borderRadius: AppRadius.pill,
+          boxShadow: AppShadows.homeAction,
         ),
         child: Material(
           color: Colors.transparent,
           child: InkWell(
-            borderRadius: AppRadius.md,
+            borderRadius: AppRadius.pill,
             onTap: showProgress ? null : onPressed,
             child: Padding(
               padding: const EdgeInsets.symmetric(
-                horizontal: AppSpacing.space8,
+                horizontal: AppSpacing.space10,
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
@@ -58,9 +58,7 @@ class AppPillButton extends StatelessWidget {
                   Text(
                     label,
                     textAlign: TextAlign.center,
-                    style: AppTextStyles.bodyLarge.copyWith(
-                      color: AppColors.background,
-                    ),
+                    style: AppTextStyles.homeAction,
                   ),
                 ],
               ),

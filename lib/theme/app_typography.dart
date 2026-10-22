@@ -165,6 +165,15 @@ class AppTextStyles {
     letterSpacing: -0.8,
   );
 
+  /// Sapaan besar beranda (desain baru).
+  static final homeGreeting = GoogleFonts.montserrat(
+    color: AppColors.textPrimary,
+    fontSize: 36,
+    fontWeight: FontWeight.w800,
+    height: 1.33,
+    letterSpacing: -0.8,
+  );
+
   /// Judul besar 36pt (hero halaman menunggu).
   static final displayTitle = GoogleFonts.montserrat(
     color: AppColors.textPrimary,
@@ -244,6 +253,62 @@ class AppTextStyles {
     fontSize: 12,
     fontWeight: FontWeight.w600,
     height: 1.33,
+  );
+
+  /// Label kartu statistik beranda (desain baru).
+  static final homeStatLabel = GoogleFonts.plusJakartaSans(
+    color: AppColors.textSecondary,
+    fontSize: 12,
+    fontWeight: FontWeight.w500,
+    height: 1.33,
+  );
+
+  static final homeStatLabelOnPrimary = GoogleFonts.plusJakartaSans(
+    color: AppColors.onPrimaryMuted,
+    fontSize: 12,
+    fontWeight: FontWeight.w500,
+    height: 1.33,
+  );
+
+  /// Nilai kartu statistik beranda (desain baru).
+  static final homeStatValue = GoogleFonts.montserrat(
+    color: AppColors.textPrimary,
+    fontSize: 20,
+    fontWeight: FontWeight.w800,
+    height: 1.2,
+    letterSpacing: -0.4,
+  );
+
+  static final homeStatValueOnPrimary = GoogleFonts.montserrat(
+    color: AppColors.onPrimaryMuted,
+    fontSize: 20,
+    fontWeight: FontWeight.w800,
+    height: 1.2,
+    letterSpacing: -0.4,
+  );
+
+  static final homeStatValueLarge = GoogleFonts.montserrat(
+    color: AppColors.textPrimary,
+    fontSize: 24,
+    fontWeight: FontWeight.w800,
+    height: 1.17,
+    letterSpacing: -0.4,
+  );
+
+  /// Tautan "Lihat Semua" pada judul section beranda.
+  static final sectionLink = GoogleFonts.plusJakartaSans(
+    color: AppColors.primary,
+    fontSize: 16,
+    fontWeight: FontWeight.w400,
+    height: 1.5,
+  );
+
+  /// Label tombol aksi beranda ("Create Quiz").
+  static final homeAction = GoogleFonts.montserrat(
+    color: AppColors.textOnPrimary,
+    fontSize: 16,
+    fontWeight: FontWeight.w700,
+    height: 1.25,
   );
 
   static final bodyLarge = GoogleFonts.plusJakartaSans(

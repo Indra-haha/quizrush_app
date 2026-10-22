@@ -5,20 +5,36 @@ import '../theme/app_theme.dart';
 import '../theme/quiz_status.dart';
 import '../helpers/format.dart';
 
+/// Varian tampilan kartu kuis.
+///
+/// [standard] dipakai halaman hasil; [home] mengikuti desain beranda baru
+/// (sudut lebih besar, badge kategori di kiri atas, kotak ikon di tengah).
+enum QuizCardStyle { standard, home }
+
 class QuizCard extends StatelessWidget {
   final Quizes quiz;
   final VoidCallback onTap;
+  final QuizCardStyle style;
 
-  const QuizCard({super.key, required this.quiz, required this.onTap});
+  const QuizCard({
+    super.key,
+    required this.quiz,
+    required this.onTap,
+    this.style = QuizCardStyle.standard,
+  });
+
+  bool get _isHome => style == QuizCardStyle.home;
 
   @override
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: AppRadius.lg,
-        border: Border.all(color: AppColors.primaryBorder),
-        boxShadow: AppShadows.softLift,
+        borderRadius: _isHome ? AppRadius.xxl : AppRadius.lg,
+        border: Border.all(
+          color: _isHome ? AppColors.homeCardBorder : AppColors.primaryBorder,
+        ),
+        boxShadow: _isHome ? AppShadows.homeQuizCard : AppShadows.softLift,
       ),
       clipBehavior: Clip.antiAlias,
       child: Material(
@@ -30,11 +46,18 @@ class QuizCard extends StatelessWidget {
             children: [
               _buildCover(),
               Padding(
-                padding: const EdgeInsets.all(AppSpacing.space8),
+                padding: EdgeInsets.all(
+                  _isHome ? AppSpacing.space9 : AppSpacing.space8,
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(quiz.title, style: AppTextStyles.heading2),
+                    Text(
+                      quiz.title,
+                      style: _isHome
+                          ? AppTextStyles.heading5
+                          : AppTextStyles.heading2,
+                    ),
                     const SizedBox(height: AppSpacing.space4),
                     Row(
                       children: [
@@ -63,7 +86,7 @@ class QuizCard extends StatelessWidget {
 
   Widget _buildCover() {
     return SizedBox(
-      height: 192,
+      height: AppSizes.homeQuizCover,
       width: double.infinity,
       child: Stack(
         fit: StackFit.expand,
@@ -92,19 +115,34 @@ class QuizCard extends StatelessWidget {
                 ),
               ],
             ),
-          Positioned(
-            top: 12,
-            right: 12,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                if (quiz.status.isNotEmpty)
-                  _buildBadge(QuizStatus.labelOf(quiz.status)),
-                const SizedBox(height: AppSpacing.space2),
-                _buildBadge('${quiz.questionCount} Soal'),
-              ],
+          if (_isHome) ...[
+            const Positioned.fill(child: Center(child: _QuizCardIconBox())),
+            Positioned(
+              top: AppSpacing.space9,
+              left: AppSpacing.space9,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildHomeBadge(quiz.kategoriLabel, outlined: true),
+                  const SizedBox(height: AppSpacing.space2),
+                  _buildHomeBadge('${quiz.questionCount} Soal'),
+                ],
+              ),
             ),
-          ),
+          ] else
+            Positioned(
+              top: 12,
+              right: 12,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  if (quiz.status.isNotEmpty)
+                    _buildBadge(QuizStatus.labelOf(quiz.status)),
+                  const SizedBox(height: AppSpacing.space2),
+                  _buildBadge('${quiz.questionCount} Soal'),
+                ],
+              ),
+            ),
         ],
       ),
     );
@@ -137,6 +175,28 @@ class QuizCard extends StatelessWidget {
     );
   }
 
+  Widget _buildHomeBadge(String text, {bool outlined = false}) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.space6,
+        vertical: AppSpacing.space2,
+      ),
+      decoration: BoxDecoration(
+        color: outlined
+            ? AppColors.overlayLight
+            : AppColors.textPrimary.withValues(alpha: 0.50),
+        borderRadius: AppRadius.pill,
+        border: outlined
+            ? Border.all(
+                color: AppColors.overlayBorder,
+                width: AppBorderWidth.hairline,
+              )
+            : null,
+      ),
+      child: Text(text, style: AppTextStyles.statLabelOnPrimary),
+    );
+  }
+
   Widget _buildMeta(IconData icon, String text) {
     return Row(
       mainAxisSize: MainAxisSize.min,
@@ -145,6 +205,31 @@ class QuizCard extends StatelessWidget {
         const SizedBox(width: AppSpacing.space2),
         Text(text, style: AppTextStyles.bodyMeta),
       ],
+    );
+  }
+}
+
+class _QuizCardIconBox extends StatelessWidget {
+  const _QuizCardIconBox();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: AppSizes.homeQuizIconBox,
+      height: AppSizes.homeQuizIconBox,
+      decoration: BoxDecoration(
+        color: AppColors.overlayLight,
+        borderRadius: AppRadius.lg,
+        border: Border.all(
+          color: AppColors.overlayBorder,
+          width: AppBorderWidth.hairline,
+        ),
+      ),
+      child: const Icon(
+        Icons.menu_book_rounded,
+        size: AppIconSize.xxl,
+        color: AppColors.textOnPrimary,
+      ),
     );
   }
 }

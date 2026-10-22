@@ -16,8 +16,8 @@ class HomeGreeting extends StatelessWidget {
         Text('Selamat Datang,', style: AppTextStyles.accentLabel),
         const SizedBox(height: AppSpacing.xxs),
         Text(
-          name.isEmpty ? 'Halo!' : 'Halo, $name!',
-          style: AppTextStyles.display1,
+          name.isEmpty ? 'Halo! 👋' : 'Halo, $name! 👋',
+          style: AppTextStyles.homeGreeting,
         ),
       ],
     );

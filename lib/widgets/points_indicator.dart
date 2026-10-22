@@ -5,6 +5,9 @@ import '../pages/points_history_page.dart';
 import '../services/points_store.dart';
 import '../theme/app_theme.dart';
 
+/// Varian tampilan indikator poin.
+enum PointsIndicatorStyle { standard, home }
+
 /// Indikator saldo poin untuk appbar. Nilainya mengikuti [PointsStore] dan
 /// menyegarkan diri dari server saat pertama dibangun; ketuk untuk membuka
 /// riwayat koin.
@@ -13,7 +16,14 @@ class PointsIndicator extends StatefulWidget {
   /// menyegarkan sendiri).
   final bool autoRefresh;
 
-  const PointsIndicator({super.key, this.autoRefresh = true});
+  /// [PointsIndicatorStyle.home] memakai pill polos sesuai desain beranda.
+  final PointsIndicatorStyle style;
+
+  const PointsIndicator({
+    super.key,
+    this.autoRefresh = true,
+    this.style = PointsIndicatorStyle.standard,
+  });
 
   @override
   State<PointsIndicator> createState() => _PointsIndicatorState();
@@ -31,9 +41,9 @@ class _PointsIndicatorState extends State<PointsIndicator> {
   }
 
   void _openHistory() {
-    Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => const PointsHistoryPage()),
-    );
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (_) => const PointsHistoryPage()));
   }
 
   @override
@@ -49,45 +59,57 @@ class _PointsIndicatorState extends State<PointsIndicator> {
           child: InkWell(
             onTap: _openHistory,
             borderRadius: AppRadius.pill,
-            child: Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppSpacing.space5,
-                vertical: AppSpacing.space3,
-              ),
-              decoration: BoxDecoration(
-                color: AppColors.primarySoft,
-                borderRadius: AppRadius.pill,
-                border: Border.all(
-                  color: AppColors.primaryBorder.withValues(alpha: 0.5),
-                  width: AppBorderWidth.hairline,
-                ),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(
-                    Icons.emoji_events_rounded,
-                    size: AppIconSize.sm,
-                    color: AppColors.primary,
-                  ),
-                  const SizedBox(width: AppSpacing.space2),
-                  Text(
-                    label,
-                    style: AppTextStyles.labelStrongSmall.copyWith(
-                      color: AppColors.primaryDark,
+            child: widget.style == PointsIndicatorStyle.home
+                ? Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.space5,
+                      vertical: AppSpacing.space3,
+                    ),
+                    decoration: const BoxDecoration(
+                      color: AppColors.surfaceSoft,
+                      borderRadius: AppRadius.pill,
+                    ),
+                    child: Text('$label Pts', style: AppTextStyles.accentLabel),
+                  )
+                : Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.space5,
+                      vertical: AppSpacing.space3,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.primarySoft,
+                      borderRadius: AppRadius.pill,
+                      border: Border.all(
+                        color: AppColors.primaryBorder.withValues(alpha: 0.5),
+                        width: AppBorderWidth.hairline,
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(
+                          Icons.emoji_events_rounded,
+                          size: AppIconSize.sm,
+                          color: AppColors.primary,
+                        ),
+                        const SizedBox(width: AppSpacing.space2),
+                        Text(
+                          label,
+                          style: AppTextStyles.labelStrongSmall.copyWith(
+                            color: AppColors.primaryDark,
+                          ),
+                        ),
+                        const SizedBox(width: AppSpacing.space1),
+                        Text(
+                          'PTS',
+                          style: AppTextStyles.bodyCaption.copyWith(
+                            color: AppColors.primary,
+                            fontWeight: AppFontWeight.bold,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  const SizedBox(width: AppSpacing.space1),
-                  Text(
-                    'PTS',
-                    style: AppTextStyles.bodyCaption.copyWith(
-                      color: AppColors.primary,
-                      fontWeight: AppFontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-            ),
           ),
         );
       },

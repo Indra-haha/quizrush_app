@@ -392,6 +392,7 @@ Authorization: Bearer <TOKEN>
       "user_id": "<user_id>",
       "title": "Kuis Pemrograman Mobile",
       "description": "Dasar Flutter & Dart",
+      "kategori": "Pemrograman",
       "path": "https://res.cloudinary.com/quiz/image/upload/v123/galery-quiz/quiz-image/kuis-mobile.png",
       "questions": [
         {
@@ -425,6 +426,7 @@ Authorization: Bearer <TOKEN>
       "user_id": "<user_id>",
       "title": "Kuis Basis Data MongoDB",
       "description": "Konsep dasar MongoDB",
+      "kategori": "Basis Data",
       "path": "https://res.cloudinary.com/quiz/image/upload/v123/galery-quiz/quiz-image/kuis-mongodb.png",
       "questions": [
         {
@@ -441,7 +443,7 @@ Authorization: Bearer <TOKEN>
 }
 ```
 
-> `status` pada kuis = status room yang paling terakhir dibuat; field ini dihilangkan (`omitempty`) jika kuis belum punya room (masuk grup `quarantine`). `path` berisi URL gambar kuis hasil unggahan Cloudinary (lihat §4.2–§4.4). `correct_idx` tidak dikembalikan pada response untuk menjaga jawaban benar tetap rahasia. Tiap room memuat `type` (`public` atau `private`); room lama tanpa field `type` ditampilkan sebagai `public`.
+> `status` pada kuis = status room yang paling terakhir dibuat; field ini dihilangkan (`omitempty`) jika kuis belum punya room (masuk grup `quarantine`). `path` berisi URL gambar kuis hasil unggahan Cloudinary (lihat §4.2–§4.4). `correct_idx` tidak dikembalikan pada response untuk menjaga jawaban benar tetap rahasia. Tiap room memuat `type` (`public` atau `private`); room lama tanpa field `type` ditampilkan sebagai `public`. `kategori` berisi kategori kuis; bila kosong atau tidak dikirim server, klien menampilkan nilai default `Umum`.
 
 **Contoh response — `401 Unauthorized`**
 
@@ -762,6 +764,7 @@ Authorization: Bearer <TOKEN>
       "host": "Budi Santoso",
       "title": "Kuis Pemrograman Mobile",
       "description": "Dasar Flutter & Dart",
+      "kategori": "Pemrograman",
       "path": "https://res.cloudinary.com/quiz/image/upload/v123/galery-quiz/quiz-image/kuis-mobile.png",
       "total_questions": 10,
       "total_duration": 20,
@@ -785,7 +788,7 @@ Authorization: Bearer <TOKEN>
 }
 ```
 
-> `path` berisi URL gambar kuis hasil unggahan Cloudinary (lihat §4.2–§4.4). `host` berisi nama pemilik kuis (field `nama` pada koleksi `users`, diambil dari `user_id` kuis); `user_id` tidak dikembalikan pada feed ini. Feed publik **tidak** mengembalikan daftar soal; sebagai gantinya dikirim ringkasan `total_questions` (jumlah soal), `total_duration` (jumlah durasi semua soal dalam detik), dan `total_skor` (jumlah skor semua soal). `status` di level kuis tidak dikembalikan pada endpoint ini (status room terbaru sudah direpresentasikan oleh nama grup). Kuis berstatus `waiting` maupun yang belum punya room tidak ditampilkan. Room yang dikembalikan **hanya bertipe `public`**; karena itu pin (`kode`) ikut dikembalikan untuk room tersebut, sedangkan room `private` tidak ditampilkan. Room lama tanpa field `type` dianggap `public`.
+> `path` berisi URL gambar kuis hasil unggahan Cloudinary (lihat §4.2–§4.4). `host` berisi nama pemilik kuis (field `nama` pada koleksi `users`, diambil dari `user_id` kuis); `user_id` tidak dikembalikan pada feed ini. Feed publik **tidak** mengembalikan daftar soal; sebagai gantinya dikirim ringkasan `total_questions` (jumlah soal), `total_duration` (jumlah durasi semua soal dalam detik), dan `total_skor` (jumlah skor semua soal). `status` di level kuis tidak dikembalikan pada endpoint ini (status room terbaru sudah direpresentasikan oleh nama grup). Kuis berstatus `waiting` maupun yang belum punya room tidak ditampilkan. Room yang dikembalikan **hanya bertipe `public`**; karena itu pin (`kode`) ikut dikembalikan untuk room tersebut, sedangkan room `private` tidak ditampilkan. Room lama tanpa field `type` dianggap `public`. `kategori` berisi kategori kuis; bila kosong atau tidak dikirim server, klien menampilkan nilai default `Umum`.
 
 **Contoh response — `401 Unauthorized`**
 
