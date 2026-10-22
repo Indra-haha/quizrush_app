@@ -331,6 +331,14 @@ class _CreateQuizPageState extends State<CreateQuizPage> {
       );
       return;
     }
+    final imageUpload = _imageUpload!;
+    if (imageUpload.publicId.isEmpty || imageUpload.format.isEmpty) {
+      AppSnackBar.error(
+        context,
+        'Gambar belum berhasil diunggah. Ketuk "Coba lagi" pada gambar.',
+      );
+      return;
+    }
 
     setState(() => _saving = true);
 
@@ -360,7 +368,8 @@ class _CreateQuizPageState extends State<CreateQuizPage> {
         title: _titleController.text.trim(),
         description: _descriptionController.text.trim(),
         questions: questions,
-        path: _imageUpload!.path,
+        imageId: imageUpload.publicId,
+        imageFormat: imageUpload.format,
       );
       if (!mounted) return;
       Navigator.of(context).pop(true);

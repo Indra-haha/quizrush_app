@@ -31,16 +31,9 @@ class AppBottomNav extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return DecoratedBox(
-      decoration: ShapeDecoration(
-        color: AppColors.surface,
-        shape: RoundedRectangleBorder(
-          side: BorderSide(
-            width: AppBorderWidth.hairline,
-            strokeAlign: BorderSide.strokeAlignOutside,
-            color: AppColors.primaryBorder,
-          ),
-        ),
-        shadows: AppShadows.navBar,
+      decoration: const BoxDecoration(
+        color: AppColors.navSurface,
+        boxShadow: AppShadows.navBarUp,
       ),
       child: Material(
         type: MaterialType.transparency,

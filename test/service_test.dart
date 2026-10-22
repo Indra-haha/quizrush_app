@@ -9,24 +9,29 @@ import 'package:quizrush/services/ai_service.dart';
 import 'package:quizrush/services/api_client.dart';
 import 'package:quizrush/services/auth_service.dart';
 import 'package:quizrush/services/quiz_service.dart';
+import 'package:quizrush/services/result_service.dart';
 import 'package:quizrush/services/room_service.dart';
 
 ApiClient _api(Future<http.Response> Function(http.Request) handler) {
-  return ApiClient(
-    client: MockClient(handler),
-    baseUrl: 'https://test.local',
-  );
+  return ApiClient(client: MockClient(handler), baseUrl: 'https://test.local');
 }
 
 http.Response _json(String body, int status) {
-  return http.Response(body, status, headers: {'content-type': 'application/json'});
+  return http.Response(
+    body,
+    status,
+    headers: {'content-type': 'application/json'},
+  );
 }
 
 void main() {
   group('ApiClient', () {
     test('uri menggabungkan baseUrl dan path', () {
       final api = _api((_) async => _json('{}', 200));
-      expect(api.uri('/api/quizzes').toString(), 'https://test.local/api/quizzes');
+      expect(
+        api.uri('/api/quizzes').toString(),
+        'https://test.local/api/quizzes',
+      );
     });
 
     test('headers mengisi Authorization dan User-Agent', () {
@@ -111,7 +116,9 @@ void main() {
 
     test('login gagal melempar ApiException dengan pesan server', () async {
       final service = AuthService.withApi(
-        _api((_) async => _json('{"message":"Username atau password salah"}', 401)),
+        _api(
+          (_) async => _json('{"message":"Username atau password salah"}', 401),
+        ),
       );
 
       expect(
@@ -119,7 +126,11 @@ void main() {
         throwsA(
           isA<ApiException>()
               .having((e) => e.statusCode, 'statusCode', 401)
-              .having((e) => e.message, 'message', 'Username atau password salah'),
+              .having(
+                (e) => e.message,
+                'message',
+                'Username atau password salah',
+              ),
         ),
       );
     });
@@ -127,16 +138,14 @@ void main() {
     test('register sukses mengembalikan User', () async {
       String? sentPassword;
       final service = AuthService.withApi(
-        _api(
-          (request) async {
-            final body = jsonDecode(request.body) as Map<String, dynamic>;
-            sentPassword = body['password'] as String?;
-            return _json(
-              '{"user":{"username":"budi","nama":"Budi","kelas":"6A","tanggal_lahir":"2005-03-05"}}',
-              201,
-            );
-          },
-        ),
+        _api((request) async {
+          final body = jsonDecode(request.body) as Map<String, dynamic>;
+          sentPassword = body['password'] as String?;
+          return _json(
+            '{"user":{"username":"budi","nama":"Budi","kelas":"6A","tanggal_lahir":"2005-03-05"}}',
+            201,
+          );
+        }),
       );
 
       final user = await service.register(
@@ -155,10 +164,7 @@ void main() {
       final service = AuthService.withApi(
         _api((_) async => _json('{"message":"unauthorized"}', 401)),
       );
-      expect(
-        () => service.logout('token'),
-        throwsA(isA<ApiException>()),
-      );
+      expect(() => service.logout('token'), throwsA(isA<ApiException>()));
     });
 
     test('checkSession mengembalikan map user', () async {
@@ -230,7 +236,10 @@ void main() {
             );
           }
           expect(request.url.path, '/v1_1/dlxxyz123/image/upload');
-          expect(request.headers['content-type'], contains('multipart/form-data'));
+          expect(
+            request.headers['content-type'],
+            contains('multipart/form-data'),
+          );
           final body = request.body;
           expect(body, contains('name="api_key"'));
           expect(body, contains('123456789012345'));
@@ -240,6 +249,8 @@ void main() {
           expect(body, contains('abc123'));
           expect(body, contains('name="folder"'));
           expect(body, contains('galery-quiz/quiz-image'));
+          expect(body, contains('name="type"'));
+          expect(body, contains('authenticated'));
           expect(body, contains('filename="cover.png"'));
           return _json(
             '{"public_id":"galery-quiz/quiz-image/cover","format":"png",'
@@ -271,88 +282,184 @@ void main() {
         'https://res.cloudinary.com/dlxxyz123/image/authenticated/'
         'v1792154580/galery-quiz/quiz-image/cover.png',
       );
+      expect(asset.publicId, 'galery-quiz/quiz-image/cover');
+      expect(asset.format, 'png');
     });
 
-    test('uploadQuizImage menerima signature snake_case & timestamp string', () async {
-      final service = QuizService.withApi(
-        _api((request) async {
-          if (request.url.path == '/api/create/signature') {
+    test(
+      'uploadQuizImage menerima signature snake_case & timestamp string',
+      () async {
+        final service = QuizService.withApi(
+          _api((request) async {
+            if (request.url.path == '/api/create/signature') {
+              return _json(
+                '{"signature":"abc","timestamp":"1792154580",'
+                '"api_key":"key","cloud_name":"cloud"}',
+                200,
+              );
+            }
+            expect(request.url.path, '/v1_1/cloud/image/upload');
+            final body = request.body;
+            expect(body, contains('name="type"'));
+            expect(body, contains('authenticated'));
             return _json(
-              '{"signature":"abc","timestamp":"1792154580",'
-              '"api_key":"key","cloud_name":"cloud"}',
+              '{"public_id":"x","format":"png",'
+              '"secure_url":"https://res.cloudinary.com/cloud/image/upload/x.png"}',
               200,
             );
-          }
-          expect(request.url.path, '/v1_1/cloud/image/upload');
-          return _json(
-            '{"public_id":"x","format":"png",'
-            '"secure_url":"https://res.cloudinary.com/cloud/image/upload/x.png"}',
-            200,
-          );
-        }),
-      );
+          }),
+        );
 
-      final asset = await service.uploadQuizImage(
-        token: 'token',
-        imageBytes: 'PNGDATA'.codeUnits,
-        imageFilename: 'x.png',
-      );
-
-      expect(asset.path, 'https://res.cloudinary.com/cloud/image/upload/x.png');
-    });
-
-    test('uploadQuizImage signature gagal melempar ApiException sebelum upload', () async {
-      var uploaded = false;
-      final service = QuizService.withApi(
-        _api((request) async {
-          if (request.url.host == 'api.cloudinary.com') {
-            uploaded = true;
-          }
-          return _json('{"message":"konfigurasi Cloudinary belum lengkap"}', 500);
-        }),
-      );
-      await expectLater(
-        () => service.uploadQuizImage(
+        final asset = await service.uploadQuizImage(
           token: 'token',
-          imageBytes: const [1, 2, 3],
-          imageFilename: 'c.png',
-        ),
-        throwsA(
-          isA<ApiException>()
-              .having((e) => e.statusCode, 'status', 500)
-              .having((e) => e.message, 'message', 'konfigurasi Cloudinary belum lengkap'),
-        ),
-      );
-      expect(uploaded, isFalse);
-    });
+          imageBytes: 'PNGDATA'.codeUnits,
+          imageFilename: 'x.png',
+        );
 
-    test('uploadQuizImage gagal upload Cloudinary melempar ApiException', () async {
-      final service = QuizService.withApi(
-        _api((request) async {
-          if (request.url.path == '/api/create/signature') {
+        expect(
+          asset.path,
+          'https://res.cloudinary.com/cloud/image/upload/x.png',
+        );
+        expect(asset.publicId, 'x');
+        expect(asset.format, 'png');
+      },
+    );
+
+    test(
+      'uploadQuizImage memakai type dari respons signature',
+      () async {
+        final service = QuizService.withApi(
+          _api((request) async {
+            if (request.url.path == '/api/create/signature') {
+              return _json(
+                '{"signature":"abc","timestamp":1,"apiKey":"k",'
+                '"cloudName":"c","type":"upload"}',
+                200,
+              );
+            }
+            final body = request.body;
+            expect(body, contains('name="type"'));
+            expect(body, contains('upload'));
+            expect(body, isNot(contains('authenticated')));
             return _json(
-              '{"signature":"abc","timestamp":1,"apiKey":"k","cloudName":"c"}',
+              '{"public_id":"x","format":"png",'
+              '"secure_url":"https://res.cloudinary.com/cloud/image/upload/x.png"}',
               200,
             );
-          }
-          return _json('{"error":{"message":"Signature match invalid"}}', 401);
-        }),
-      );
-      expect(
-        () => service.uploadQuizImage(
-          token: 'token',
-          imageBytes: const [1, 2, 3],
-          imageFilename: 'c.png',
-        ),
-        throwsA(
-          isA<ApiException>()
-              .having((e) => e.statusCode, 'status', 401)
-              .having((e) => e.message, 'message', 'Signature match invalid'),
-        ),
-      );
-    });
+          }),
+        );
 
-    test('createQuiz mengirim JSON berisi path dan mem-parse quiz', () async {
+        await service.uploadQuizImage(
+          token: 'token',
+          imageBytes: 'PNGDATA'.codeUnits,
+          imageFilename: 'x.png',
+        );
+      },
+    );
+
+    test(
+      'uploadQuizImage respons Cloudinary tanpa public_id melempar ApiException',
+      () async {
+        final service = QuizService.withApi(
+          _api((request) async {
+            if (request.url.path == '/api/create/signature') {
+              return _json(
+                '{"signature":"abc","timestamp":1,"apiKey":"k","cloudName":"c"}',
+                200,
+              );
+            }
+            return _json(
+              '{"secure_url":"https://res.cloudinary.com/cloud/image/upload/x.png"}',
+              200,
+            );
+          }),
+        );
+
+        await expectLater(
+          () => service.uploadQuizImage(
+            token: 'token',
+            imageBytes: 'PNGDATA'.codeUnits,
+            imageFilename: 'x.png',
+          ),
+          throwsA(
+            isA<ApiException>().having(
+              (e) => e.message,
+              'message',
+              'Respons Cloudinary tidak valid',
+            ),
+          ),
+        );
+      },
+    );
+
+    test(
+      'uploadQuizImage signature gagal melempar ApiException sebelum upload',
+      () async {
+        var uploaded = false;
+        final service = QuizService.withApi(
+          _api((request) async {
+            if (request.url.host == 'api.cloudinary.com') {
+              uploaded = true;
+            }
+            return _json(
+              '{"message":"konfigurasi Cloudinary belum lengkap"}',
+              500,
+            );
+          }),
+        );
+        await expectLater(
+          () => service.uploadQuizImage(
+            token: 'token',
+            imageBytes: const [1, 2, 3],
+            imageFilename: 'c.png',
+          ),
+          throwsA(
+            isA<ApiException>()
+                .having((e) => e.statusCode, 'status', 500)
+                .having(
+                  (e) => e.message,
+                  'message',
+                  'konfigurasi Cloudinary belum lengkap',
+                ),
+          ),
+        );
+        expect(uploaded, isFalse);
+      },
+    );
+
+    test(
+      'uploadQuizImage gagal upload Cloudinary melempar ApiException',
+      () async {
+        final service = QuizService.withApi(
+          _api((request) async {
+            if (request.url.path == '/api/create/signature') {
+              return _json(
+                '{"signature":"abc","timestamp":1,"apiKey":"k","cloudName":"c"}',
+                200,
+              );
+            }
+            return _json(
+              '{"error":{"message":"Signature match invalid"}}',
+              401,
+            );
+          }),
+        );
+        expect(
+          () => service.uploadQuizImage(
+            token: 'token',
+            imageBytes: const [1, 2, 3],
+            imageFilename: 'c.png',
+          ),
+          throwsA(
+            isA<ApiException>()
+                .having((e) => e.statusCode, 'status', 401)
+                .having((e) => e.message, 'message', 'Signature match invalid'),
+          ),
+        );
+      },
+    );
+
+    test('createQuiz mengirim JSON berisi image_id dan image_format', () async {
       String? contentType;
       String? body;
 
@@ -377,17 +484,14 @@ void main() {
             skor: 10,
           ),
         ],
-        path: 'https://res.cloudinary.com/cloud/image/upload/cover.png',
+        imageId: 'galery-quiz/quiz-image/cover',
+        imageFormat: 'png',
       );
 
       expect(contentType, 'application/json');
       expect(body, contains('"title":"Kuis Baru"'));
-      expect(
-        body,
-        contains(
-          '"path":"https://res.cloudinary.com/cloud/image/upload/cover.png"',
-        ),
-      );
+      expect(body, contains('"image_id":"galery-quiz/quiz-image/cover"'));
+      expect(body, contains('"image_format":"png"'));
       expect(quiz.id, 'q9');
     });
 
@@ -400,7 +504,8 @@ void main() {
           token: 'token',
           title: 'Kuis',
           questions: const [],
-          path: 'https://res.cloudinary.com/cloud/image/upload/cover.png',
+          imageId: 'galery-quiz/quiz-image/cover',
+          imageFormat: 'png',
         ),
         throwsA(
           isA<ApiException>()
@@ -434,7 +539,11 @@ void main() {
       expect(
         () => service.verifyPin(token: 'token', pin: '000000'),
         throwsA(
-          isA<ApiException>().having((e) => e.message, 'message', 'PIN tidak valid'),
+          isA<ApiException>().having(
+            (e) => e.message,
+            'message',
+            'PIN tidak valid',
+          ),
         ),
       );
     });
@@ -523,8 +632,7 @@ void main() {
           path = request.url.path;
           auth = request.headers['Authorization'];
           body = jsonDecode(request.body) as Map<String, dynamic>;
-          return _json(
-            '''
+          return _json('''
 {
   "message": "Saran soal berhasil dibuat",
   "questions": [
@@ -536,9 +644,7 @@ void main() {
       "skor": 20
     }
   ]
-}''',
-            200,
-          );
+}''', 200);
         }),
       );
 
@@ -558,44 +664,53 @@ void main() {
       expect(result.first.skor, 20);
     });
 
-    test('suggestQuestions membuang soal tidak valid dan menormalisasi', () async {
-      final service = AiService.withApi(
-        _api(
-          (_) async => _json(
-            '''
+    test(
+      'suggestQuestions membuang soal tidak valid dan menormalisasi',
+      () async {
+        final service = AiService.withApi(
+          _api(
+            (_) async => _json('''
 {
   "questions": [
     { "question": "", "options": ["a","b","c","d"], "correct_idx": 0, "duration": 2, "skor": 10 },
     { "question": "Opsi tidak 4", "options": ["a","b"], "correct_idx": 0, "duration": 2, "skor": 10 },
     { "question": "Di luar batas", "options": ["a","b","c","d"], "correct_idx": 9, "duration": 7.5, "skor": 999 }
   ]
-}''',
-            200,
+}''', 200),
           ),
-        ),
-      );
+        );
 
-      final result = await service.suggestQuestions(token: 't', topic: 'x');
-      expect(result, hasLength(1));
-      expect(result.first.question, 'Di luar batas');
-      expect(result.first.correctIdx, 0);
-      expect(result.first.duration, 2.0);
-      expect(result.first.skor, 10);
-    });
+        final result = await service.suggestQuestions(token: 't', topic: 'x');
+        expect(result, hasLength(1));
+        expect(result.first.question, 'Di luar batas');
+        expect(result.first.correctIdx, 0);
+        expect(result.first.duration, 2.0);
+        expect(result.first.skor, 10);
+      },
+    );
 
-    test('suggestQuestions melempar ApiException non-transien dengan pesan server', () async {
-      final service = AiService.withApi(
-        _api((_) async => _json('{"message":"Terjadi kesalahan server"}', 500)),
-      );
-      expect(
-        () => service.suggestQuestions(token: 't', topic: 'x'),
-        throwsA(
-          isA<ApiException>()
-              .having((e) => e.statusCode, 'statusCode', 500)
-              .having((e) => e.message, 'message', 'Terjadi kesalahan server'),
-        ),
-      );
-    });
+    test(
+      'suggestQuestions melempar ApiException non-transien dengan pesan server',
+      () async {
+        final service = AiService.withApi(
+          _api(
+            (_) async => _json('{"message":"Terjadi kesalahan server"}', 500),
+          ),
+        );
+        expect(
+          () => service.suggestQuestions(token: 't', topic: 'x'),
+          throwsA(
+            isA<ApiException>()
+                .having((e) => e.statusCode, 'statusCode', 500)
+                .having(
+                  (e) => e.message,
+                  'message',
+                  'Terjadi kesalahan server',
+                ),
+          ),
+        );
+      },
+    );
 
     test('suggestQuestions mencoba ulang sekali saat provider sibuk', () async {
       var calls = 0;
@@ -605,8 +720,7 @@ void main() {
           if (calls == 1) {
             return _json('{"message":"Model AI gagal merespons"}', 502);
           }
-          return _json(
-            '''
+          return _json('''
 {
   "questions": [
     {
@@ -617,9 +731,7 @@ void main() {
       "skor": 20
     }
   ]
-}''',
-            200,
-          );
+}''', 200);
         }),
       );
 
@@ -628,35 +740,93 @@ void main() {
       expect(result, hasLength(1));
     });
 
-    test('suggestQuestions memberi pesan sibuk setelah ulangan transien habis', () async {
-      var calls = 0;
-      final service = AiService.withApi(
-        _api((_) async {
-          calls++;
-          return _json('{"message":"Model AI gagal merespons"}', 503);
+    test(
+      'suggestQuestions memberi pesan sibuk setelah ulangan transien habis',
+      () async {
+        var calls = 0;
+        final service = AiService.withApi(
+          _api((_) async {
+            calls++;
+            return _json('{"message":"Model AI gagal merespons"}', 503);
+          }),
+        );
+        await expectLater(
+          service.suggestQuestions(token: 't', topic: 'x'),
+          throwsA(
+            isA<ApiException>()
+                .having((e) => e.statusCode, 'statusCode', 503)
+                .having(
+                  (e) => e.message,
+                  'message',
+                  'Model AI sedang sibuk. Coba lagi sebentar lagi.',
+                ),
+          ),
+        );
+        expect(calls, AiService.maxAttempts);
+      },
+    );
+
+    test(
+      'suggestQuestions mengembalikan list kosong saat questions bukan list',
+      () async {
+        final service = AiService.withApi(
+          _api((_) async => _json('{"questions":"bukan-list"}', 200)),
+        );
+        final result = await service.suggestQuestions(token: 't', topic: 'x');
+        expect(result, isEmpty);
+      },
+    );
+  });
+
+  group('ResultService', () {
+    test('fetchResults mem-parse entries dan mengirim token', () async {
+      late http.Request captured;
+      final service = ResultService.withApi(
+        _api((request) async {
+          captured = request;
+          return _json(
+            '{"results":[{"id":"r1","room_id":"room1","kode":"482913",'
+            '"quiz_id":"q1","entries":[{"nama":"Budi Santoso","skor":87}],'
+            '"created_at":"2026-10-05T20:03:00Z"}]}',
+            200,
+          );
         }),
       );
-      await expectLater(
-        service.suggestQuestions(token: 't', topic: 'x'),
-        throwsA(
-          isA<ApiException>()
-              .having((e) => e.statusCode, 'statusCode', 503)
-              .having(
-                (e) => e.message,
-                'message',
-                'Model AI sedang sibuk. Coba lagi sebentar lagi.',
-              ),
-        ),
-      );
-      expect(calls, AiService.maxAttempts);
+
+      final results = await service.fetchResults(token: 'token');
+
+      expect(captured.url.path, '/api/results');
+      expect(captured.headers['authorization'], 'Bearer token');
+      expect(results, hasLength(1));
+      expect(results.single.kode, '482913');
+      expect(results.single.entries.single.nama, 'Budi Santoso');
+      expect(results.single.entries.single.skor, 87);
     });
 
-    test('suggestQuestions mengembalikan list kosong saat questions bukan list', () async {
-      final service = AiService.withApi(
-        _api((_) async => _json('{"questions":"bukan-list"}', 200)),
+    test('fetchResults menyertakan limit dan skip', () async {
+      late http.Request captured;
+      final service = ResultService.withApi(
+        _api((request) async {
+          captured = request;
+          return _json('{"results":[]}', 200);
+        }),
       );
-      final result = await service.suggestQuestions(token: 't', topic: 'x');
-      expect(result, isEmpty);
+
+      await service.fetchResults(token: 'token', limit: 10, skip: 20);
+
+      expect(captured.url.queryParameters['limit'], '10');
+      expect(captured.url.queryParameters['skip'], '20');
+    });
+
+    test('fetchResults non-200 melempar ApiException', () async {
+      final service = ResultService.withApi(
+        _api((_) async => _json('{"message":"unauthorized"}', 401)),
+      );
+
+      expect(
+        () => service.fetchResults(token: 'token'),
+        throwsA(isA<ApiException>().having((e) => e.statusCode, 'status', 401)),
+      );
     });
   });
 }

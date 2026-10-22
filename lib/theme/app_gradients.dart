@@ -45,4 +45,11 @@ class AppGradients {
     end: Alignment(1, 0.5),
     colors: [Color(0xFF4648D4), Color(0xFF6B38D4)],
   );
+
+  /// Track toggle aktif pada kartu pengaturan profil (vertikal).
+  static const toggleActive = LinearGradient(
+    begin: Alignment(0.5, -0.0),
+    end: Alignment(0.5, 1.0),
+    colors: [Color(0xFF4648D4), Color(0xFF6B38D4)],
+  );
 }

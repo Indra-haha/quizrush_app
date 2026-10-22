@@ -147,4 +147,22 @@ class AppShadows {
       spreadRadius: -2,
     ),
   ];
+
+  /// Glow indigo di belakang avatar profil.
+  static const avatarGlow = <BoxShadow>[
+    BoxShadow(
+      color: Color(0x2D4648D4),
+      blurRadius: 20,
+      offset: Offset(0, 8),
+    ),
+  ];
+
+  /// Bayangan navigasi bawah yang jatuh ke atas (desain profil).
+  static const navBarUp = <BoxShadow>[
+    BoxShadow(
+      color: Color(0x0C000000),
+      blurRadius: 12,
+      offset: Offset(0, -2),
+    ),
+  ];
 }

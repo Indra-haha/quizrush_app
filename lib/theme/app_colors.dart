@@ -28,6 +28,12 @@ class AppColors {
   // Surface kanvas untuk halaman daftar quiz (desain MyQuiz).
   static const quizCanvas = Color(0xFFFBF8FF);
 
+  // Profil: bidang navigasi bawah semi-transparan, tinta pill wilayah, dan
+  // warna bayangan header.
+  static const navSurface = Color(0xD8F9F9FF);
+  static const locationInk = Color(0xFF07006C);
+  static const headerShadow = Color(0x33000000);
+
   // Beranda (desain baru): tint ikon kartu statistik, overlay di atas gambar
   // kuis, dan border kartu kuis.
   static const homeTotalTint = primarySoft;

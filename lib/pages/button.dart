@@ -35,7 +35,7 @@ class _MainShellState extends State<MainShell> {
       SaldoPage(isActive: _index == 1),
       QuizPage(user: widget.user),
       RankingRegionPage(isActive: _index == 3),
-      ProfilePage(user: widget.user),
+      ProfilePage(user: widget.user, isActive: _index == 4),
     ];
     return Scaffold(
       body: IndexedStack(index: _index, children: pages),
@@ -44,13 +44,10 @@ class _MainShellState extends State<MainShell> {
         onSelected: (i) => setState(() => _index = i),
         items: const [
           AppBottomNavItem(label: 'Home', icon: Icons.home_rounded),
-          AppBottomNavItem(
-            label: 'Reward',
-            icon: Icons.card_giftcard_rounded,
-          ),
+          AppBottomNavItem(label: 'Reward', icon: Icons.card_giftcard_rounded),
           AppBottomNavItem(label: 'Quiz', icon: Icons.quiz_rounded),
-          AppBottomNavItem(label: 'Rank', icon: Icons.emoji_events_rounded),
-          AppBottomNavItem(label: 'Profile', icon: Icons.person_rounded),
+          AppBottomNavItem(label: 'Ranking', icon: Icons.emoji_events_rounded),
+          AppBottomNavItem(label: 'Profil', icon: Icons.person_rounded),
         ],
       ),
     );

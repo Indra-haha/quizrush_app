@@ -487,4 +487,76 @@ class AppTextStyles {
     fontWeight: FontWeight.w700,
     height: 1.43,
   );
+
+  /// Inisial nama pada avatar kartu profil.
+  static final profileAvatarInitials = GoogleFonts.montserrat(
+    color: AppColors.primary,
+    fontSize: AppFontSize.hero,
+    fontWeight: FontWeight.w700,
+    height: 1,
+  );
+
+  /// Nama pengguna pada kartu profil.
+  static final profileName = GoogleFonts.montserrat(
+    color: AppColors.textPrimary,
+    fontSize: 28,
+    fontWeight: FontWeight.w700,
+    height: 1.21,
+    letterSpacing: -0.7,
+  );
+
+  /// Username pada kartu profil.
+  static final profileHandle = GoogleFonts.plusJakartaSans(
+    color: AppColors.textSecondary,
+    fontSize: 16,
+    fontWeight: FontWeight.w400,
+    height: 1.5,
+  );
+
+  /// Label pill kelas pada kartu profil.
+  static final profileLocation = GoogleFonts.plusJakartaSans(
+    color: AppColors.locationInk,
+    fontSize: 12,
+    fontWeight: FontWeight.w600,
+    height: 1.33,
+  );
+
+  /// Nilai statistik pada kartu profil.
+  static final profileStatValue = GoogleFonts.montserrat(
+    color: AppColors.textPrimary,
+    fontSize: 24,
+    fontWeight: FontWeight.w700,
+    height: 1.33,
+  );
+
+  static final profileStatValueAccent = GoogleFonts.montserrat(
+    color: AppColors.primary,
+    fontSize: 24,
+    fontWeight: FontWeight.w700,
+    height: 1.33,
+  );
+
+  /// Label statistik pada kartu profil.
+  static final profileStatLabel = GoogleFonts.plusJakartaSans(
+    color: AppColors.textSecondary,
+    fontSize: 12,
+    fontWeight: FontWeight.w500,
+    height: 1.33,
+  );
+
+  /// Judul baris pengaturan profil.
+  static final settingTitle = GoogleFonts.plusJakartaSans(
+    color: AppColors.textPrimary,
+    fontSize: 14,
+    fontWeight: FontWeight.w700,
+    height: 1.43,
+  );
+
+  /// Deskripsi baris pengaturan profil.
+  static final settingSubtitle = GoogleFonts.plusJakartaSans(
+    color: AppColors.textSecondary,
+    fontSize: 12,
+    fontWeight: FontWeight.w400,
+    height: 1.33,
+  );
 }

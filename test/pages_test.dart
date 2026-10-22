@@ -11,9 +11,17 @@ import 'package:quizrush/pages/profile_page.dart';
 import 'package:quizrush/pages/saldo/saldo_page.dart';
 import 'package:quizrush/services/api_client.dart';
 import 'package:quizrush/services/points_service.dart';
+import 'package:quizrush/services/profile_stats_service.dart';
 
 Widget _wrap(Widget child) {
   return MaterialApp(home: child);
+}
+
+class _FakeProfileStatsService implements ProfileStatsService {
+  @override
+  Future<ProfileStats> load({required String nama}) async {
+    return const ProfileStats(games: 12, accuracy: 87, points: 28450);
+  }
 }
 
 PointsService _saldoService() {
@@ -216,35 +224,39 @@ void main() {
   });
 
   group('ProfilePage', () {
-    testWidgets('menampilkan data user dan tombol Logout', (
+    testWidgets('menampilkan data user, statistik, dan logout di header', (
       WidgetTester tester,
     ) async {
       await tester.pumpWidget(
         _wrap(
-          const ProfilePage(
-            user: {
+          ProfilePage(
+            user: const {
               'nama': 'Budi Santoso',
               'username': 'budi',
               'kelas': 'XI IPA 1',
               'tanggal_lahir': '17/08/2006',
             },
+            statsService: _FakeProfileStatsService(),
           ),
         ),
       );
-      await tester.pump();
+      await tester.pumpAndSettle();
 
       expect(find.text('Budi Santoso'), findsWidgets);
+      expect(find.text('BS'), findsOneWidget);
       expect(find.text('@budi'), findsOneWidget);
       expect(find.text('XI IPA 1'), findsOneWidget);
-      expect(find.text('2006-08-17'), findsOneWidget);
+      expect(find.text('2006-08-17'), findsNothing);
 
-      final logoutButton = find.widgetWithText(FilledButton, 'Logout');
-      await tester.scrollUntilVisible(
-        logoutButton,
-        200,
-        scrollable: find.byType(Scrollable).first,
-      );
-      expect(logoutButton, findsOneWidget);
+      expect(find.text('Game'), findsOneWidget);
+      expect(find.text('12'), findsOneWidget);
+      expect(find.text('Akurasi'), findsOneWidget);
+      expect(find.text('87%'), findsOneWidget);
+      expect(find.text('Saldo Koin'), findsOneWidget);
+      expect(find.text('28.450'), findsOneWidget);
+
+      expect(find.byTooltip('Keluar'), findsOneWidget);
+      expect(find.text('Keluar'), findsNothing);
     });
   });
 }

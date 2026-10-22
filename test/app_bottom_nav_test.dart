@@ -59,7 +59,7 @@ void main() {
       );
     });
 
-    testWidgets('dekorasi memakai token surface, border, dan shadow', (
+    testWidgets('dekorasi memakai nav surface dan shadow atas', (
       WidgetTester tester,
     ) async {
       await tester.pumpWidget(_wrap());
@@ -72,14 +72,11 @@ void main() {
             )
             .first,
       );
-      final decoration = box.decoration as ShapeDecoration;
-      final border = decoration.shape as RoundedRectangleBorder;
+      final decoration = box.decoration as BoxDecoration;
 
-      expect(decoration.color, AppColors.surface);
-      expect(decoration.shadows, AppShadows.navBar);
-      expect(border.side.color, AppColors.primaryBorder);
-      expect(border.side.width, AppBorderWidth.hairline);
-      expect(border.side.strokeAlign, BorderSide.strokeAlignOutside);
+      expect(decoration.color, AppColors.navSurface);
+      expect(decoration.boxShadow, AppShadows.navBarUp);
+      expect(decoration.border, isNull);
     });
 
     testWidgets('ketuk tab memanggil onSelected dengan index yang benar', (

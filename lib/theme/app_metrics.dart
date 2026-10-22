@@ -113,4 +113,15 @@ class AppSizes {
 
   /// Tinggi tombol aksi "Create Quiz" di beranda.
   static const homeActionHeight = 56.0;
+
+  /// Lebar maksimum kartu profil (desain 390px).
+  static const profileCard = 350.0;
+
+  /// Diameter avatar pada kartu profil.
+  static const profileAvatar = 96.0;
+
+  /// Ukuran track dan knob toggle pengaturan profil.
+  static const profileToggleWidth = 56.0;
+  static const profileToggleHeight = 32.0;
+  static const profileToggleKnob = 24.0;
 }
