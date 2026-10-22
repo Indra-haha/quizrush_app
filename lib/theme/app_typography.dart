@@ -15,7 +15,6 @@ class AppFontSize {
   static const medium = 15.0;
   static const base = 16.0;
   static const title = 18.0;
-  static const heading = 22.0;
   static const display = 24.0;
   static const hero = 36.0;
 }
@@ -28,7 +27,6 @@ class AppFontWeight {
   static const medium = FontWeight.w500;
   static const semibold = FontWeight.w600;
   static const bold = FontWeight.w700;
-  static const extrabold = FontWeight.w800;
   static const black = FontWeight.w900;
 }
 
@@ -68,54 +66,10 @@ class AppTextStyles {
     height: 1.27,
   );
 
-  static final heading1StrongAccent = GoogleFonts.montserrat(
-    color: AppColors.primary,
-    fontSize: 22,
-    fontWeight: FontWeight.w700,
-    height: 1.27,
-  );
-
-  static final heading2Strong = GoogleFonts.montserrat(
-    color: AppColors.primary,
-    fontSize: 24,
-    fontWeight: FontWeight.w700,
-    height: 1.21,
-  );
-
-  static final calculatorDisplay = GoogleFonts.montserrat(
-    color: AppColors.textPrimary,
-    fontSize: 22,
-    fontWeight: FontWeight.w700,
-    height: 1.2,
-    letterSpacing: 0.5,
-  );
-
-  static final calculatorResult = GoogleFonts.montserrat(
-    color: AppColors.textPrimary,
-    fontSize: 22,
-    fontWeight: FontWeight.w500,
-    height: 1.2,
-  );
-
   static final cardTitle = GoogleFonts.plusJakartaSans(
     color: AppColors.textPrimary,
     fontSize: 16,
     fontWeight: FontWeight.w700,
-    height: 1.4,
-  );
-
-  static final heroTitle = GoogleFonts.montserrat(
-    color: AppColors.primary,
-    fontSize: 24,
-    fontWeight: FontWeight.w700,
-    height: 1.33,
-    letterSpacing: 1.2,
-  );
-
-  static final hintLarge = GoogleFonts.plusJakartaSans(
-    color: AppColors.textMuted,
-    fontSize: 18,
-    fontWeight: FontWeight.w500,
     height: 1.4,
   );
 
@@ -148,13 +102,6 @@ class AppTextStyles {
     fontWeight: FontWeight.w900,
     height: 1.17,
     letterSpacing: -0.4,
-  );
-
-  static final countdown = GoogleFonts.plusJakartaSans(
-    color: AppColors.textPrimary,
-    fontSize: 10,
-    fontWeight: FontWeight.w400,
-    height: 1.2,
   );
 
   static final display1 = GoogleFonts.montserrat(
@@ -209,13 +156,6 @@ class AppTextStyles {
     fontSize: 18,
     fontWeight: FontWeight.w700,
     height: 1.22,
-  );
-
-  static final heading4 = GoogleFonts.montserrat(
-    color: AppColors.textPrimary,
-    fontSize: 18,
-    fontWeight: FontWeight.w500,
-    height: 1.56,
   );
 
   static final heading5 = GoogleFonts.montserrat(
@@ -372,13 +312,6 @@ class AppTextStyles {
 
   static final labelStrong = GoogleFonts.plusJakartaSans(
     color: AppColors.textPrimary,
-    fontSize: 14,
-    fontWeight: FontWeight.w700,
-    height: 1.43,
-  );
-
-  static final labelStrongOnPrimary = GoogleFonts.plusJakartaSans(
-    color: AppColors.textOnPrimary,
     fontSize: 14,
     fontWeight: FontWeight.w700,
     height: 1.43,

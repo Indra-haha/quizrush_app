@@ -13,21 +13,6 @@ class AppDecorations {
     boxShadow: AppShadows.card,
   );
 
-  static BoxDecoration get surfaceRounded =>
-      BoxDecoration(color: AppColors.surface, borderRadius: AppRadius.md);
-
-  static BoxDecoration get surfaceSoftRounded =>
-      BoxDecoration(color: AppColors.surfaceSoft, borderRadius: AppRadius.md);
-
-  static BoxDecoration get statTile => BoxDecoration(
-    color: AppColors.surface,
-    borderRadius: AppRadius.xl,
-    border: Border.all(color: AppColors.divider),
-  );
-
-  static BoxDecoration get statTileActive =>
-      BoxDecoration(color: AppColors.primary, borderRadius: AppRadius.xl);
-
   static BoxDecoration get pill => BoxDecoration(
     color: AppColors.surface,
     borderRadius: AppRadius.pill,

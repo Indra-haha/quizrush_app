@@ -83,14 +83,6 @@ class LiveGameController extends ChangeNotifier {
     return q != null && q.total > 0 && q.index >= q.total - 1;
   }
 
-  /// Entri milik peserta ini pada sebuah papan peringkat.
-  LiveLeaderboardEntry? selfEntry(List<LiveLeaderboardEntry> entries) {
-    for (final entry in entries) {
-      if (entry.username == myUsername) return entry;
-    }
-    return null;
-  }
-
   void _onMessage(RoomMessage message) {
     switch (message.type) {
       case 'question':

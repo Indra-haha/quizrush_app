@@ -24,7 +24,6 @@ class AppBorderWidth {
   static const hairline = 1.0;
   static const thin = 1.5;
   static const regular = 2.0;
-  static const thick = 3.0;
   static const heavy = 4.0;
 }
 

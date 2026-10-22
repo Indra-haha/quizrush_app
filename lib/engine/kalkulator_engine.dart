@@ -10,11 +10,6 @@ class AngkaExpr extends Expr {
   final double nilai;
 }
 
-class NegExpr extends Expr {
-  const NegExpr(this.target);
-  final Expr target;
-}
-
 class BinerExpr extends Expr {
   const BinerExpr(this.kiri, this.opr, this.kanan);
   final Expr kiri;
@@ -26,19 +21,13 @@ class KalkulatorEngine {
   KalkulatorEngine._();
 
   static Expr angka(num nilai) => AngkaExpr(nilai.toDouble());
-  static Expr tambah(Expr a, Expr b) => BinerExpr(a, '+', b);
-  static Expr kurang(Expr a, Expr b) => BinerExpr(a, '-', b);
   static Expr kali(Expr a, Expr b) => BinerExpr(a, '×', b);
   static Expr bagi(Expr a, Expr b) => BinerExpr(a, '÷', b);
-  static Expr negasi(Expr target) => NegExpr(target);
 
   static double? hitung(Expr expr) {
     switch (expr) {
       case AngkaExpr(:final nilai):
         return nilai;
-      case NegExpr(:final target):
-        final nilai = hitung(target);
-        return nilai == null ? null : -nilai;
       case BinerExpr(:final kiri, :final opr, :final kanan):
         final a = hitung(kiri);
         final b = hitung(kanan);

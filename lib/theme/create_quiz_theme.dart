@@ -65,9 +65,6 @@ class CreateQuizTextStyles {
     color: AppColors.onPrimarySubtle,
   );
 
-  static final subLabel = AppTextStyles.labelStrong.copyWith(
-    color: AppColors.textSecondary,
-  );
   static final pointsHint = AppTextStyles.bodySmall.copyWith(
     color: AppColors.textSecondary,
   );
@@ -306,7 +303,6 @@ class CreateQuizQuestionStyles {
     horizontal: AppSpacing.space6,
     vertical: AppSpacing.space4,
   );
-  static const durationChipShape = StadiumBorder();
   static const durationChipSelectedDecoration = ShapeDecoration(
     color: AppColors.quizAction,
     shape: StadiumBorder(),

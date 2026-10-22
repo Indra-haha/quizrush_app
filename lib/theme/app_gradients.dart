@@ -4,8 +4,6 @@ import 'package:flutter/material.dart';
 class AppGradients {
   AppGradients._();
 
-  static const diagonal = <Alignment>[Alignment.topLeft, Alignment.bottomRight];
-
   /// Hero card / card artwork gradient.
   static const heroGradient = LinearGradient(
     begin: Alignment.topLeft,
