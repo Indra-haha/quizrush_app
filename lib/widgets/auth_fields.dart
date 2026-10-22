@@ -47,21 +47,225 @@ class _PasswordFieldState extends State<PasswordField> {
   }
 }
 
+/// Field form dengan label di atas kotak input (desain register & login).
+///
+/// Kotak memakai latar `fieldBackground` tanpa garis bawah; ikon di kiri
+/// bersifat opsional dan mengikuti posisi/jarak pada desain.
+class AuthField extends StatelessWidget {
+  final TextEditingController controller;
+  final String label;
+  final String? hint;
+  final IconData? icon;
+  final double iconSize;
+  final double iconOffset;
+  final double iconGap;
+  final EdgeInsets boxPadding;
+  final bool obscureText;
+  final bool readOnly;
+  final bool enabled;
+  final TextInputType keyboardType;
+  final VoidCallback? onTap;
+
+  const AuthField({
+    super.key,
+    required this.controller,
+    required this.label,
+    this.hint,
+    this.icon,
+    this.iconSize = AppIconSize.sm,
+    this.iconOffset = AppSpacing.space15,
+    this.iconGap = AppSpacing.space9,
+    this.boxPadding = const EdgeInsets.only(
+      top: AppSpacing.space15,
+      right: AppSpacing.space15,
+      bottom: AppSpacing.space15,
+    ),
+    this.obscureText = false,
+    this.readOnly = false,
+    this.enabled = true,
+    this.keyboardType = TextInputType.text,
+    this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: AppTextStyles.fieldLabel),
+        const SizedBox(height: AppSpacing.space3),
+        Container(
+          width: double.infinity,
+          clipBehavior: Clip.antiAlias,
+          decoration: BoxDecoration(color: AppColors.fieldBackground),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              if (icon != null) ...[
+                SizedBox(width: iconOffset),
+                Icon(icon, size: iconSize, color: AppColors.textSecondary),
+                SizedBox(width: iconGap),
+              ],
+              Expanded(
+                child: Padding(
+                  padding: boxPadding,
+                  child: TextField(
+                    controller: controller,
+                    style: AppTextStyles.fieldValue,
+                    obscureText: obscureText,
+                    readOnly: readOnly,
+                    enabled: enabled,
+                    keyboardType: keyboardType,
+                    onTap: onTap,
+                    decoration: InputDecoration(
+                      isDense: true,
+                      border: InputBorder.none,
+                      enabledBorder: InputBorder.none,
+                      focusedBorder: InputBorder.none,
+                      disabledBorder: InputBorder.none,
+                      contentPadding: EdgeInsets.zero,
+                      hintText: hint,
+                      hintStyle: AppTextStyles.fieldHint,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Baris persetujuan syarat & ketentuan beserta kebijakan privasi.
+class AuthTermsRow extends StatelessWidget {
+  final bool value;
+  final ValueChanged<bool>? onChanged;
+
+  const AuthTermsRow({super.key, required this.value, this.onChanged});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        AuthTermsCheckbox(value: value, onChanged: onChanged),
+        const SizedBox(width: AppSpacing.space6),
+        Expanded(
+          child: Text.rich(
+            TextSpan(
+              children: [
+                TextSpan(text: 'Saya menyetujui ', style: AppTextStyles.termsText),
+                TextSpan(
+                  text: 'Syarat & Ketentuan',
+                  style: AppTextStyles.termsLink,
+                ),
+                TextSpan(text: '\nserta ', style: AppTextStyles.termsText),
+                TextSpan(
+                  text: 'Kebijakan Privasi',
+                  style: AppTextStyles.termsLink,
+                ),
+                TextSpan(text: ' QuizRush.', style: AppTextStyles.termsText),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Kotak centang 13x13 dengan garis 1px sesuai desain.
+class AuthTermsCheckbox extends StatelessWidget {
+  final bool value;
+  final ValueChanged<bool>? onChanged;
+
+  const AuthTermsCheckbox({super.key, required this.value, this.onChanged});
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      checked: value,
+      label: 'Saya menyetujui Syarat & Ketentuan serta Kebijakan Privasi',
+      child: GestureDetector(
+        onTap: onChanged == null ? null : () => onChanged!(!value),
+        child: Container(
+          width: AppSizes.termsCheckbox,
+          height: AppSizes.termsCheckbox,
+          decoration: ShapeDecoration(
+            color: value ? AppColors.primary : AppColors.pureSurface,
+            shape: RoundedRectangleBorder(
+              side: BorderSide(
+                width: AppBorderWidth.hairline,
+                color: AppColors.checkboxStroke,
+              ),
+              borderRadius: AppRadius.checkbox,
+            ),
+          ),
+          child: value
+              ? const Icon(
+                  Icons.check,
+                  size: AppIconSize.micro,
+                  color: AppColors.pureSurface,
+                )
+              : null,
+        ),
+      ),
+    );
+  }
+}
+
 /// Tombol utama form autentikasi dengan indikator loading.
+///
+/// Varian `gradient` dipakai halaman auth: tombol penuh dengan gradien
+/// brand, radius kapsul, dan bayangan sesuai desain.
 class AuthSubmitButton extends StatelessWidget {
   final String label;
   final bool loading;
   final VoidCallback? onPressed;
+  final bool gradient;
 
   const AuthSubmitButton({
     super.key,
     required this.label,
     required this.loading,
     required this.onPressed,
+    this.gradient = false,
   });
 
   @override
   Widget build(BuildContext context) {
+    if (gradient) {
+      return DecoratedBox(
+        decoration: ShapeDecoration(
+          gradient: AppGradients.authAction,
+          shape: RoundedRectangleBorder(borderRadius: AppRadius.authAction),
+          shadows: AppShadows.authAction,
+        ),
+        child: Material(
+          type: MaterialType.transparency,
+          child: InkWell(
+            onTap: loading ? null : onPressed,
+            borderRadius: AppRadius.authAction,
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: AppSpacing.space8),
+              alignment: Alignment.center,
+              child: loading
+                  ? const SizedBox(
+                      width: 22,
+                      height: 22,
+                      child: AppLoadingIndicator(),
+                    )
+                  : Text(label, style: AppTextStyles.authAction),
+            ),
+          ),
+        ),
+      );
+    }
+
     return ElevatedButton(
       onPressed: loading ? null : onPressed,
       style: ElevatedButton.styleFrom(
@@ -77,58 +281,6 @@ class AuthSubmitButton extends StatelessWidget {
               child: AppLoadingIndicator(),
             )
           : Text(label, style: AppTextStyles.button),
-    );
-  }
-}
-
-/// Kartu form autentikasi berisi logo, judul, dan konten yang di-scroll.
-class AuthFormCard extends StatelessWidget {
-  final String title;
-  final List<Widget> children;
-
-  const AuthFormCard({
-    super.key,
-    required this.title,
-    required this.children,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      body: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(AppSpacing.space10),
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 450),
-            child: Card(
-              elevation: AppElevation.raised,
-              shape: RoundedRectangleBorder(borderRadius: AppRadius.lg),
-              child: Padding(
-                padding: const EdgeInsets.all(AppSpacing.space11),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Image.asset(
-                      'lib/assets/icon/logo.png',
-                      width: 70,
-                      height: 70,
-                    ),
-                    const SizedBox(height: AppSpacing.space5),
-                    Text(
-                      title,
-                      textAlign: TextAlign.center,
-                      style: AppTextStyles.heading2Strong,
-                    ),
-                    const SizedBox(height: AppSpacing.space16),
-                    ...children,
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
     );
   }
 }

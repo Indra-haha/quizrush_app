@@ -18,6 +18,13 @@ class AppColors {
   static const surface = Color(0xFFF9F9FF);
   static const surfaceSoft = Color(0xFFDEE8FF);
 
+  // Putih murni (kartu form auth) & latar halaman auth (desain register).
+  static const pureSurface = Color(0xFFFFFFFF);
+  static const pageBase = Color(0xFFFCFCFC);
+  static const fieldBackground = Color(0xFFF0F3FF);
+  static const fieldHint = Color(0xFF9CA3AF);
+  static const checkboxStroke = Color(0xFF767676);
+
   // Surface kanvas untuk halaman daftar quiz (desain MyQuiz).
   static const quizCanvas = Color(0xFFFBF8FF);
 

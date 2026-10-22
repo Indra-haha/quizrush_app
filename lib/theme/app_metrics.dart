@@ -46,6 +46,26 @@ class AppRadius {
   static const xl = BorderRadius.all(Radius.circular(24));
   static const xxl = BorderRadius.all(Radius.circular(32));
   static const pill = BorderRadius.all(Radius.circular(999));
+
+  /// Panel hero halaman auth: sudut bawah membulat.
+  static const authHero = BorderRadius.only(
+    bottomLeft: Radius.circular(32),
+    bottomRight: Radius.circular(32),
+  );
+
+  /// Kartu form auth: sudut atas lebih besar dari sudut bawah.
+  static const authCard = BorderRadius.only(
+    topLeft: Radius.circular(36),
+    topRight: Radius.circular(36),
+    bottomLeft: Radius.circular(28),
+    bottomRight: Radius.circular(28),
+  );
+
+  /// Tombol aksi berbentuk kapsul.
+  static const authAction = BorderRadius.all(Radius.circular(48));
+
+  /// Kotak centang syarat & ketentuan.
+  static const checkbox = BorderRadius.all(Radius.circular(2.5));
 }
 
 /// Fixed component sizes that are neither spacing nor icon glyphs.
@@ -66,4 +86,19 @@ class AppSizes {
 
   /// Maximum width of the glass card inside the waiting room hero.
   static const heroCard = 350.0;
+
+  /// Tinggi panel gradien di atas halaman register.
+  static const authHero = 242.0;
+
+  /// Jarak wordmark dari tepi atas panel hero halaman register.
+  static const authHeroTop = 70.0;
+
+  /// Tinggi minimum halaman register.
+  static const authPageMinHeight = 780.0;
+
+  /// Sisi kotak centang syarat & ketentuan.
+  static const termsCheckbox = 13.0;
+
+  /// Diameter tombol bulat biometrik pada halaman login.
+  static const authBiometric = 64.0;
 }

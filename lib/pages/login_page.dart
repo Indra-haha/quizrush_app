@@ -10,10 +10,9 @@ import '../services/auth_service.dart';
 import '../services/biometric_service.dart';
 import '../services/session_service.dart';
 import '../theme/app_theme.dart';
-import '../widgets/app_loading_indicator.dart';
 import '../widgets/app_snackbar.dart';
-import '../widgets/app_text_field.dart';
 import '../widgets/auth_fields.dart';
+import '../widgets/auth_page.dart';
 import 'button.dart';
 import 'regis_page.dart';
 
@@ -202,132 +201,83 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      body: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(AppSpacing.space10),
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 400),
-            child: Card(
-              elevation: AppElevation.raised,
-              shape: RoundedRectangleBorder(borderRadius: AppRadius.lg),
-              child: Padding(
-                padding: const EdgeInsets.all(AppSpacing.space11),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Image.asset(
-                      'lib/assets/icon/logo.png',
-                      width: 64,
-                      height: 64,
-                      fit: BoxFit.contain,
+    return AuthPageScaffold(
+      cardChildren: [
+        const AuthFormTitle(title: 'Login'),
+        Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          spacing: AppSpacing.space8,
+          children: [
+            AuthField(
+              controller: _usernameController,
+              label: 'Username',
+              hint: 'Contoh: Budi Santoso',
+              icon: Icons.alternate_email,
+              enabled: !_isLoading,
+            ),
+            AuthField(
+              controller: _passwordController,
+              label: 'Kata Sandi',
+              hint: 'Minimal 8 karakter',
+              icon: Icons.lock,
+              obscureText: true,
+              enabled: !_isLoading,
+            ),
+          ],
+        ),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Expanded(
+              child: AuthSubmitButton(
+                label: 'Masuk',
+                loading: _isLoading,
+                onPressed: _login,
+                gradient: true,
+              ),
+            ),
+            const SizedBox(width: AppSpacing.space4),
+            Material(
+              color: AppColors.primary,
+              shape: const CircleBorder(),
+              child: InkWell(
+                onTap: _isLoading ? null : _loginWithBiometric,
+                customBorder: const CircleBorder(),
+                child: Container(
+                  width: AppSizes.authBiometric,
+                  height: AppSizes.authBiometric,
+                  alignment: Alignment.center,
+                  child: Tooltip(
+                    message: _biometricEnabled
+                        ? 'Login dengan sidik jari'
+                        : 'Aktifkan sidik jari di Profile',
+                    child: Icon(
+                      Icons.fingerprint,
+                      size: AppIconSize.lg,
+                      color: AppColors.textOnPrimary,
                     ),
-                    const SizedBox(height: AppSpacing.space4),
-                    Text(
-                      'Everything about Numbers',
-                      textAlign: TextAlign.center,
-                      style: AppTextStyles.heading1StrongAccent,
-                    ),
-                    const SizedBox(height: AppSpacing.space10),
-                    AppTextField(
-                      controller: _usernameController,
-                      label: 'Username',
-                      icon: Icons.person_outline,
-                      enabled: !_isLoading,
-                    ),
-                    const SizedBox(height: AppSpacing.space8),
-                    PasswordField(
-                      controller: _passwordController,
-                      label: 'Password',
-                      icon: Icons.lock_outline,
-                      enabled: !_isLoading,
-                      onSubmitted: (_) => _login(),
-                    ),
-                    const SizedBox(height: AppSpacing.space10),
-                    IntrinsicHeight(
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          Expanded(
-                            child: ElevatedButton(
-                              onPressed: _isLoading ? null : _login,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: AppColors.primary,
-                                foregroundColor: AppColors.textOnPrimary,
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: AppSpacing.space7,
-                                ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: AppRadius.md,
-                                ),
-                              ),
-                              child: _isLoading
-                                  ? const SizedBox(
-                                      width: 22,
-                                      height: 22,
-                                      child: AppLoadingIndicator(),
-                                    )
-                                  : const Text('Login'),
-                            ),
-                          ),
-                          const SizedBox(width: AppSpacing.space4),
-                          OutlinedButton(
-                            onPressed:
-                                _isLoading ? null : _loginWithBiometric,
-                            style: OutlinedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: AppSpacing.space6,
-                              ),
-                              foregroundColor: _biometricEnabled
-                                  ? AppColors.primary
-                                  : AppColors.textSecondary,
-                              side: BorderSide(
-                                color: _biometricEnabled
-                                    ? AppColors.primary
-                                    : AppColors.textSecondary,
-                              ),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: AppRadius.md,
-                              ),
-                            ),
-                            child: Tooltip(
-                              message: _biometricEnabled
-                                  ? 'Login dengan sidik jari'
-                                  : 'Aktifkan sidik jari di Profile',
-                              child: Icon(
-                                Icons.fingerprint,
-                                size: AppIconSize.lg,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: AppSpacing.space6),
-
-                    TextButton(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const RegisterPage(),
-                          ),
-                        );
-                      },
-                      child: Text(
-                        'Belum punya akun? Registrasi',
-                        style: AppTextStyles.buttonSmall,
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
               ),
             ),
-          ),
+          ],
         ),
-      ),
+        AuthPageFooter(
+          text: 'Belum punya akun? ',
+          linkText: 'Buat di sini',
+          onLinkTap: _isLoading
+              ? null
+              : () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const RegisterPage(),
+                    ),
+                  );
+                },
+        ),
+      ],
     );
   }
 }

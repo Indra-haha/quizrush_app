@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -16,8 +15,10 @@ void main() {
 
     expect(find.text('Login'), findsOneWidget);
     expect(find.text('Username'), findsOneWidget);
-    expect(find.text('Password'), findsOneWidget);
-    expect(find.widgetWithText(ElevatedButton, 'Login'), findsOneWidget);
+    expect(find.text('Kata Sandi'), findsOneWidget);
+    expect(find.text('Masuk'), findsOneWidget);
+    expect(find.text('Belum punya akun? '), findsOneWidget);
+    expect(find.text('Buat di sini'), findsOneWidget);
   });
 
   testWidgets('Login tanpa input menampilkan pesan error', (
@@ -25,7 +26,7 @@ void main() {
   ) async {
     await tester.pumpWidget(const QuizApp());
 
-    await tester.tap(find.byType(ElevatedButton));
+    await tester.tap(find.text('Masuk'));
     await tester.pump();
 
     expect(find.text('Username dan password wajib diisi'), findsOneWidget);

@@ -398,4 +398,87 @@ class AppTextStyles {
     fontWeight: FontWeight.w600,
     height: 1.33,
   );
+
+  /// Wordmark QUIZRUSH pada hero halaman register.
+  static final brandWordmark = GoogleFonts.montserrat(
+    color: AppColors.textOnPrimary,
+    fontSize: 32,
+    fontWeight: FontWeight.w700,
+    fontStyle: FontStyle.italic,
+    height: 1.06,
+    letterSpacing: -1.4,
+  );
+
+  /// Tagline di bawah wordmark.
+  static final heroTagline = GoogleFonts.plusJakartaSans(
+    color: AppColors.textOnPrimary,
+    fontSize: 16,
+    fontWeight: FontWeight.w400,
+    height: 1.5,
+  );
+
+  /// Judul kartu form auth ("Buat Akun").
+  static final authTitle = GoogleFonts.montserrat(
+    color: AppColors.textPrimary,
+    fontSize: 20,
+    fontWeight: FontWeight.w700,
+    height: 1.6,
+    letterSpacing: -0.6,
+  );
+
+  /// Label field form (di atas kotak input).
+  static final fieldLabel = GoogleFonts.plusJakartaSans(
+    color: AppColors.textSecondary,
+    fontSize: 16,
+    fontWeight: FontWeight.w700,
+    height: 1.25,
+  );
+
+  /// Isi field form.
+  static final fieldValue = GoogleFonts.plusJakartaSans(
+    color: AppColors.textPrimary,
+    fontSize: 16,
+    fontWeight: FontWeight.w400,
+  );
+
+  /// Placeholder field form.
+  static final fieldHint = GoogleFonts.plusJakartaSans(
+    color: AppColors.fieldHint,
+    fontSize: 16,
+    fontWeight: FontWeight.w400,
+  );
+
+  /// Label tombol utama halaman auth.
+  static final authAction = GoogleFonts.montserrat(
+    color: AppColors.textOnPrimary,
+    fontSize: 24,
+    fontWeight: FontWeight.w700,
+    height: 1.33,
+    letterSpacing: -0.6,
+  );
+
+  /// Teks syarat & ketentuan.
+  static final termsText = GoogleFonts.plusJakartaSans(
+    color: AppColors.textSecondary,
+    fontSize: 16,
+    fontWeight: FontWeight.w400,
+    height: 1.5,
+  );
+
+  /// Tautan syarat & ketentuan (garis bawah).
+  static final termsLink = GoogleFonts.plusJakartaSans(
+    color: AppColors.primary,
+    fontSize: 16,
+    fontWeight: FontWeight.w400,
+    height: 1.5,
+    decoration: TextDecoration.underline,
+  );
+
+  /// Tautan "Masuk di sini" di bawah kartu auth.
+  static final authFooterLink = GoogleFonts.plusJakartaSans(
+    color: AppColors.primary,
+    fontSize: 16,
+    fontWeight: FontWeight.w700,
+    height: 1.43,
+  );
 }

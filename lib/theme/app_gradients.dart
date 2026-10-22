@@ -19,4 +19,18 @@ class AppGradients {
     end: Alignment.bottomRight,
     colors: [Color(0xFF4648D4), Color(0xFF4648D4)],
   );
+
+  /// Panel gradien di atas halaman register (desain baru).
+  static const authHero = LinearGradient(
+    begin: Alignment(0.14, -0.14),
+    end: Alignment(0.86, 1.14),
+    colors: [Color(0xFF4648D4), Color(0xFF6B38D4)],
+  );
+
+  /// Gradien tombol aksi halaman auth (horizontal).
+  static const authAction = LinearGradient(
+    begin: Alignment(0, 0.5),
+    end: Alignment(1, 0.5),
+    colors: [Color(0xFF4648D4), Color(0xFF6B38D4)],
+  );
 }

@@ -24,8 +24,9 @@ Aplikasi Flutter untuk **platform kuis kelas daring** lengkap dengan autentikasi
 ## Fitur
 
 ### Autentikasi
-- **Login** dengan NIM + password, tanpa OTP.
-- **Registrasi** (nama lengkap, NIM, kelas, tanggal lahir, konfirmasi password).
+- **Login** dengan username + password, tanpa OTP. Halaman login bergaya hero (sama dengan registrasi): panel gradien ungu di atas, kartu putih, tombol "Masuk" bergradien, tombol sidik jari, dan tautan "Buat di sini".
+- **Registrasi** (nama lengkap, NIM, sekolahan, tanggal lahir, konfirmasi password) memakai halaman auth bergaya hero: panel gradien ungu di atas, kartu putih yang menumpuk ke hero, dan tombol daftar bergradien.
+- **Syarat & Ketentuan** wajib dicentang sebelum pendaftaran berhasil; checkbox dan tautannya memakai token warna/ketebalan garis yang sama dengan desain.
 - **Restore sesi otomatis** — token yang tersimpan divalidasi lewat `GET /api/session`; jika masih valid pengguna langsung masuk ke aplikasi.
 
 ### Kuis
@@ -97,7 +98,7 @@ lib/
 │   └── QuizPage/     Sisi peserta: jelajahi kuis, detail kuis
 ├── services/    Lapisan data: REST client, auth, kuis, room, sesi, cache
 ├── theme/       Design token (modul terpisah) + barrel app_theme.dart, palet status, palet opsi jawaban
-└── widgets/     56 widget presentational tanpa logika halaman
+└── widgets/     57 widget presentational tanpa logika halaman
 ```
 
 Pola yang dipakai:
@@ -119,14 +120,14 @@ Token design terbagi ke modul-modul di **`lib/theme/`** (`app_colors.dart`, `app
 | `AppColors` | Brand, surface, teks, status, divider + palet 4 warna jawaban + palet halaman menunggu |
 | `AppSpacing` | Skala numerik `space1`…`space16`, clearances, alias semantik `xxs`…`xxl` |
 | `AppRadius` | `sm 8`, `md 12`, `lg 16`, `xl 24`, `xxl 32`, `pill 999` |
-| `AppShadows` | 15 preset `List<BoxShadow>` (card, raised, hairline, layered, pillButton, brandGlow, softCard, navBar, …) |
+| `AppShadows` | 17 preset `List<BoxShadow>` (card, raised, hairline, layered, pillButton, brandGlow, softCard, navBar, authCard, authAction, …) |
 | `AppElevation` | `none`, `subtle`, `medium`, `raised` |
 | `AppSizes` | Ukuran komponen tetap (tombol kembali, avatar, slot kosong, titik status) |
-| `AppTextStyles` | sekitar 45 style siap pakai |
+| `AppTextStyles` | sekitar 60 style siap pakai |
 | `AppFontSize` · `AppFontWeight` | Skala ukuran & bobot font untuk API widget |
 | `AppIconSize` · `AppBorderWidth` | Ukuran glyph ikon & ketebalan border |
 | `AppDecorations` | `BoxDecoration` siap pakai (card, statTile, pill, input, …) |
-| `AppGradients` | `heroGradient`, `solidHero` |
+| `AppGradients` | `heroGradient`, `solidHero`, `authHero`, `authAction` |
 | `AppButtons` | `ButtonStyle`: `primary`, `primaryLarge`, `primaryCompact`, `outline`, `text`, `destructive` |
 | `AppStatus` | `danger`, `onLightAlpha` |
 | `AppTheme` | Satu-satunya tempat `ThemeData` dibangun (`AppTheme.light`) |
@@ -193,11 +194,12 @@ flutter test
 | `test/region_label_test.dart` | `formatRegionLabel` (slug wilayah `GET /api/location` → label terbaca) |
 | `test/quiz_waiting_test.dart` | Widget halaman menunggu (`QuizWaitingHero`, `QuizWaitingStats`, `QuizWaitingParticipant`, `QuizWaitingSlot`) |
 | `test/app_bottom_nav_test.dart` | Navigasi bawah kustom (`AppBottomNav`): label, warna status aktif, dekorasi, dan callback tab |
+| `test/auth_register_test.dart` | Halaman registrasi baru: hero & wordmark, field "Sekolahan", pesan validasi kosong, syarat wajib dicentang, tombol gradien, ikon & margin kiri field, dan tautan kembali ke login |
 | `test/engine_score_test.dart` | `KalkulatorEngine.hitungSkorWaktu` |
 | `test/model_json_test.dart` | Serialisasi/deserialisasi model (`Quizes`, `Room`, `RoomMessage`, `User`, dll) |
 | `test/service_test.dart` | Lapisan service lewat `MockClient` (`ApiClient`, auth, quiz, room) |
 
-Total **207** test, semuanya lulus.
+Total **216** test, semuanya lulus.
 
 ---
 
