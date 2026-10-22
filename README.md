@@ -51,9 +51,9 @@ Halaman profil pengguna yang menampilkan nama, username, kelas, dan tanggal lahi
 2. **Temukan kuis** → tab **Quiz** → cari judul atau ketik 6-digit PIN → lihat detail & kode room.
 3. **Buat kuis** → FAB **Create Quiz** di Home → isi form → buat room → bagikan kode 6 digit.
 4. **Jalankan** → detail room → `Publish` → `Mulai Game` → `Akhiri`.
-5. **Akun** → tab **Peringkat** untuk peringkat wilayah (lokasi dari GPS), tab **Profile** untuk melihat profil dan logout.
+5. **Akun** → tab **Rank** untuk peringkat wilayah (lokasi dari GPS), tab **Profile** untuk melihat profil dan logout.
 
-Navigasi memakai `MainShell` (`lib/pages/button.dart`) dengan 4 tab: **Home · Quiz · Peringkat · Profile**.
+Navigasi memakai `MainShell` (`lib/pages/button.dart`) dengan 5 tab: **Home · Reward · Quiz · Rank · Profile**. Bar navigasi digambar widget kustom `AppBottomNav` (`lib/widgets/app_bottom_nav.dart`): bidang surface dengan garis tepi 1px di luar bidang, bayangan tipis, ikon di atas label; tab aktif ditandai lewat warna primary.
 
 ---
 
@@ -92,12 +92,12 @@ lib/
 ├── engine/      KalkulatorEngine — pohon Expr + hitung() & hitungSkorWaktu
 ├── helpers/     Logika murni Dart: json, format, validators, pin, room_status_flow, quiz_play_session, quiz_image, room_launcher, room_roster, region_label
 ├── models/      User, Quizes, Room, RoomMessage, RoomVerify + serialisasi JSON
-├── pages/       4 tab shell + auth
+├── pages/       5 tab shell + auth
 │   ├── MyQuizPage/   Sisi host: kuis saya, room, detail room, sheet buat room, buat kuis, tester
 │   └── QuizPage/     Sisi peserta: jelajahi kuis, detail kuis
 ├── services/    Lapisan data: REST client, auth, kuis, room, sesi, cache
 ├── theme/       Design token (modul terpisah) + barrel app_theme.dart, palet status, palet opsi jawaban
-└── widgets/     55 widget presentational tanpa logika halaman
+└── widgets/     56 widget presentational tanpa logika halaman
 ```
 
 Pola yang dipakai:
@@ -119,7 +119,7 @@ Token design terbagi ke modul-modul di **`lib/theme/`** (`app_colors.dart`, `app
 | `AppColors` | Brand, surface, teks, status, divider + palet 4 warna jawaban + palet halaman menunggu |
 | `AppSpacing` | Skala numerik `space1`…`space16`, clearances, alias semantik `xxs`…`xxl` |
 | `AppRadius` | `sm 8`, `md 12`, `lg 16`, `xl 24`, `xxl 32`, `pill 999` |
-| `AppShadows` | 14 preset `List<BoxShadow>` (card, raised, hairline, layered, pillButton, brandGlow, softCard, …) |
+| `AppShadows` | 15 preset `List<BoxShadow>` (card, raised, hairline, layered, pillButton, brandGlow, softCard, navBar, …) |
 | `AppElevation` | `none`, `subtle`, `medium`, `raised` |
 | `AppSizes` | Ukuran komponen tetap (tombol kembali, avatar, slot kosong, titik status) |
 | `AppTextStyles` | sekitar 45 style siap pakai |
@@ -192,11 +192,12 @@ flutter test
 | `test/format_test.dart` | `format` (durasi, kode, waktu relatif, tanggal lahir, `totalDuration`) |
 | `test/region_label_test.dart` | `formatRegionLabel` (slug wilayah `GET /api/location` → label terbaca) |
 | `test/quiz_waiting_test.dart` | Widget halaman menunggu (`QuizWaitingHero`, `QuizWaitingStats`, `QuizWaitingParticipant`, `QuizWaitingSlot`) |
+| `test/app_bottom_nav_test.dart` | Navigasi bawah kustom (`AppBottomNav`): label, warna status aktif, dekorasi, dan callback tab |
 | `test/engine_score_test.dart` | `KalkulatorEngine.hitungSkorWaktu` |
 | `test/model_json_test.dart` | Serialisasi/deserialisasi model (`Quizes`, `Room`, `RoomMessage`, `User`, dll) |
 | `test/service_test.dart` | Lapisan service lewat `MockClient` (`ApiClient`, auth, quiz, room) |
 
-Total **201** test, semuanya lulus.
+Total **207** test, semuanya lulus.
 
 ---
 

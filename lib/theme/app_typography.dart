@@ -390,4 +390,12 @@ class AppTextStyles {
     height: 1.33,
     letterSpacing: 1.2,
   );
+
+  /// Label tab pada navigasi bawah.
+  static final navLabel = GoogleFonts.plusJakartaSans(
+    color: AppColors.textSecondary,
+    fontSize: 12,
+    fontWeight: FontWeight.w600,
+    height: 1.33,
+  );
 }

@@ -108,6 +108,16 @@ class AppShadows {
     BoxShadow(color: Color(0x33000000), blurRadius: 16, offset: Offset(0, 6)),
   ];
 
+  /// Navigasi bawah: garis tipis tepat di bawah bidang nav.
+  static const navBar = <BoxShadow>[
+    BoxShadow(
+      color: Color(0x33000000),
+      blurRadius: 2,
+      offset: Offset(0, 1),
+      spreadRadius: 0,
+    ),
+  ];
+
   /// Inset-feeling highlight.
   static const inset = <BoxShadow>[
     BoxShadow(

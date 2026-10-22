@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../services/points_store.dart';
-import '../theme/app_theme.dart';
+import '../widgets/app_bottom_nav.dart';
 import 'home_page.dart';
 import 'QuizPage/quiz_page.dart';
 import 'ranking_region_page.dart';
@@ -39,18 +39,18 @@ class _MainShellState extends State<MainShell> {
     ];
     return Scaffold(
       body: IndexedStack(index: _index, children: pages),
-      bottomNavigationBar: BottomNavigationBar(
-        type: BottomNavigationBarType.fixed,
+      bottomNavigationBar: AppBottomNav(
         currentIndex: _index,
-        selectedItemColor: AppColors.primary,
-        unselectedItemColor: AppColors.textSecondary,
-        onTap: (i) => setState(() => _index = i),
+        onSelected: (i) => setState(() => _index = i),
         items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-          BottomNavigationBarItem(icon: Icon(Icons.account_balance_wallet_outlined),label: 'Saldo'),
-          BottomNavigationBarItem(icon: Icon(Icons.quiz), label: 'Quiz'),
-          BottomNavigationBarItem(icon: Icon(Icons.leaderboard_outlined),label: 'Peringkat'),
-          BottomNavigationBarItem(icon: Icon(Icons.person_outline),label: 'Profile'),
+          AppBottomNavItem(label: 'Home', icon: Icons.home_rounded),
+          AppBottomNavItem(
+            label: 'Reward',
+            icon: Icons.card_giftcard_rounded,
+          ),
+          AppBottomNavItem(label: 'Quiz', icon: Icons.quiz_rounded),
+          AppBottomNavItem(label: 'Rank', icon: Icons.emoji_events_rounded),
+          AppBottomNavItem(label: 'Profile', icon: Icons.person_rounded),
         ],
       ),
     );
