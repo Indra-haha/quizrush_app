@@ -108,6 +108,21 @@ class QuizService {
     return MyQuizzes.fromJson(jsonMap(data));
   }
 
+  /// Kumpulkan pilihan kategori dari kuis milik user (`GET /api/my-quizzes`).
+  ///
+  /// `POST /api/create/quiz` belum menerima field kategori, jadi hasil method
+  /// ini dipakai untuk mengisi dropdown pada form create quiz saja.
+  Future<List<String>> fetchKategoriOptions({required String token}) async {
+    final quizzes = await getMyQuizzes(token);
+    final values = <String>{Quizes.defaultKategori};
+    for (final quiz in quizzes.all) {
+      values.add(quiz.kategoriLabel);
+    }
+    final options = values.toList()
+      ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+    return options;
+  }
+
   /// Unggah gambar kuis ke Cloudinary (§4.2–§4.3) dan kembalikan URL
   /// aset (`secure_url`) yang akan dikirim sebagai `path` pada [createQuiz].
   ///

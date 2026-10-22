@@ -11,6 +11,9 @@ class AppHeaderBar extends StatelessWidget implements PreferredSizeWidget {
   final TextStyle? titleStyle;
   final Widget? leading;
   final PreferredSizeWidget? bottom;
+  final Color? backgroundColor;
+  final double? elevation;
+  final Color? shadowColor;
 
   const AppHeaderBar({
     super.key,
@@ -18,6 +21,9 @@ class AppHeaderBar extends StatelessWidget implements PreferredSizeWidget {
     this.titleStyle,
     this.leading,
     this.bottom,
+    this.backgroundColor,
+    this.elevation,
+    this.shadowColor,
   });
 
   @override
@@ -67,6 +73,10 @@ class AppHeaderBar extends StatelessWidget implements PreferredSizeWidget {
     return AppBar(
       automaticallyImplyLeading: false,
       titleSpacing: 0,
+      backgroundColor: backgroundColor,
+      elevation: elevation,
+      shadowColor: shadowColor,
+      surfaceTintColor: Colors.transparent,
       title: buildTitleRow(buildTrailing()),
       bottom: bottom,
     );

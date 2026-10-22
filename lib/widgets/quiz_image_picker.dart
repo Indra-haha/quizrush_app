@@ -45,15 +45,8 @@ class QuizImagePicker extends StatelessWidget {
       onTap: picking || uploading ? null : onPick,
       child: Container(
         width: double.infinity,
-        height: 200,
-        decoration: BoxDecoration(
-          color: AppColors.surfaceSoft,
-          borderRadius: AppRadius.md,
-          border: Border.all(
-            color: AppColors.divider,
-            width: AppBorderWidth.regular,
-          ),
-        ),
+        height: CreateQuizCoverStyles.height,
+        decoration: CreateQuizCoverStyles.decoration,
         clipBehavior: Clip.antiAlias,
         child: picking
             ? const Center(child: CircularProgressIndicator())
@@ -77,21 +70,35 @@ class _Placeholder extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        const Icon(
-          Icons.add_photo_alternate_outlined,
-          size: AppIconSize.lg,
-          color: AppColors.textMuted,
-        ),
-        const SizedBox(height: AppSpacing.space6),
-        Text(
-          'Pilih Gambar (jpg, png, webp · maks 5 MB)',
-          style: AppTextStyles.button.copyWith(color: AppColors.textSecondary),
-          textAlign: TextAlign.center,
-        ),
-      ],
+    return Padding(
+      padding: CreateQuizCoverStyles.placeholderPadding,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            width: CreateQuizCoverStyles.placeholderIconBox,
+            height: CreateQuizCoverStyles.placeholderIconBox,
+            decoration: CreateQuizCoverStyles.placeholderIconDecoration,
+            child: const Icon(
+              Icons.add_photo_alternate_outlined,
+              size: CreateQuizCoverStyles.placeholderIconSize,
+              color: AppColors.textSecondary,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.space6),
+          Text(
+            'UPLOAD COVER',
+            textAlign: TextAlign.center,
+            style: CreateQuizTextStyles.coverLabel,
+          ),
+          const SizedBox(height: AppSpacing.space2),
+          Text(
+            'Pilih Gambar (jpg, png, webp · maks 5 MB)',
+            style: CreateQuizTextStyles.coverCaption,
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
     );
   }
 }
@@ -127,14 +134,11 @@ class _Preview extends StatelessWidget {
           child: GestureDetector(
             onTap: onRemove,
             child: Container(
-              padding: const EdgeInsets.all(AppSpacing.space4),
-              decoration: BoxDecoration(
-                color: AppColors.textPrimary.withValues(alpha: 0.6),
-                shape: BoxShape.circle,
-              ),
+              padding: CreateQuizCoverStyles.removePadding,
+              decoration: CreateQuizCoverStyles.removeDecoration,
               child: const Icon(
                 Icons.close,
-                size: AppIconSize.sm,
+                size: CreateQuizCoverStyles.removeIconSize,
                 color: AppColors.textOnPrimary,
               ),
             ),
@@ -153,18 +157,16 @@ class _UploadingOverlay extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return DecoratedBox(
-      decoration: BoxDecoration(
-        color: AppColors.textPrimary.withValues(alpha: 0.55),
-      ),
+      decoration: CreateQuizCoverStyles.uploadOverlayDecoration,
       child: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             const SizedBox(
-              width: 32,
-              height: 32,
+              width: CreateQuizCoverStyles.progressSize,
+              height: CreateQuizCoverStyles.progressSize,
               child: CircularProgressIndicator(
-                strokeWidth: 3,
+                strokeWidth: CreateQuizCoverStyles.progressStroke,
                 color: AppColors.textOnPrimary,
               ),
             ),
@@ -172,9 +174,7 @@ class _UploadingOverlay extends StatelessWidget {
             Text(
               label ?? 'Mengunggah gambar…',
               key: const ValueKey('quizImageUploadLabel'),
-              style: AppTextStyles.button.copyWith(
-                color: AppColors.textOnPrimary,
-              ),
+              style: CreateQuizTextStyles.coverProgress,
               textAlign: TextAlign.center,
             ),
           ],
@@ -192,30 +192,30 @@ class _ErrorOverlay extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return DecoratedBox(
-      decoration: BoxDecoration(
-        color: AppColors.textPrimary.withValues(alpha: 0.7),
-      ),
+      decoration: CreateQuizCoverStyles.errorOverlayDecoration,
       child: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             const Icon(
               Icons.cloud_off,
-              size: AppIconSize.lg,
+              size: CreateQuizCoverStyles.errorIconSize,
               color: AppColors.textOnPrimary,
             ),
             const SizedBox(height: AppSpacing.space5),
             Text(
               'Gagal mengunggah ke Cloudinary',
-              style: AppTextStyles.button.copyWith(
-                color: AppColors.textOnPrimary,
-              ),
+              style: CreateQuizTextStyles.coverError,
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: AppSpacing.space5),
             FilledButton.icon(
               onPressed: onRetry,
-              icon: const Icon(Icons.refresh, size: AppIconSize.body),
+              style: CreateQuizCoverStyles.retryButton,
+              icon: const Icon(
+                Icons.refresh,
+                size: CreateQuizCoverStyles.retryIconSize,
+              ),
               label: const Text('Coba lagi'),
             ),
           ],

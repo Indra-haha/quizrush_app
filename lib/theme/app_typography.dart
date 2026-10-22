@@ -513,6 +513,14 @@ class AppTextStyles {
     fontWeight: FontWeight.w400,
   );
 
+  /// Placeholder field form Create Quiz (desain baru).
+  static final quizFieldHint = GoogleFonts.montserrat(
+    color: AppColors.fieldHint,
+    fontSize: 16,
+    fontWeight: FontWeight.w700,
+    height: 1.4,
+  );
+
   /// Label tombol utama halaman auth.
   static final authAction = GoogleFonts.montserrat(
     color: AppColors.textOnPrimary,

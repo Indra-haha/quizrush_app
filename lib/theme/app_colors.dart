@@ -37,6 +37,14 @@ class AppColors {
   static const overlayLight = Color(0x33FFFFFF);
   static const overlayBorder = Color(0x4DFFFFFF);
   static const onPrimaryMuted = Color(0xE6FFFFFF);
+  static const onPrimarySubtle = Color(0x99FFFFFF);
+  static const onPrimarySoft = Color(0x73FFFFFF);
+  static const onPrimaryFaint = Color(0x4DFFFFFF);
+
+  // Scrim/overlay di atas gambar cover Create Quiz.
+  static const scrim = Color(0x8C111C2D);
+  static const scrimSoft = Color(0x99111C2D);
+  static const scrimStrong = Color(0xB3111C2D);
 
   // Aksen indigo (tombol aksi & pill utama pada desain MyQuiz).
   static const indigoAction = Color(0xFF4B49D6);
@@ -99,6 +107,20 @@ class AppColors {
   static const answerGreen = Color(0xFF2E7D32);
   static const answerGreenSoft = Color(0xFFC8E6C9);
   static const answerGreenBorder = Color(0xFF1B5E20);
+
+  // Palet solid untuk editor jawaban desain Create Quiz. Warna ini hanya
+  // dipakai di halaman create agar baris jawaban langsung terbaca dari
+  // warnanya tanpa mengubah palet quiz yang sedang berjalan.
+  static const answerRedSolid = Color(0xFFEF4444);
+  static const answerBlueSolid = Color(0xFF2563EB);
+  static const answerGreenSolid = Color(0xFF059669);
+  static const answerAmberSolid = Color(0xFFF59E0B);
+
+  // Aksen desain Create Quiz.
+  static const quizAction = Color(0xFF6063EE);
+  static const quizQuestionSurface = Color(0xFFE7EEFF);
+  static const quizCoverSurface = Color(0xFFD8E3FB);
+  static const quizCoverBorder = Color(0xFF767586);
 }
 
 class AppStatus {

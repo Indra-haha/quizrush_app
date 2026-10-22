@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../theme/app_theme.dart';
-import '../theme/quiz_option_theme.dart';
-import 'app_field_decoration.dart';
 
 const _durations = [1.5, 2.0, 3.0, 5.0];
 
@@ -38,40 +36,22 @@ class QuizQuestionEditor extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(AppSpacing.space9),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceSoft,
-        borderRadius: AppRadius.md,
-        border: Border.all(
-          color: AppColors.textOnPrimary,
-          width: AppBorderWidth.regular,
-        ),
-      ),
+      padding: CreateQuizQuestionStyles.cardPadding,
+      decoration: CreateQuizQuestionStyles.cardDecoration,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildHeader(),
-          const SizedBox(height: AppSpacing.space6),
-          TextField(
-            controller: questionController,
-            maxLines: null,
-            minLines: 3,
-            style: AppTextStyles.buttonLarge.copyWith(
-              color: AppColors.textPrimary,
-            ),
-            decoration: AppFieldDecoration.bordered(
-              hint: 'Tuliskan pertanyaan Anda di sini...',
-              hintStyle: AppTextStyles.hintLarge,
-            ).build(),
-          ),
-          const SizedBox(height: AppSpacing.space8),
-          for (var i = 0; i < optionThemes.length; i++) ...[
+          const SizedBox(height: AppSpacing.space10),
+          _buildQuestionField(),
+          const SizedBox(height: AppSpacing.space10),
+          for (var i = 0; i < optionControllers.length; i++) ...[
             _buildAnswerField(i),
-            if (i < optionThemes.length - 1)
-              const SizedBox(height: AppSpacing.space6),
+            if (i < optionControllers.length - 1)
+              const SizedBox(height: AppSpacing.space5),
           ],
-          const SizedBox(height: AppSpacing.space8),
-          _buildDurationAndSkor(),
+          const SizedBox(height: AppSpacing.space10),
+          _buildDurationAndHadiah(),
         ],
       ),
     );
@@ -81,90 +61,94 @@ class QuizQuestionEditor extends StatelessWidget {
     return Row(
       children: [
         Container(
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.space8,
-            vertical: AppSpacing.space4,
-          ),
-          decoration: BoxDecoration(
-            color: AppColors.primary,
-            borderRadius: AppRadius.md,
+          padding: CreateQuizQuestionStyles.pillPadding,
+          decoration: const ShapeDecoration(
+            color: AppColors.quizAction,
+            shape: CreateQuizQuestionStyles.pillShape,
           ),
           child: Text(
             'Pertanyaan ${index + 1}',
-            style: AppTextStyles.labelStrong.copyWith(
-              color: AppColors.textOnPrimary,
-            ),
+            style: CreateQuizTextStyles.questionPill,
           ),
         ),
         const Spacer(),
         TextButton(
           onPressed: onRemove,
-          child: Text(
-            'Hapus',
-            style: AppTextStyles.labelStrong.copyWith(color: AppColors.error),
-          ),
+          style: CreateQuizQuestionStyles.deleteButton,
+          child: Text('Hapus', style: CreateQuizTextStyles.deleteAction),
         ),
       ],
     );
   }
 
+  Widget _buildQuestionField() {
+    return ConstrainedBox(
+      constraints: const BoxConstraints(
+        minHeight: CreateQuizQuestionStyles.questionMinHeight,
+      ),
+      child: Container(
+        width: double.infinity,
+        padding: CreateQuizQuestionStyles.questionPadding,
+        child: TextField(
+          controller: questionController,
+          maxLines: null,
+          minLines: 3,
+          style: CreateQuizTextStyles.questionInput,
+          decoration: InputDecoration(
+            hintText: 'Tuliskan pertanyaan Anda di \nsini...',
+            hintStyle: CreateQuizTextStyles.questionHint,
+            border: InputBorder.none,
+            isDense: true,
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildAnswerField(int option) {
-    final style = optionThemes[option];
+    final color = CreateQuizQuestionStyles
+        .answerColors[option % CreateQuizQuestionStyles.answerColors.length];
+    final shape = CreateQuizQuestionStyles
+        .answerShapes[option % CreateQuizQuestionStyles.answerShapes.length];
     final selected = correctIdx == option;
 
     return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.space6,
-        vertical: AppSpacing.space3,
-      ),
-      decoration: BoxDecoration(
-        color: style.bg,
-        borderRadius: AppRadius.md,
-        border: Border.all(color: style.border, width: AppBorderWidth.heavy),
-      ),
+      width: double.infinity,
+      padding: CreateQuizQuestionStyles.answerPadding,
+      color: color,
       child: Row(
         children: [
-          Container(
-            width: 20,
-            height: 20,
-            decoration: BoxDecoration(color: style.dot, shape: BoxShape.circle),
-          ),
-          const SizedBox(width: AppSpacing.space6),
+          _AnswerMarker(shape: shape),
+          const SizedBox(width: CreateQuizQuestionStyles.answerGap),
           Expanded(
             child: TextField(
               controller: optionControllers[option],
-              style: AppTextStyles.button.copyWith(
-                color: AppColors.textPrimary,
-              ),
+              maxLines: null,
+              style: CreateQuizTextStyles.answerInput,
               decoration: InputDecoration(
-                hintText: style.hint,
-                hintStyle: AppTextStyles.button.copyWith(
-                  color: AppColors.textPrimary.withValues(alpha: 0.5),
-                ),
+                hintText: 'Tulis jawaban...',
+                hintStyle: CreateQuizTextStyles.answerHint,
                 border: InputBorder.none,
                 isDense: true,
-                contentPadding: const EdgeInsets.symmetric(
-                  vertical: AppSpacing.space7,
-                ),
+                contentPadding: CreateQuizQuestionStyles.answerFieldPadding,
               ),
             ),
           ),
-          const SizedBox(width: AppSpacing.space4),
+          const SizedBox(width: CreateQuizQuestionStyles.answerToggleGap),
           GestureDetector(
             onTap: () => onCorrectChanged(option),
             child: Container(
-              width: 44,
-              height: 24,
+              width: CreateQuizQuestionStyles.toggleSize.width,
+              height: CreateQuizQuestionStyles.toggleSize.height,
               alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: selected ? style.dot : style.dot.withValues(alpha: 0.3),
-                borderRadius: AppRadius.md,
+              decoration: CreateQuizQuestionStyles.toggleDecoration(
+                selected: selected,
               ),
               child: selected
-                  ? const Icon(
+                  ? Icon(
                       Icons.check,
-                      size: AppIconSize.sm,
-                      color: AppColors.textOnPrimary,
+                      size: CreateQuizQuestionStyles.checkIconSize,
+                      color: color,
                     )
                   : null,
             ),
@@ -174,71 +158,33 @@ class QuizQuestionEditor extends StatelessWidget {
     );
   }
 
-  Widget _buildDurationAndSkor() {
+  Widget _buildDurationAndHadiah() {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+        Expanded(child: _buildDuration()),
+        const SizedBox(width: CreateQuizQuestionStyles.durationHadiahGap),
+        _buildHadiah(),
+      ],
+    );
+  }
+
+  Widget _buildDuration() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _label('Durasi'),
+        const SizedBox(height: CreateQuizQuestionStyles.labelGap),
+        Container(
+          padding: CreateQuizQuestionStyles.durationTrackPadding,
+          decoration: CreateQuizQuestionStyles.durationTrackDecoration,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              _label('Durasi'),
-              const SizedBox(height: AppSpacing.space3),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.space8,
-                ),
-                decoration: BoxDecoration(
-                  color: AppColors.surface,
-                  borderRadius: AppRadius.md,
-                  border: Border.all(
-                    color: AppColors.divider,
-                    width: AppBorderWidth.regular,
-                  ),
-                ),
-                child: DropdownButtonHideUnderline(
-                  child: DropdownButton<double>(
-                    value: duration,
-                    isExpanded: true,
-                    borderRadius: AppRadius.md,
-                    style: AppTextStyles.button.copyWith(
-                      color: AppColors.textPrimary,
-                    ),
-                    items: [
-                      for (final d in _durations)
-                        DropdownMenuItem(
-                          value: d,
-                          child: Text(_durationLabel(d)),
-                        ),
-                    ],
-                    onChanged: (value) {
-                      if (value == null) return;
-                      onDurationChanged(value);
-                    },
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(width: AppSpacing.space8),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _label('Poin (1-50)'),
-              const SizedBox(height: AppSpacing.space3),
-              TextField(
-                controller: skorController,
-                keyboardType: TextInputType.number,
-                style: AppTextStyles.button.copyWith(
-                  color: AppColors.textPrimary,
-                ),
-                decoration: AppFieldDecoration.bordered(
-                  hint: '20',
-                  hintStyle: AppTextStyles.hint,
-                ).build(),
-              ),
+              for (var i = 0; i < _durations.length; i++) ...[
+                if (i > 0) const SizedBox(width: AppSpacing.space1),
+                _durationChip(_durations[i], _durations[i] == duration),
+              ],
             ],
           ),
         ),
@@ -246,12 +192,138 @@ class QuizQuestionEditor extends StatelessWidget {
     );
   }
 
-  Widget _label(String text) {
-    return Text(text, style: AppTextStyles.labelStrong);
+  Widget _durationChip(double value, bool selected) {
+    return GestureDetector(
+      onTap: () => onDurationChanged(value),
+      child: Container(
+        padding: CreateQuizQuestionStyles.durationChipPadding,
+        decoration: selected
+            ? CreateQuizQuestionStyles.durationChipSelectedDecoration
+            : CreateQuizQuestionStyles.durationChipDecoration,
+        child: Text(
+          _durationPillLabel(value),
+          textAlign: TextAlign.center,
+          style: selected
+              ? CreateQuizTextStyles.durationSelected
+              : CreateQuizTextStyles.duration,
+        ),
+      ),
+    );
   }
 
-  String _durationLabel(double value) {
-    final shown = value == value.roundToDouble() ? value.toInt() : value;
-    return '$shown detik';
+  Widget _buildHadiah() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            _label('Hadiah'),
+            const SizedBox(width: CreateQuizQuestionStyles.labelGap),
+            Text('Poin', style: CreateQuizTextStyles.pointsHint),
+          ],
+        ),
+        const SizedBox(height: CreateQuizQuestionStyles.labelGap),
+        SizedBox(
+          width: CreateQuizQuestionStyles.pointsFieldWidth,
+          child: TextField(
+            controller: skorController,
+            keyboardType: TextInputType.number,
+            style: CreateQuizTextStyles.pointsInput,
+            decoration: CreateQuizQuestionStyles.pointsDecoration(),
+          ),
+        ),
+      ],
+    );
   }
+
+  Widget _label(String text) {
+    return Text(text, style: CreateQuizTextStyles.duration);
+  }
+
+  String _durationPillLabel(double value) {
+    final shown = value == value.roundToDouble() ? value.toInt() : value;
+    return '${shown}s';
+  }
+}
+
+class _AnswerMarker extends StatelessWidget {
+  final CreateQuizAnswerShape shape;
+
+  const _AnswerMarker({required this.shape});
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: CreateQuizQuestionStyles.answerMarkerBoxSize,
+      height: CreateQuizQuestionStyles.answerMarkerBoxSize,
+      child: Center(
+        child: switch (shape) {
+          CreateQuizAnswerShape.triangle => SizedBox.fromSize(
+            size: CreateQuizQuestionStyles.answerMarkerTriangleSize,
+            child: const CustomPaint(painter: _TriangleMarkerPainter()),
+          ),
+          CreateQuizAnswerShape.diamond => Transform.rotate(
+            angle: CreateQuizQuestionStyles.answerMarkerDiamondRotation,
+            child: const _BoxMarker(
+              size: CreateQuizQuestionStyles.answerMarkerDiamondSize,
+            ),
+          ),
+          CreateQuizAnswerShape.square => const _BoxMarker(
+            size: CreateQuizQuestionStyles.answerMarkerSize,
+          ),
+          CreateQuizAnswerShape.circle => const _BoxMarker(
+            size: CreateQuizQuestionStyles.answerMarkerSize,
+            circular: true,
+          ),
+        },
+      ),
+    );
+  }
+}
+
+class _BoxMarker extends StatelessWidget {
+  final double size;
+  final bool circular;
+
+  const _BoxMarker({required this.size, this.circular = false});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        color: CreateQuizQuestionStyles.answerMarkerColor,
+        shape: circular ? BoxShape.circle : BoxShape.rectangle,
+        boxShadow: CreateQuizQuestionStyles.answerMarkerShadow,
+      ),
+    );
+  }
+}
+
+class _TriangleMarkerPainter extends CustomPainter {
+  const _TriangleMarkerPainter();
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final path = Path()
+      ..moveTo(size.width / 2, 0)
+      ..lineTo(size.width, size.height)
+      ..lineTo(0, size.height)
+      ..close();
+
+    canvas.drawShadow(
+      path,
+      CreateQuizQuestionStyles.answerMarkerShadowColor,
+      CreateQuizQuestionStyles.answerMarkerShadowElevation,
+      false,
+    );
+    canvas.drawPath(
+      path,
+      Paint()..color = CreateQuizQuestionStyles.answerMarkerColor,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

@@ -16,7 +16,6 @@ import '../../widgets/app_bottom_sheet.dart';
 import '../../widgets/app_field_decoration.dart';
 import '../../widgets/app_header_bar_with_actions.dart';
 import '../../widgets/app_primary_button.dart';
-import '../../widgets/app_secondary_button.dart';
 import '../../widgets/app_snackbar.dart';
 import '../../widgets/quiz_image_picker.dart';
 import '../../widgets/quiz_question_editor.dart';
@@ -57,6 +56,9 @@ class _CreateQuizPageState extends State<CreateQuizPage> {
   bool _saving = false;
   bool _pickingImage = false;
 
+  List<String> _kategoriOptions = const [Quizes.defaultKategori];
+  String? _selectedKategori;
+
   /// URL aset gambar hasil unggah Cloudinary (secure_url);
   /// dikirim sebagai `path` saat save.
   QuizImageAsset? _imageUpload;
@@ -68,6 +70,12 @@ class _CreateQuizPageState extends State<CreateQuizPage> {
   int _uploadSeq = 0;
 
   @override
+  void initState() {
+    super.initState();
+    unawaited(_loadKategoriOptions());
+  }
+
+  @override
   void dispose() {
     _titleController.dispose();
     _descriptionController.dispose();
@@ -75,6 +83,22 @@ class _CreateQuizPageState extends State<CreateQuizPage> {
       question.dispose();
     }
     super.dispose();
+  }
+
+  /// Isi pilihan kategori dari kuis milik user. Form create quiz belum
+  /// mengirim kategori ke API, jadi kegagalan di sini cukup memakai fallback.
+  Future<void> _loadKategoriOptions() async {
+    final token = await SessionService.instance.getToken();
+    if (token == null) return;
+    try {
+      final options = await QuizService.instance.fetchKategoriOptions(
+        token: token,
+      );
+      if (!mounted || options.isEmpty) return;
+      setState(() => _kategoriOptions = options);
+    } catch (_) {
+      // Dropdown tetap memakai fallback "Umum".
+    }
   }
 
   Future<void> _pickImage() async {
@@ -354,66 +378,64 @@ class _CreateQuizPageState extends State<CreateQuizPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.pageBase,
       appBar: AppHeaderBarWithActions(
-        title: 'Create Quiz',
+        title: 'Buat Quiz',
+        titleStyle: CreateQuizTextStyles.headerTitle,
+        backgroundColor: CreateQuizPageStyles.headerBackground,
+        elevation: CreateQuizPageStyles.headerElevation,
+        shadowColor: CreateQuizPageStyles.headerShadowColor,
         leading: IconButton(
           tooltip: 'Kembali',
           onPressed: _saving ? null : () => Navigator.of(context).pop(false),
           icon: const Icon(Icons.arrow_back),
         ),
-        actions: [
-          AppPrimaryButton(
-            label: 'Simpan Quiz',
-            onPressed: _uploading ? null : _save,
-            loading: _saving,
-            radius: 9999,
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.space9,
-              vertical: AppSpacing.space6,
-            ),
-          ),
-        ],
+        actions: [_buildSaveButton()],
       ),
-      body: Column(
+      body: ListView(
+        keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+        padding: CreateQuizPageStyles.pagePadding,
         children: [
-          Expanded(
-            child: ListView(
-              padding: const EdgeInsets.fromLTRB(
-                AppSpacing.space9,
-                AppSpacing.space10,
-                AppSpacing.space9,
-                AppSpacing.space13,
+          Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(
+                maxWidth: CreateQuizPageStyles.contentMaxWidth,
               ),
-              children: [
-                _buildLabel('Judul Quiz'),
-                const SizedBox(height: AppSpacing.space4),
-                _buildTitleField(),
-                const SizedBox(height: AppSpacing.space9),
-                _buildLabel('Deskripsi'),
-                const SizedBox(height: AppSpacing.space4),
-                _buildDescriptionField(),
-                const SizedBox(height: AppSpacing.space9),
-                _buildLabel('Gambar Quiz'),
-                const SizedBox(height: AppSpacing.space4),
-                QuizImagePicker(
-                  bytes: _imageBytes,
-                  picking: _pickingImage,
-                  uploading: _uploading,
-                  uploadLabel: _uploadLabel,
-                  uploadError: _uploadFailed,
-                  onPick: _pickImage,
-                  onRemove: _removeImage,
-                  onRetry: _retryUpload,
-                ),
-                const SizedBox(height: AppSpacing.space9),
-                _buildSuggestButton(),
-                const SizedBox(height: AppSpacing.space10),
-                for (var i = 0; i < _questions.length; i++) ...[
-                  _buildQuestionEditor(i),
-                  const SizedBox(height: AppSpacing.space9),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _buildLabel('Judul Quiz'),
+                  const SizedBox(height: AppSpacing.space4),
+                  _buildTitleField(),
+                  const SizedBox(height: AppSpacing.space10),
+                  _buildDescriptionHeader(),
+                  const SizedBox(height: AppSpacing.space4),
+                  _buildDescriptionField(),
+                  const SizedBox(height: AppSpacing.space10),
+                  Center(child: _buildSuggestButton()),
+                  const SizedBox(height: AppSpacing.space10),
+                  _buildLabel('Cover Quiz'),
+                  const SizedBox(height: AppSpacing.space4),
+                  QuizImagePicker(
+                    bytes: _imageBytes,
+                    picking: _pickingImage,
+                    uploading: _uploading,
+                    uploadLabel: _uploadLabel,
+                    uploadError: _uploadFailed,
+                    onPick: _pickImage,
+                    onRemove: _removeImage,
+                    onRetry: _retryUpload,
+                  ),
+                  const SizedBox(height: AppSpacing.space12),
+                  for (var i = 0; i < _questions.length; i++) ...[
+                    _buildQuestionEditor(i),
+                    if (i < _questions.length - 1)
+                      const SizedBox(height: AppSpacing.space12),
+                  ],
+                  const SizedBox(height: AppSpacing.space12),
+                  _buildAddQuestionButton(),
                 ],
-                _buildAddQuestionButton(),
-              ],
+              ),
             ),
           ),
         ],
@@ -421,18 +443,99 @@ class _CreateQuizPageState extends State<CreateQuizPage> {
     );
   }
 
+  Widget _buildSaveButton() {
+    final enabled = !_saving && !_uploading;
+
+    return Opacity(
+      opacity: enabled ? 1 : CreateQuizPageStyles.saveDisabledOpacity,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: enabled ? _save : null,
+          customBorder: CreateQuizPageStyles.saveButtonShape,
+          child: Ink(
+            decoration: CreateQuizPageStyles.saveButtonDecoration,
+            child: Padding(
+              padding: CreateQuizPageStyles.saveButtonPadding,
+              child: _saving
+                  ? const SizedBox(
+                      width: CreateQuizPageStyles.saveProgressSize,
+                      height: CreateQuizPageStyles.saveProgressSize,
+                      child: CircularProgressIndicator(
+                        strokeWidth: CreateQuizPageStyles.saveProgressStroke,
+                        color: AppColors.textOnPrimary,
+                      ),
+                    )
+                  : Text('Simpan', style: CreateQuizTextStyles.saveAction),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildLabel(String text) {
-    return Text(text, style: AppTextStyles.labelStrong);
+    return Text(text, style: CreateQuizTextStyles.fieldLabel);
   }
 
   Widget _buildTitleField() {
     return TextField(
       controller: _titleController,
-      style: AppTextStyles.heading5,
-      decoration: const AppFieldDecoration.bordered(
+      style: CreateQuizTextStyles.fieldValue,
+      decoration: CreateQuizPageStyles.fieldDecoration(
         hint: 'Masukkan judul yang menarik...',
-        radius: 32,
-      ).build(),
+      ),
+    );
+  }
+
+  Widget _buildDescriptionHeader() {
+    return Row(
+      children: [
+        Expanded(child: _buildLabel('Deskripsi Quiz')),
+        const SizedBox(width: AppSpacing.space4),
+        _buildKategoriButton(),
+      ],
+    );
+  }
+
+  Widget _buildKategoriButton() {
+    final label = _selectedKategori ?? 'Kategori Quiz';
+
+    return ConstrainedBox(
+      constraints: const BoxConstraints(
+        maxWidth: CreateQuizPageStyles.categoryMaxWidth,
+      ),
+      child: PopupMenuButton<String>(
+        tooltip: 'Pilih kategori',
+        onSelected: (value) => setState(() => _selectedKategori = value),
+        itemBuilder: (_) => [
+          for (final option in _kategoriOptions)
+            PopupMenuItem<String>(value: option, child: Text(option)),
+        ],
+        child: Container(
+          padding: CreateQuizPageStyles.categoryPadding,
+          decoration: CreateQuizPageStyles.categoryDecoration,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Flexible(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: CreateQuizTextStyles.category,
+                ),
+              ),
+              const SizedBox(width: CreateQuizPageStyles.categoryGap),
+              const Icon(
+                Icons.keyboard_arrow_down,
+                size: CreateQuizPageStyles.categoryIconSize,
+                color: AppColors.textSecondary,
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
@@ -441,18 +544,28 @@ class _CreateQuizPageState extends State<CreateQuizPage> {
       controller: _descriptionController,
       maxLines: null,
       minLines: 2,
-      style: AppTextStyles.bodyLarge,
-      decoration: const AppFieldDecoration.bordered(
-        hint: 'Masukkan deskripsi yang menarik...',
-      ).build(),
+      style: CreateQuizTextStyles.fieldValue,
+      decoration: CreateQuizPageStyles.fieldDecoration(
+        hint: 'Masukkan Keterangan',
+      ),
     );
   }
 
   Widget _buildSuggestButton() {
-    return AppSecondaryButton(
-      label: 'Buat Soal dengan AI',
-      icon: Icons.auto_awesome,
+    return FilledButton(
       onPressed: _openSuggestSheet,
+      style: CreateQuizPageStyles.suggestButton,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(
+            Icons.auto_awesome,
+            size: CreateQuizPageStyles.suggestIconSize,
+          ),
+          const SizedBox(width: CreateQuizPageStyles.suggestGap),
+          Text('Generate Soal', style: CreateQuizTextStyles.suggest),
+        ],
+      ),
     );
   }
 
@@ -473,10 +586,38 @@ class _CreateQuizPageState extends State<CreateQuizPage> {
   }
 
   Widget _buildAddQuestionButton() {
-    return AppSecondaryButton(
-      label: 'Tambah Pertanyaan',
-      icon: Icons.add,
-      onPressed: _addQuestion,
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: _addQuestion,
+        borderRadius: AppRadius.xxl,
+        child: Container(
+          width: double.infinity,
+          padding: CreateQuizPageStyles.addQuestionPadding,
+          decoration: CreateQuizPageStyles.addQuestionDecoration,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: CreateQuizPageStyles.addQuestionCircleSize,
+                height: CreateQuizPageStyles.addQuestionCircleSize,
+                decoration: CreateQuizPageStyles.addQuestionCircleDecoration,
+                child: const Icon(
+                  Icons.add,
+                  size: CreateQuizPageStyles.addQuestionIconSize,
+                  color: AppColors.textOnPrimary,
+                ),
+              ),
+              const SizedBox(height: CreateQuizPageStyles.addQuestionGap),
+              Text(
+                'Tambah Pertanyaan',
+                textAlign: TextAlign.center,
+                style: CreateQuizTextStyles.addQuestion,
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
@@ -533,9 +674,7 @@ class _SuggestSheetState extends State<_SuggestSheet> {
           Text(
             'Masukkan topik/ide soal, hasilnya akan mengisi seluruh '
             'pertanyaan di form. Jumlah soal menyesuaikan topik.',
-            style: AppTextStyles.bodyMedium.copyWith(
-              color: AppColors.textSecondary,
-            ),
+            style: CreateQuizTextStyles.suggestSheetBody,
           ),
           const SizedBox(height: AppSpacing.space8),
           TextField(

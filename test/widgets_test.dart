@@ -504,7 +504,7 @@ void main() {
 
       expect(find.text('Pertanyaan 1'), findsOneWidget);
       expect(find.text('Durasi'), findsOneWidget);
-      expect(find.text('Poin (1-50)'), findsOneWidget);
+      expect(find.text('Poin'), findsOneWidget);
     });
 
     testWidgets('menekan penanda jawaban meneruskan index', (

@@ -32,6 +32,7 @@ class AppElevation {
   AppElevation._();
 
   static const none = 0.0;
+  static const hairline = 1.0;
   static const subtle = 2.0;
   static const medium = 3.0;
   static const raised = 8.0;

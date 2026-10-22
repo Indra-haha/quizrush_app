@@ -21,3 +21,4 @@ export 'app_shadows.dart';
 export 'app_spacing.dart';
 export 'app_theme_data.dart';
 export 'app_typography.dart';
+export 'create_quiz_theme.dart';
