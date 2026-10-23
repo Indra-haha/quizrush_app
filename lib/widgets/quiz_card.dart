@@ -23,18 +23,16 @@ class QuizCard extends StatelessWidget {
     this.style = QuizCardStyle.standard,
   });
 
-  bool get _isHome => style == QuizCardStyle.home;
-
   @override
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: _isHome ? AppRadius.xxl : AppRadius.lg,
+        borderRadius: AppRadius.lg,
         border: Border.all(
-          color: _isHome ? AppColors.homeCardBorder : AppColors.primaryBorder,
+          color: AppColors.primaryBorder,
         ),
-        boxShadow: _isHome ? AppShadows.homeQuizCard : AppShadows.softLift,
+        boxShadow: AppShadows.softLift,
       ),
       clipBehavior: Clip.antiAlias,
       child: Material(
@@ -46,17 +44,14 @@ class QuizCard extends StatelessWidget {
             children: [
               _buildCover(),
               Padding(
-                padding: EdgeInsets.all(
-                  _isHome ? AppSpacing.space9 : AppSpacing.space8,
+                padding: EdgeInsets.all(AppSpacing.space8,
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       quiz.title,
-                      style: _isHome
-                          ? AppTextStyles.heading5
-                          : AppTextStyles.heading2,
+                      style: AppTextStyles.heading2,
                     ),
                     const SizedBox(height: AppSpacing.space4),
                     Row(
@@ -115,21 +110,6 @@ class QuizCard extends StatelessWidget {
                 ),
               ],
             ),
-          if (_isHome) ...[
-            const Positioned.fill(child: Center(child: _QuizCardIconBox())),
-            Positioned(
-              top: AppSpacing.space9,
-              left: AppSpacing.space9,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildHomeBadge(quiz.kategoriLabel, outlined: true),
-                  const SizedBox(height: AppSpacing.space2),
-                  _buildHomeBadge('${quiz.questionCount} Soal'),
-                ],
-              ),
-            ),
-          ] else
             Positioned(
               top: 12,
               right: 12,

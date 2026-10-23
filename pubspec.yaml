@@ -45,6 +45,7 @@ dependencies:
   flutter_secure_storage: ^9.2.2
   geolocator: ^14.0.2
   sensors_plus: ^7.1.1
+  flutter_local_notifications: ^22.3.2
 
 dev_dependencies:
   flutter_test:

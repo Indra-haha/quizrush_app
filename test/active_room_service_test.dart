@@ -2,11 +2,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:quizrush/models/room.dart';
 import 'package:quizrush/services/active_room_service.dart';
 
-Room _room() => const Room(
+Room _room({String status = 'waiting'}) => Room(
   id: 'r1',
   quizId: 'q1',
   kode: '482913',
-  status: 'waiting',
+  status: status,
   createdAt: '2026-09-17T10:00:00Z',
 );
 
@@ -33,8 +33,26 @@ void main() {
     expect(notified, 1);
   });
 
+  test('set menyimpan token room dan token login', () {
+    service.set(_room(), roomToken: 'room-token', loginToken: 'login-token');
+
+    expect(service.hasRoomSession, isTrue);
+    expect(service.roomToken, 'room-token');
+    expect(service.loginToken, 'login-token');
+  });
+
+  test('updateRoom mempertahankan token dan memperbarui status', () {
+    service.set(_room(), roomToken: 'room-token', loginToken: 'login-token');
+
+    service.updateRoom(_room(status: 'open'));
+
+    expect(service.room?.status, 'open');
+    expect(service.roomToken, 'room-token');
+    expect(service.loginToken, 'login-token');
+  });
+
   test('clear menghapus room dan memberi notifikasi', () {
-    service.set(_room());
+    service.set(_room(), roomToken: 'room-token', loginToken: 'login-token');
 
     var notified = 0;
     void listener() => notified++;
@@ -45,6 +63,9 @@ void main() {
 
     expect(service.hasRoom, isFalse);
     expect(service.room, isNull);
+    expect(service.roomToken, isNull);
+    expect(service.loginToken, isNull);
+    expect(service.hasRoomSession, isFalse);
     expect(notified, 1);
   });
 

@@ -11,7 +11,7 @@ class ProfileSettingsService {
 
   Future<bool> notificationsEnabled() async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getBool(_kNotifications) ?? true;
+    return prefs.getBool(_kNotifications) ?? false;
   }
 
   Future<void> setNotificationsEnabled(bool value) async {

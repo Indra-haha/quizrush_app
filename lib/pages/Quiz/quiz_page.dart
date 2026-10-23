@@ -237,7 +237,7 @@ class _QuizPageState extends State<QuizPage> {
         icon: Icons.pin_outlined,
         onPressed: _openEnterPin,
       ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+      // floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,

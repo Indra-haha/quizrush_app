@@ -14,7 +14,6 @@ import 'package:quizrush/widgets/auth_fields.dart';
 import 'package:quizrush/widgets/cache_info_bar.dart';
 import 'package:quizrush/widgets/empty_state_view.dart';
 import 'package:quizrush/widgets/enter_pin_intro_card.dart';
-import 'package:quizrush/widgets/home_greeting.dart';
 import 'package:quizrush/widgets/home_stat_card.dart';
 import 'package:quizrush/widgets/load_more_button.dart';
 import 'package:quizrush/widgets/pin_input_field.dart';
@@ -766,23 +765,6 @@ void main() {
       expect(find.text('Total Main'), findsOneWidget);
       expect(find.text('1.2k'), findsOneWidget);
     });
-
-    testWidgets('HomeGreeting menyapa dengan nama', (
-      WidgetTester tester,
-    ) async {
-      await tester.pumpWidget(_wrap(const HomeGreeting(name: 'Budi')));
-
-      expect(find.text('Halo, Budi! 👋'), findsOneWidget);
-    });
-
-    testWidgets('HomeGreeting tanpa nama memakai sapaan umum', (
-      WidgetTester tester,
-    ) async {
-      await tester.pumpWidget(_wrap(const HomeGreeting(name: '')));
-
-      expect(find.text('Halo! 👋'), findsOneWidget);
-    });
-
     testWidgets('QuizCard varian home memakai kategori default', (
       WidgetTester tester,
     ) async {

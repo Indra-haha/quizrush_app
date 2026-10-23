@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:quizrush/pages/Profiles/sensor_settings.dart' show SensorSettingsPage;
+import 'package:quizrush/pages/Profiles/sensor_settings.dart'
+    show SensorSettingsPage;
 
 import '../../helpers/format.dart';
 import '../../helpers/password_hasher.dart';
 import '../../services/active_room_service.dart';
 import '../../services/api/auth_service.dart';
 import '../../services/biometric_service.dart';
+import '../../services/notification_service.dart';
 import '../../services/points_store.dart';
 import '../../services/profile_settings_service.dart';
 import '../../services/profile_stats_service.dart';
@@ -13,6 +15,7 @@ import '../../services/quiz_cache_service.dart';
 import '../../services/session_service.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/app_header_bar_with_actions.dart';
+import '../../widgets/app_pill_button.dart';
 import '../../widgets/app_snackbar.dart';
 import '../../widgets/auth_fields.dart';
 import '../login_redirect.dart';
@@ -81,7 +84,17 @@ class _ProfilePageState extends State<ProfilePage> {
   Future<void> _loadNotificationState() async {
     final enabled = await ProfileSettingsService.instance
         .notificationsEnabled();
-    if (mounted) setState(() => _notificationsEnabled = enabled);
+    if (!enabled) {
+      if (mounted) setState(() => _notificationsEnabled = false);
+      return;
+    }
+
+    final granted = await NotificationService.instance.isPermissionGranted();
+    if (!mounted) return;
+    setState(() => _notificationsEnabled = granted);
+    if (!granted) {
+      await ProfileSettingsService.instance.setNotificationsEnabled(false);
+    }
   }
 
   Future<void> _loadBiometricState() async {
@@ -90,8 +103,29 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Future<void> _toggleNotifications(bool value) async {
-    setState(() => _notificationsEnabled = value);
-    await ProfileSettingsService.instance.setNotificationsEnabled(value);
+    if (!value) {
+      setState(() => _notificationsEnabled = false);
+      await ProfileSettingsService.instance.setNotificationsEnabled(false);
+      await NotificationService.instance.cancelRoomReminder();
+      return;
+    }
+
+    final granted = await NotificationService.instance.requestPermission();
+    if (!mounted) return;
+    if (!granted) {
+      setState(() => _notificationsEnabled = false);
+      await ProfileSettingsService.instance.setNotificationsEnabled(false);
+      if (!mounted) return;
+      AppSnackBar.error(
+        context,
+        'Izin notifikasi ditolak. Aktifkan lewat pengaturan perangkat.',
+      );
+      return;
+    }
+
+    setState(() => _notificationsEnabled = true);
+    await ProfileSettingsService.instance.setNotificationsEnabled(true);
+    if (mounted) AppSnackBar.success(context, 'Notifikasi diaktifkan.');
   }
 
   Future<void> _toggleBiometric(bool value) async {
@@ -208,9 +242,9 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   void _sensorSettings() {
-    Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => const SensorSettingsPage()),
-    );
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (_) => const SensorSettingsPage()));
   }
 
   @override
@@ -224,6 +258,11 @@ class _ProfilePageState extends State<ProfilePage> {
             onPressed: _loggingOut ? null : _logout,
           ),
         ],
+      ),
+      floatingActionButton: AppPillButton(
+        label: 'Feedback',
+        icon: Icons.feedback_rounded,
+        onPressed: () => {},
       ),
       body: RefreshIndicator(
         color: AppColors.primary,
@@ -453,7 +492,7 @@ class _SettingsCard extends StatelessWidget {
           _SettingsRow(
             icon: Icons.notifications_none_rounded,
             title: 'Pengaturan Notifikasi',
-            subtitle: 'Pengingat sesi kuis',
+            subtitle: 'Izin & pengingat room',
             trailing: _DesignToggle(
               value: notificationsEnabled,
               enabled: true,

@@ -31,11 +31,12 @@ class RoomLauncher {
       return;
     }
 
-    final result = await RoomService.instance.verifyPin(
-      token: token,
-      pin: pin,
+    final result = await RoomService.instance.verifyPin(token: token, pin: pin);
+    ActiveRoomService.instance.set(
+      result.room,
+      roomToken: result.token,
+      loginToken: token,
     );
-    ActiveRoomService.instance.set(result.room);
     if (!context.mounted) return;
 
     final route = MaterialPageRoute<void>(

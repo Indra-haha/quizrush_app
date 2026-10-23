@@ -12,7 +12,6 @@ import '../../widgets/app_snackbar.dart';
 import '../../widgets/cache_info_bar.dart';
 import '../../widgets/empty_state_view.dart';
 import '../../widgets/error_state_view.dart';
-import '../../widgets/home_greeting.dart';
 import '../../widgets/home_stat_card.dart';
 import '../../widgets/points_indicator.dart';
 import '../../widgets/quiz_card.dart';
@@ -169,7 +168,6 @@ class _HomePageState extends State<HomePage> {
         bottom: AppSpacing.fabClearance,
       ),
       children: [
-        HomeGreeting(name: (_user?['nama'] as String?) ?? ''),
         const SizedBox(height: AppSpacing.space8),
         _buildStats(),
         if (_loading)
@@ -187,7 +185,6 @@ class _HomePageState extends State<HomePage> {
           const SizedBox(height: AppSpacing.space8),
           QuizCard(
             quiz: section.quiz,
-            style: QuizCardStyle.home,
             onTap: () => _openRooms(section.quiz),
           ),
         ],

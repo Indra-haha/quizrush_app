@@ -19,6 +19,7 @@ import '../../services/profile_settings_service.dart';
 import '../../services/quiz_feed.dart';
 import '../../services/api/room_service.dart';
 import '../../services/api/room_socket.dart';
+import '../../services/room_reminder_service.dart';
 import '../../services/session_service.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/app_primary_button.dart';
@@ -99,6 +100,7 @@ class _WaitingRoomPageState extends State<WaitingRoomPage> {
   @override
   void initState() {
     super.initState();
+    RoomReminderService.instance.onRoomPageOpened();
     // Status room dari server; `waiting` adalah default server (API.md §5.1)
     // supaya status kosong tidak membuat alur publish kehilangan tombol.
     _roomStatus = widget.room.status.isEmpty ? 'waiting' : widget.room.status;
@@ -107,7 +109,8 @@ class _WaitingRoomPageState extends State<WaitingRoomPage> {
   }
 
   Future<void> _loadSensorSettings() async {
-    final enabled = await ProfileSettingsService.instance.accelerometerEnabled();
+    final enabled = await ProfileSettingsService.instance
+        .accelerometerEnabled();
     if (!mounted || !enabled) return;
     _accelerometerEnabled = true;
     _startShakeDetection();
@@ -117,7 +120,9 @@ class _WaitingRoomPageState extends State<WaitingRoomPage> {
     _accelerometerSub?.cancel();
     _accelerometerSub = userAccelerometerEventStream().listen((event) {
       if (!_accelerometerEnabled || !mounted) return;
-      final magnitude = sqrt(event.x * event.x + event.y * event.y + event.z * event.z);
+      final magnitude = sqrt(
+        event.x * event.x + event.y * event.y + event.z * event.z,
+      );
       if (magnitude < _shakeThreshold) return;
       final now = DateTime.now();
       if (now.difference(_lastShakeAt) < _shakeCooldown) return;
@@ -139,6 +144,7 @@ class _WaitingRoomPageState extends State<WaitingRoomPage> {
 
   @override
   void dispose() {
+    RoomReminderService.instance.onRoomPageClosed();
     _accelerometerSub?.cancel();
     _messageSub?.cancel();
     _statusSub?.cancel();
@@ -389,7 +395,7 @@ class _WaitingRoomPageState extends State<WaitingRoomPage> {
       if (next == 'in-Game') {
         // Jangan pop: server menyiarkan soal pertama lewat WS dan halaman ini
         // (juga milik host) pindah ke [LiveQuizPage] saat pesan itu tiba.
-        ActiveRoomService.instance.set(updated);
+        ActiveRoomService.instance.updateRoom(updated);
         AppSnackBar.success(context, 'Kuis dimulai. Sukses untuk semua!');
       } else {
         AppSnackBar.success(context, 'Room berhasil dipublish.');
