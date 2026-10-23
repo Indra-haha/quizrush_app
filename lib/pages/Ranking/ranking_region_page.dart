@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
 
-import '../../helpers/format.dart';
 import '../../models/region_location.dart';
 import '../../models/region_ranking.dart';
 import '../../services/api/api_client.dart';
 import '../../services/api/location_service.dart';
 import '../../services/session_service.dart';
-import '../../theme/app_theme.dart';
 import '../../widgets/app_header_bar_with_actions.dart';
 import '../../widgets/app_snackbar.dart';
 import '../../widgets/points_indicator.dart';

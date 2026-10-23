@@ -20,7 +20,6 @@ import '../../widgets/points_indicator.dart';
 import '../../widgets/quiz_results_list.dart';
 import '../../widgets/quiz_search_field.dart';
 import '../../widgets/section_header.dart';
-import '../../widgets/status_filter_row.dart';
 import '../login_redirect.dart';
 import 'detail_quiz_room_page.dart';
 import 'enter_pin_page.dart';

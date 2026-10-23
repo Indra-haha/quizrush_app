@@ -124,18 +124,13 @@ class AppShadows {
   ];
 
   /// Tombol aksi beranda (desain baru).
-  static const homeAction = <BoxShadow>[
+  static const action = <BoxShadow>[
     BoxShadow(color: Color(0x334648D4), blurRadius: 0, offset: Offset(0, 4)),
   ];
 
   /// Kartu putih halaman auth (desain register baru).
   static const authCard = <BoxShadow>[
     BoxShadow(color: Color(0x33000000), blurRadius: 40, offset: Offset(0, 12)),
-  ];
-
-  /// Tombol gradien halaman auth.
-  static const authAction = <BoxShadow>[
-    BoxShadow(color: Color(0x334648D4), blurRadius: 0, offset: Offset(0, 8)),
   ];
 
   /// Inset-feeling highlight.

@@ -231,7 +231,7 @@ class AuthPageFooter extends StatelessWidget {
         spacing: AppSpacing.space2,
         runSpacing: AppSpacing.space1,
         children: [
-          Text(text, style: AppTextStyles.termsText),
+          Text(text, style: AppTextStyles.bodySecondary),
           GestureDetector(
             onTap: onLinkTap,
             child: Text(linkText, style: AppTextStyles.authFooterLink),

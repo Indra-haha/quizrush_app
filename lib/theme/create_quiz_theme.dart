@@ -10,6 +10,29 @@ import 'app_typography.dart';
 /// Marker shape for each answer option in the Create Quiz editor.
 enum CreateQuizAnswerShape { triangle, diamond, square, circle }
 
+/// Shared size, spacing, and shape tokens for the Create Quiz flow.
+class CreateQuizShared {
+  CreateQuizShared._();
+
+  static const iconSmall = AppIconSize.sm;
+  static const iconLarge = AppIconSize.lg;
+  static const iconXxl = AppIconSize.xxl;
+
+  static const gapSmall = AppSpacing.space3;
+
+  static const cardPadding = EdgeInsets.all(AppSpacing.space10);
+  static const fieldPadding = EdgeInsets.symmetric(
+    horizontal: AppSpacing.space8,
+    vertical: AppSpacing.space5,
+  );
+  static const pillPadding = EdgeInsets.symmetric(
+    horizontal: AppSpacing.space8,
+    vertical: AppSpacing.space2,
+  );
+
+  static const pillShape = StadiumBorder();
+}
+
 /// Design tokens for the Create Quiz flow.
 ///
 /// Semua warna, ukuran, dekorasi, dan tipografi khusus halaman Create Quiz
@@ -27,11 +50,15 @@ class CreateQuizTextStyles {
   );
 
   static final fieldLabel = AppTextStyles.fieldLabel;
+  static final fieldLabelOnPrimary = AppTextStyles.fieldLabel.copyWith(
+    color: AppColors.textOnPrimary,
+  );
   static final fieldValue = AppTextStyles.fieldValue.copyWith(
     color: AppColors.textSecondary,
   );
   static final fieldHint = AppTextStyles.quizFieldHint;
-  static final category = AppTextStyles.fieldValue.copyWith(
+
+  static final bodySecondary = AppTextStyles.bodyMedium.copyWith(
     color: AppColors.textSecondary,
   );
 
@@ -46,9 +73,6 @@ class CreateQuizTextStyles {
     height: 1.60,
   );
 
-  static final questionPill = AppTextStyles.fieldLabel.copyWith(
-    color: AppColors.textOnPrimary,
-  );
   static final deleteAction = AppTextStyles.labelStrongError;
   static final questionInput = AppTextStyles.fieldValue.copyWith(
     color: AppColors.textSecondary,
@@ -72,33 +96,13 @@ class CreateQuizTextStyles {
     color: AppColors.textSecondary,
     fontWeight: FontWeight.w600,
   );
-  static final pointsPlaceholder = AppTextStyles.fieldValue.copyWith(
-    color: AppColors.textSecondary,
-  );
-  static final pointsSuffix = AppTextStyles.fieldValue.copyWith(
-    color: AppColors.textSecondary,
-  );
-
-  static final duration = AppTextStyles.fieldLabel;
-  static final durationSelected = AppTextStyles.fieldLabel.copyWith(
-    color: AppColors.textOnPrimary,
-  );
 
   static final coverLabel = AppTextStyles.labelStrong.copyWith(
     color: AppColors.textSecondary,
     letterSpacing: 0.6,
   );
-  static final coverCaption = AppTextStyles.bodyMedium.copyWith(
-    color: AppColors.textSecondary,
-  );
-  static final coverProgress = AppTextStyles.button.copyWith(
+  static final coverStatus = AppTextStyles.button.copyWith(
     color: AppColors.textOnPrimary,
-  );
-  static final coverError = AppTextStyles.button.copyWith(
-    color: AppColors.textOnPrimary,
-  );
-  static final suggestSheetBody = AppTextStyles.bodyMedium.copyWith(
-    color: AppColors.textSecondary,
   );
 }
 
@@ -123,11 +127,10 @@ class CreateQuizPageStyles {
     horizontal: AppSpacing.space10,
     vertical: AppSpacing.space4,
   );
-  static const saveButtonShape = StadiumBorder();
   static const saveButtonDecoration = ShapeDecoration(
-    gradient: AppGradients.authAction,
+    gradient: AppGradients.action,
     shape: StadiumBorder(),
-    shadows: AppShadows.authAction,
+    shadows: AppShadows.action,
   );
   static const saveDisabledOpacity = 0.6;
   static const saveProgressSize = 16.0;
@@ -166,7 +169,6 @@ class CreateQuizPageStyles {
     shape: const StadiumBorder(),
     padding: suggestPadding,
   );
-  static const suggestIconSize = AppIconSize.xxl;
   static const suggestGap = AppSpacing.space8;
 
   static const addQuestionPadding = EdgeInsets.symmetric(
@@ -186,8 +188,7 @@ class CreateQuizPageStyles {
     color: AppColors.quizAction,
     shape: BoxShape.circle,
   );
-  static const addQuestionIconSize = AppIconSize.lg;
-  static const addQuestionGap = AppSpacing.space3;
+
 
   static InputDecoration fieldDecoration({required String hint}) {
     return InputDecoration(
@@ -227,7 +228,6 @@ class CreateQuizQuestionStyles {
     CreateQuizAnswerShape.circle,
   ];
 
-  static const cardPadding = EdgeInsets.all(AppSpacing.space10);
   static final cardDecoration = BoxDecoration(
     color: AppColors.quizQuestionSurface,
     borderRadius: AppRadius.xxl,
@@ -238,18 +238,9 @@ class CreateQuizQuestionStyles {
     boxShadow: AppShadows.softCard,
   );
 
-  static const pillPadding = EdgeInsets.symmetric(
-    horizontal: AppSpacing.space8,
-    vertical: AppSpacing.space2,
-  );
-  static const pillShape = StadiumBorder();
-  static const deletePadding = EdgeInsets.symmetric(
-    horizontal: AppSpacing.space8,
-    vertical: AppSpacing.space2,
-  );
   static final deleteButton = TextButton.styleFrom(
     foregroundColor: AppColors.error,
-    padding: deletePadding,
+    padding: CreateQuizShared.pillPadding,
   );
 
   static const questionMinHeight = 100.0;
@@ -285,9 +276,7 @@ class CreateQuizQuestionStyles {
   );
   static const answerToggleGap = AppSpacing.space4;
   static const toggleSize = Size(44, 24);
-  static const checkIconSize = AppIconSize.sm;
 
-  static const durationHadiahGap = AppSpacing.space3;
   static const durationTrackPadding = EdgeInsets.all(AppSpacing.space1);
   static const durationTrackDecoration = ShapeDecoration(
     color: AppColors.fieldBackground,
@@ -299,10 +288,6 @@ class CreateQuizQuestionStyles {
       borderRadius: AppRadius.pill,
     ),
   );
-  static const durationChipPadding = EdgeInsets.symmetric(
-    horizontal: AppSpacing.space8,
-    vertical: AppSpacing.space5,
-  );
   static const durationChipSelectedDecoration = ShapeDecoration(
     color: AppColors.quizAction,
     shape: StadiumBorder(),
@@ -312,12 +297,7 @@ class CreateQuizQuestionStyles {
     shape: StadiumBorder(),
   );
 
-  static const labelGap = AppSpacing.space3;
   static const pointsFieldWidth = 100.0;
-  static const pointsFieldPadding = EdgeInsets.symmetric(
-    horizontal: AppSpacing.space8,
-    vertical: AppSpacing.space5,
-  );
 
   static BoxDecoration toggleDecoration({required bool selected}) {
     return BoxDecoration(
@@ -329,12 +309,12 @@ class CreateQuizQuestionStyles {
   static InputDecoration pointsDecoration() {
     return InputDecoration(
       hintText: '20',
-      hintStyle: CreateQuizTextStyles.pointsPlaceholder,
+      hintStyle: CreateQuizTextStyles.fieldValue,
       suffixText: 'Pts',
-      suffixStyle: CreateQuizTextStyles.pointsSuffix,
+      suffixStyle: CreateQuizTextStyles.fieldValue,
       filled: true,
       fillColor: AppColors.fieldBackground,
-      contentPadding: pointsFieldPadding,
+      contentPadding: CreateQuizShared.fieldPadding,
       border: pointsBorder(AppColors.primaryBorder),
       enabledBorder: pointsBorder(AppColors.primaryBorder),
       focusedBorder: pointsBorder(AppColors.quizAction),
@@ -363,20 +343,17 @@ class CreateQuizCoverStyles {
     ),
   );
 
-  static const placeholderPadding = EdgeInsets.all(AppSpacing.space10);
   static const placeholderIconBox = 64.0;
   static const placeholderIconDecoration = BoxDecoration(
     color: AppColors.onPrimarySoft,
     shape: BoxShape.circle,
   );
-  static const placeholderIconSize = AppIconSize.xxl;
 
   static const removePadding = EdgeInsets.all(AppSpacing.space4);
   static const removeDecoration = BoxDecoration(
     color: AppColors.scrimSoft,
     shape: BoxShape.circle,
   );
-  static const removeIconSize = AppIconSize.sm;
 
   static const progressSize = 32.0;
   static const progressStroke = 3.0;
@@ -384,7 +361,6 @@ class CreateQuizCoverStyles {
   static const errorOverlayDecoration = BoxDecoration(
     color: AppColors.scrimStrong,
   );
-  static const errorIconSize = AppIconSize.lg;
   static const retryIconSize = AppIconSize.body;
   static final retryButton = FilledButton.styleFrom(
     backgroundColor: AppColors.quizAction,

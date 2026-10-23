@@ -22,9 +22,9 @@ class AppPillButton extends StatelessWidget {
       height: AppSizes.homeActionHeight,
       child: DecoratedBox(
         decoration: BoxDecoration(
-          gradient: AppGradients.homeAction,
+          gradient: AppGradients.action,
           borderRadius: AppRadius.pill,
-          boxShadow: AppShadows.homeAction,
+          boxShadow: AppShadows.action,
         ),
         child: Material(
           color: Colors.transparent,
@@ -58,7 +58,7 @@ class AppPillButton extends StatelessWidget {
                   Text(
                     label,
                     textAlign: TextAlign.center,
-                    style: AppTextStyles.homeAction,
+                    style: AppTextStyles.fontButtonAction
                   ),
                 ],
               ),

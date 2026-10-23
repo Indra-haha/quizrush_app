@@ -156,7 +156,7 @@ class _SensorToggle extends StatelessWidget {
             curve: ProfileTheme.toggleCurve,
             width: AppSizes.profileToggleWidth,
             height: AppSizes.profileToggleHeight,
-            padding: ProfileTheme.togglePadding,
+            padding: ProfileTheme.paddingSmall,
             decoration: ProfileTheme.toggleDecoration(active: value),
             child: AnimatedAlign(
               duration: ProfileTheme.toggleDuration,

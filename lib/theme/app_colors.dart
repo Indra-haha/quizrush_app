@@ -46,6 +46,7 @@ class AppColors {
   static const onPrimarySubtle = Color(0x99FFFFFF);
   static const onPrimarySoft = Color(0x73FFFFFF);
   static const onPrimaryFaint = Color(0x4DFFFFFF);
+  static const onLightAlpha = Color(0x3DFFFFFF);
 
   // Scrim/overlay di atas gambar cover Create Quiz.
   static const scrim = Color(0x8C111C2D);
@@ -126,9 +127,3 @@ class AppColors {
   static const quizCoverBorder = Color(0xFF767586);
 }
 
-class AppStatus {
-  AppStatus._();
-
-  static const danger = Color(0xFFBA1A1A);
-  static const onLightAlpha = Color(0x3DFFFFFF);
-}

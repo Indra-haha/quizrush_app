@@ -30,13 +30,13 @@ class HomeStatCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final labelStyle = highlight
         ? AppTextStyles.homeStatLabelOnPrimary
-        : AppTextStyles.homeStatLabel;
+        : AppTextStyles.labelSmall;
     final valueStyle = largeValue
         ? (highlight
-              ? AppTextStyles.homeStatValueLarge.copyWith(
+              ? AppTextStyles.display2.copyWith(
                   color: AppColors.onPrimaryMuted,
                 )
-              : AppTextStyles.homeStatValueLarge)
+              : AppTextStyles.display2)
         : (highlight
               ? AppTextStyles.homeStatValueOnPrimary
               : AppTextStyles.homeStatValue);

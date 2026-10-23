@@ -71,7 +71,7 @@ class _Placeholder extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: CreateQuizCoverStyles.placeholderPadding,
+      padding: CreateQuizShared.cardPadding,
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
@@ -81,7 +81,7 @@ class _Placeholder extends StatelessWidget {
             decoration: CreateQuizCoverStyles.placeholderIconDecoration,
             child: const Icon(
               Icons.add_photo_alternate_outlined,
-              size: CreateQuizCoverStyles.placeholderIconSize,
+              size: CreateQuizShared.iconXxl,
               color: AppColors.textSecondary,
             ),
           ),
@@ -94,7 +94,7 @@ class _Placeholder extends StatelessWidget {
           const SizedBox(height: AppSpacing.space2),
           Text(
             'Pilih Gambar (jpg, png, webp · maks 5 MB)',
-            style: CreateQuizTextStyles.coverCaption,
+            style: CreateQuizTextStyles.bodySecondary,
             textAlign: TextAlign.center,
           ),
         ],
@@ -138,7 +138,7 @@ class _Preview extends StatelessWidget {
               decoration: CreateQuizCoverStyles.removeDecoration,
               child: const Icon(
                 Icons.close,
-                size: CreateQuizCoverStyles.removeIconSize,
+                size: CreateQuizShared.iconSmall,
                 color: AppColors.textOnPrimary,
               ),
             ),
@@ -174,7 +174,7 @@ class _UploadingOverlay extends StatelessWidget {
             Text(
               label ?? 'Mengunggah gambar…',
               key: const ValueKey('quizImageUploadLabel'),
-              style: CreateQuizTextStyles.coverProgress,
+              style: CreateQuizTextStyles.coverStatus,
               textAlign: TextAlign.center,
             ),
           ],
@@ -199,13 +199,13 @@ class _ErrorOverlay extends StatelessWidget {
           children: [
             const Icon(
               Icons.cloud_off,
-              size: CreateQuizCoverStyles.errorIconSize,
+              size: CreateQuizShared.iconLarge,
               color: AppColors.textOnPrimary,
             ),
             const SizedBox(height: AppSpacing.space5),
             Text(
               'Gagal mengunggah ke Cloudinary',
-              style: CreateQuizTextStyles.coverError,
+              style: CreateQuizTextStyles.coverStatus,
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: AppSpacing.space5),

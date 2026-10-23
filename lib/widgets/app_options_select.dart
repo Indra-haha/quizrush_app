@@ -32,7 +32,7 @@ class AppOptionsSelect extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: CreateQuizQuestionStyles.durationChipPadding,
+        padding: CreateQuizShared.fieldPadding,
         decoration: selected
             ? CreateQuizQuestionStyles.durationChipSelectedDecoration
             : CreateQuizQuestionStyles.durationChipDecoration,
@@ -40,8 +40,8 @@ class AppOptionsSelect extends StatelessWidget {
           value,
           textAlign: TextAlign.center,
           style: selected
-              ? CreateQuizTextStyles.durationSelected
-              : CreateQuizTextStyles.duration,
+              ? CreateQuizTextStyles.fieldLabelOnPrimary
+              : CreateQuizTextStyles.fieldLabel,
         ),
       ),
     );

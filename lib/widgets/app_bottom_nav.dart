@@ -10,12 +10,6 @@ class AppBottomNavItem {
   const AppBottomNavItem({required this.label, required this.icon});
 }
 
-/// Navigasi bawah kustom.
-///
-/// Menggantikan `BottomNavigationBar` bawaan Material: bidang berwarna
-/// surface dengan garis tepi 1px di luar bidang, bayangan tipis di bawahnya,
-/// lalu ikon di atas label. Tab aktif ditandai lewat warna (primary),
-/// tab lain memakai warna teks sekunder.
 class AppBottomNav extends StatelessWidget {
   final List<AppBottomNavItem> items;
   final int currentIndex;
@@ -95,7 +89,7 @@ class _AppBottomNavEntry extends StatelessWidget {
                 item.label,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: AppTextStyles.navLabel.copyWith(color: color),
+                style: AppTextStyles.bodyMeta.copyWith(color: color),
               ),
             ],
           ),

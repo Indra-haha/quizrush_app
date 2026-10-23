@@ -155,7 +155,7 @@ class QuizCard extends StatelessWidget {
         child: Icon(
           Icons.quiz,
           size: AppIconSize.illustration,
-          color: AppStatus.onLightAlpha,
+          color: AppColors.onLightAlpha,
         ),
       ),
     );

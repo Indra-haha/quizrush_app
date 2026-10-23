@@ -461,7 +461,7 @@ class _CreateQuizPageState extends State<CreateQuizPage> {
         color: Colors.transparent,
         child: InkWell(
           onTap: enabled ? _save : null,
-          customBorder: CreateQuizPageStyles.saveButtonShape,
+          customBorder: CreateQuizShared.pillShape,
           child: Ink(
             decoration: CreateQuizPageStyles.saveButtonDecoration,
             child: Padding(
@@ -532,7 +532,7 @@ class _CreateQuizPageState extends State<CreateQuizPage> {
                   label,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: CreateQuizTextStyles.category,
+                  style: CreateQuizTextStyles.fieldValue,
                 ),
               ),
               const SizedBox(width: CreateQuizPageStyles.categoryGap),
@@ -569,7 +569,7 @@ class _CreateQuizPageState extends State<CreateQuizPage> {
         children: [
           const Icon(
             Icons.auto_awesome,
-            size: CreateQuizPageStyles.suggestIconSize,
+            size: CreateQuizShared.iconXxl,
           ),
           const SizedBox(width: CreateQuizPageStyles.suggestGap),
           Text('Generate Soal', style: CreateQuizTextStyles.suggest),
@@ -613,11 +613,11 @@ class _CreateQuizPageState extends State<CreateQuizPage> {
                 decoration: CreateQuizPageStyles.addQuestionCircleDecoration,
                 child: const Icon(
                   Icons.add,
-                  size: CreateQuizPageStyles.addQuestionIconSize,
+                  size: CreateQuizShared.iconLarge,
                   color: AppColors.textOnPrimary,
                 ),
               ),
-              const SizedBox(height: CreateQuizPageStyles.addQuestionGap),
+              const SizedBox(height: CreateQuizShared.gapSmall),
               Text(
                 'Tambah Pertanyaan',
                 textAlign: TextAlign.center,
@@ -683,7 +683,7 @@ class _SuggestSheetState extends State<_SuggestSheet> {
           Text(
             'Masukkan topik/ide soal, hasilnya akan mengisi seluruh '
             'pertanyaan di form. Jumlah soal menyesuaikan topik.',
-            style: CreateQuizTextStyles.suggestSheetBody,
+            style: CreateQuizTextStyles.bodySecondary,
           ),
           const SizedBox(height: AppSpacing.space8),
           TextField(

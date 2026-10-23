@@ -15,7 +15,6 @@ import '../../theme/app_theme.dart';
 import '../../widgets/app_header_bar_with_actions.dart';
 import '../../widgets/app_snackbar.dart';
 import '../../widgets/auth_fields.dart';
-import '../../widgets/points_indicator.dart';
 import '../login_redirect.dart';
 
 /// Halaman profil pengguna sesuai desain kartu profil + pengaturan.
@@ -304,7 +303,7 @@ class _ProfileHeroCard extends StatelessWidget {
           Container(
             width: AppSizes.profileAvatar,
             height: AppSizes.profileAvatar,
-            padding: ProfileTheme.avatarPadding,
+            padding: ProfileTheme.paddingSmall,
             decoration: ProfileTheme.avatarDecoration,
             child: ClipOval(
               child: Container(
@@ -317,7 +316,7 @@ class _ProfileHeroCard extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(height: ProfileTheme.avatarNameGap),
+          const SizedBox(height: ProfileTheme.gapMedium),
           SizedBox(
             width: ProfileTheme.nameWidth,
             child: Text(
@@ -329,14 +328,14 @@ class _ProfileHeroCard extends StatelessWidget {
             ),
           ),
           if (username.isNotEmpty) ...[
-            const SizedBox(height: ProfileTheme.nameHandleGap),
+            const SizedBox(height: ProfileTheme.gapTiny),
             Text(
               '@$username',
               textAlign: TextAlign.center,
-              style: AppTextStyles.profileHandle,
+              style: AppTextStyles.bodySecondary,
             ),
           ],
-          const SizedBox(height: ProfileTheme.handlePillGap),
+          const SizedBox(height: ProfileTheme.gapMedium),
           Container(
             padding: ProfileTheme.pillPadding,
             decoration: ProfileTheme.pillDecoration,
@@ -410,11 +409,11 @@ class _StatTile extends StatelessWidget {
               fit: BoxFit.scaleDown,
               child: Text(value, textAlign: TextAlign.center, style: style),
             ),
-            const SizedBox(height: ProfileTheme.statValueLabelGap),
+            const SizedBox(height: ProfileTheme.gapTiny),
             Text(
               label,
               textAlign: TextAlign.center,
-              style: AppTextStyles.profileStatLabel,
+              style: AppTextStyles.labelSmall,
             ),
           ],
         ),
@@ -461,7 +460,7 @@ class _SettingsCard extends StatelessWidget {
               onChanged: onNotificationsChanged,
             ),
           ),
-          const SizedBox(height: ProfileTheme.settingRowGap),
+          const SizedBox(height: ProfileTheme.gapTiny),
           _SettingsRow(
             icon: Icons.fingerprint_rounded,
             title: 'Pengaturan Biometric',
@@ -472,26 +471,26 @@ class _SettingsCard extends StatelessWidget {
               onChanged: onBiometricChanged,
             ),
           ),
-          const SizedBox(height: ProfileTheme.settingRowGap),
+          const SizedBox(height: ProfileTheme.gapTiny),
           _SettingsRow(
             icon: Icons.query_stats_rounded,
             title: 'Statistik & Riwayat Kuis',
             subtitle: 'Pencapaian dan kuis yang diikuti',
             trailing: const Icon(
               Icons.chevron_right_rounded,
-              size: ProfileTheme.chevronSize,
+              size: ProfileTheme.iconMedium,
               color: ProfileTheme.chevronColor,
             ),
             onTap: onStatsTap,
           ),
-          const SizedBox(height: ProfileTheme.settingRowGap),
+          const SizedBox(height: ProfileTheme.gapTiny),
           _SettingsRow(
             icon: Icons.tune_rounded,
             title: 'Pengaturan Lanjut',
             subtitle: 'Peningkatan performa',
             trailing: const Icon(
               Icons.chevron_right_rounded,
-              size: ProfileTheme.chevronSize,
+              size: ProfileTheme.iconMedium,
               color: ProfileTheme.chevronColor,
             ),
             onTap: onAdvancedTap,
@@ -527,22 +526,22 @@ class _SettingsRow extends StatelessWidget {
         child: Row(
           children: [
             SizedBox(
-              width: ProfileTheme.settingIconBox,
-              height: ProfileTheme.settingIconBox,
+              width: ProfileTheme.iconLarge,
+              height: ProfileTheme.iconLarge,
               child: Icon(
                 icon,
-                size: ProfileTheme.settingIconSize,
+                size: ProfileTheme.iconMedium,
                 color: ProfileTheme.settingIconColor,
               ),
             ),
-            const SizedBox(width: ProfileTheme.settingIconGap),
+            const SizedBox(width: ProfileTheme.gapMedium),
             Expanded(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title, style: AppTextStyles.settingTitle),
-                  const SizedBox(height: ProfileTheme.settingTextGap),
+                  Text(title, style: AppTextStyles.labelStrong),
+                  const SizedBox(height: ProfileTheme.gapTiny),
                   Text(subtitle, style: AppTextStyles.settingSubtitle),
                 ],
               ),
@@ -587,7 +586,7 @@ class _DesignToggle extends StatelessWidget {
             duration: ProfileTheme.toggleDuration,
             width: AppSizes.profileToggleWidth,
             height: AppSizes.profileToggleHeight,
-            padding: ProfileTheme.togglePadding,
+            padding: ProfileTheme.paddingSmall,
             decoration: ProfileTheme.toggleDecoration(active: value),
             child: AnimatedAlign(
               duration: ProfileTheme.toggleDuration,
@@ -621,8 +620,8 @@ class _LogoutAction extends StatelessWidget {
       onPressed: loggingOut ? null : onPressed,
       icon: loggingOut
           ? const SizedBox(
-              width: ProfileTheme.logoutProgressSize,
-              height: ProfileTheme.logoutProgressSize,
+              width: ProfileTheme.iconMedium,
+              height: ProfileTheme.iconMedium,
               child: CircularProgressIndicator(
                 strokeWidth: ProfileTheme.logoutProgressStroke,
                 color: ProfileTheme.logoutColor,
@@ -630,7 +629,7 @@ class _LogoutAction extends StatelessWidget {
             )
           : const Icon(
               Icons.logout_rounded,
-              size: ProfileTheme.logoutIconSize,
+              size: ProfileTheme.iconLarge,
               color: ProfileTheme.logoutColor,
             ),
     );

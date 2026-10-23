@@ -199,7 +199,7 @@ void main() {
 
       expect(
         gradients.any(
-          (gradient) => gradient.colors == AppGradients.authAction.colors,
+          (gradient) => gradient.colors == AppGradients.action.colors,
         ),
         isTrue,
       );

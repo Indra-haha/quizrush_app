@@ -14,7 +14,6 @@ library;
 
 export 'app_buttons.dart';
 export 'app_colors.dart';
-export 'app_decorations.dart';
 export 'app_gradients.dart';
 export 'app_metrics.dart';
 export 'app_shadows.dart';

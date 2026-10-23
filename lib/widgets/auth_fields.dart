@@ -157,17 +157,17 @@ class AuthTermsRow extends StatelessWidget {
           child: Text.rich(
             TextSpan(
               children: [
-                TextSpan(text: 'Saya menyetujui ', style: AppTextStyles.termsText),
+                TextSpan(text: 'Saya menyetujui ', style: AppTextStyles.bodySecondary),
                 TextSpan(
                   text: 'Syarat & Ketentuan',
                   style: AppTextStyles.termsLink,
                 ),
-                TextSpan(text: '\nserta ', style: AppTextStyles.termsText),
+                TextSpan(text: '\nserta ', style: AppTextStyles.bodySecondary),
                 TextSpan(
                   text: 'Kebijakan Privasi',
                   style: AppTextStyles.termsLink,
                 ),
-                TextSpan(text: ' QuizRush.', style: AppTextStyles.termsText),
+                TextSpan(text: ' QuizRush.', style: AppTextStyles.bodySecondary),
               ],
             ),
           ),
@@ -240,9 +240,9 @@ class AuthSubmitButton extends StatelessWidget {
     if (gradient) {
       return DecoratedBox(
         decoration: ShapeDecoration(
-          gradient: AppGradients.authAction,
+          gradient: AppGradients.action,
           shape: RoundedRectangleBorder(borderRadius: AppRadius.authAction),
-          shadows: AppShadows.authAction,
+          shadows: AppShadows.action,
         ),
         child: Material(
           type: MaterialType.transparency,

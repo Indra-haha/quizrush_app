@@ -267,7 +267,7 @@ class _BalanceCard extends StatelessWidget {
                   children: [
                     Text(
                       formatPoints(value),
-                      style: AppTextStyles.statValue.copyWith(
+                      style: AppTextStyles.display2.copyWith(
                         fontSize: AppFontSize.hero,
                         color: AppColors.indigoActionInk,
                         letterSpacing: -0.9,

@@ -59,13 +59,6 @@ class AppTextStyles {
     height: 1.2,
   );
 
-  static final heading1Strong = GoogleFonts.montserrat(
-    color: AppColors.textPrimary,
-    fontSize: 22,
-    fontWeight: FontWeight.w700,
-    height: 1.27,
-  );
-
   static final cardTitle = GoogleFonts.plusJakartaSans(
     color: AppColors.textPrimary,
     fontSize: 16,
@@ -172,14 +165,6 @@ class AppTextStyles {
     height: 1.33,
   );
 
-  static final statValue = GoogleFonts.montserrat(
-    color: AppColors.textPrimary,
-    fontSize: 24,
-    fontWeight: FontWeight.w800,
-    height: 1.17,
-    letterSpacing: -0.4,
-  );
-
   static final statValueOnPrimary = GoogleFonts.montserrat(
     color: AppColors.textOnPrimary,
     fontSize: 24,
@@ -195,8 +180,8 @@ class AppTextStyles {
     height: 1.33,
   );
 
-  /// Label kartu statistik beranda (desain baru).
-  static final homeStatLabel = GoogleFonts.plusJakartaSans(
+  /// Label kecil untuk nilai statistik.
+  static final labelSmall = GoogleFonts.plusJakartaSans(
     color: AppColors.textSecondary,
     fontSize: 12,
     fontWeight: FontWeight.w500,
@@ -227,14 +212,6 @@ class AppTextStyles {
     letterSpacing: -0.4,
   );
 
-  static final homeStatValueLarge = GoogleFonts.montserrat(
-    color: AppColors.textPrimary,
-    fontSize: 24,
-    fontWeight: FontWeight.w800,
-    height: 1.17,
-    letterSpacing: -0.4,
-  );
-
   /// Tautan "Lihat Semua" pada judul section beranda.
   static final sectionLink = GoogleFonts.plusJakartaSans(
     color: AppColors.primary,
@@ -244,7 +221,7 @@ class AppTextStyles {
   );
 
   /// Label tombol aksi beranda ("Create Quiz").
-  static final homeAction = GoogleFonts.montserrat(
+  static final fontButtonAction = GoogleFonts.montserrat(
     color: AppColors.textOnPrimary,
     fontSize: 16,
     fontWeight: FontWeight.w700,
@@ -389,14 +366,6 @@ class AppTextStyles {
     letterSpacing: 1.2,
   );
 
-  /// Label tab pada navigasi bawah.
-  static final navLabel = GoogleFonts.plusJakartaSans(
-    color: AppColors.textSecondary,
-    fontSize: 12,
-    fontWeight: FontWeight.w600,
-    height: 1.33,
-  );
-
   /// Wordmark QUIZRUSH pada hero halaman register.
   static final brandWordmark = GoogleFonts.montserrat(
     color: AppColors.textOnPrimary,
@@ -463,8 +432,8 @@ class AppTextStyles {
     letterSpacing: -0.6,
   );
 
-  /// Teks syarat & ketentuan.
-  static final termsText = GoogleFonts.plusJakartaSans(
+  /// Teks sekunder berukuran body.
+  static final bodySecondary = GoogleFonts.plusJakartaSans(
     color: AppColors.textSecondary,
     fontSize: 16,
     fontWeight: FontWeight.w400,
@@ -505,14 +474,6 @@ class AppTextStyles {
     letterSpacing: -0.7,
   );
 
-  /// Username pada kartu profil.
-  static final profileHandle = GoogleFonts.plusJakartaSans(
-    color: AppColors.textSecondary,
-    fontSize: 16,
-    fontWeight: FontWeight.w400,
-    height: 1.5,
-  );
-
   /// Label pill kelas pada kartu profil.
   static final profileLocation = GoogleFonts.plusJakartaSans(
     color: AppColors.locationInk,
@@ -534,22 +495,6 @@ class AppTextStyles {
     fontSize: 24,
     fontWeight: FontWeight.w700,
     height: 1.33,
-  );
-
-  /// Label statistik pada kartu profil.
-  static final profileStatLabel = GoogleFonts.plusJakartaSans(
-    color: AppColors.textSecondary,
-    fontSize: 12,
-    fontWeight: FontWeight.w500,
-    height: 1.33,
-  );
-
-  /// Judul baris pengaturan profil.
-  static final settingTitle = GoogleFonts.plusJakartaSans(
-    color: AppColors.textPrimary,
-    fontSize: 14,
-    fontWeight: FontWeight.w700,
-    height: 1.43,
   );
 
   /// Deskripsi baris pengaturan profil.

@@ -66,7 +66,7 @@ class QuizAnswerField extends StatelessWidget {
               child: selected
                   ? Icon(
                       Icons.check,
-                      size: CreateQuizQuestionStyles.checkIconSize,
+                      size: CreateQuizShared.iconSmall,
                       color: color,
                     )
                   : null,
@@ -110,7 +110,7 @@ class QuizQuestionEditor extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: CreateQuizQuestionStyles.cardPadding,
+      padding: CreateQuizShared.cardPadding,
       decoration: CreateQuizQuestionStyles.cardDecoration,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -140,14 +140,14 @@ class QuizQuestionEditor extends StatelessWidget {
     return Row(
       children: [
         Container(
-          padding: CreateQuizQuestionStyles.pillPadding,
+          padding: CreateQuizShared.pillPadding,
           decoration: const ShapeDecoration(
             color: AppColors.quizAction,
-            shape: CreateQuizQuestionStyles.pillShape,
+            shape: CreateQuizShared.pillShape,
           ),
           child: Text(
             'Pertanyaan ${index + 1}',
-            style: CreateQuizTextStyles.questionPill,
+            style: CreateQuizTextStyles.fieldLabelOnPrimary,
           ),
         ),
         const Spacer(),
@@ -189,7 +189,7 @@ class QuizQuestionEditor extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Expanded(child: _buildDuration()),
-        const SizedBox(width: CreateQuizQuestionStyles.durationHadiahGap),
+        const SizedBox(width: CreateQuizShared.gapSmall),
         _buildHadiah(),
       ],
     );
@@ -200,7 +200,7 @@ class QuizQuestionEditor extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _label('Durasi'),
-        const SizedBox(height: CreateQuizQuestionStyles.labelGap),
+        const SizedBox(height: CreateQuizShared.gapSmall),
         list_options.ListOptions<double>(
           optionLists: const [1.5, 2.0, 3.0, 5.0],
           selectedOption: duration,
@@ -217,11 +217,11 @@ class QuizQuestionEditor extends StatelessWidget {
         Row(
           children: [
             _label('Hadiah'),
-            const SizedBox(width: CreateQuizQuestionStyles.labelGap),
+            const SizedBox(width: CreateQuizShared.gapSmall),
             Text('Poin', style: CreateQuizTextStyles.pointsHint),
           ],
         ),
-        const SizedBox(height: CreateQuizQuestionStyles.labelGap),
+        const SizedBox(height: CreateQuizShared.gapSmall),
         SizedBox(
           width: CreateQuizQuestionStyles.pointsFieldWidth,
           child: TextField(
@@ -236,7 +236,7 @@ class QuizQuestionEditor extends StatelessWidget {
   }
 
   Widget _label(String text) {
-    return Text(text, style: CreateQuizTextStyles.duration);
+    return Text(text, style: CreateQuizTextStyles.fieldLabel);
   }
 }
 

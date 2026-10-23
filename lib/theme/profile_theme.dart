@@ -32,7 +32,7 @@ class ProfileTheme {
     vertical: AppSpacing.space10,
   );
 
-  static const avatarPadding = EdgeInsets.all(AppSpacing.space2);
+  static const paddingSmall = EdgeInsets.all(AppSpacing.space2);
 
   static const avatarDecoration = BoxDecoration(
     color: AppColors.surfaceSoft,
@@ -44,9 +44,8 @@ class ProfileTheme {
 
   static const nameWidth = 188.0;
 
-  static const avatarNameGap = AppSpacing.space6;
-  static const nameHandleGap = AppSpacing.space1;
-  static const handlePillGap = AppSpacing.space6;
+  static const gapMedium = AppSpacing.space6;
+  static const gapTiny = AppSpacing.space1;
 
   static const pillPadding = EdgeInsets.symmetric(
     horizontal: AppSpacing.space6,
@@ -63,25 +62,18 @@ class ProfileTheme {
   static const statTilePadding = EdgeInsets.symmetric(
     vertical: AppSpacing.space2,
   );
-  static const statValueLabelGap = AppSpacing.space1;
 
   static const settingsPadding = EdgeInsets.all(AppSpacing.space6);
 
-  static const settingRowGap = AppSpacing.space1;
-  static const settingTextGap = AppSpacing.space1;
   static const settingRowPadding = EdgeInsets.symmetric(
     horizontal: AppSpacing.space5,
     vertical: AppSpacing.space6,
   );
-  static const settingIconBox = AppIconSize.lg;
-  static const settingIconSize = AppIconSize.md;
+  static const iconLarge = AppIconSize.lg;
+  static const iconMedium = AppIconSize.md;
   static const settingIconColor = AppColors.primary;
-  static const settingIconGap = AppSpacing.space6;
   static const settingTrailingGap = AppSpacing.space4;
-  static const chevronSize = AppIconSize.md;
   static const chevronColor = AppColors.textSecondary;
-
-  static const togglePadding = EdgeInsets.all(AppSpacing.space2);
   static const toggleDuration = Duration(milliseconds: 180);
   static const toggleCurve = Curves.easeOut;
   static const toggleActiveAlignment = Alignment.centerRight;
@@ -102,8 +94,6 @@ class ProfileTheme {
     );
   }
 
-  static const logoutIconSize = AppIconSize.lg;
   static const logoutColor = AppColors.error;
-  static const logoutProgressSize = AppIconSize.md;
   static const logoutProgressStroke = AppBorderWidth.regular;
 }

@@ -281,7 +281,7 @@ class QuizWaitingStats extends StatelessWidget {
               Expanded(
                 child: Text(
                   '$participantCount Peserta',
-                  style: AppTextStyles.statValue,
+                  style: AppTextStyles.display2,
                 ),
               ),
             ],

@@ -126,16 +126,16 @@ Token design terbagi ke modul-modul di **`lib/theme/`** (`app_colors.dart`, `app
 | `AppColors` | Brand, surface, teks, status, divider + palet 4 warna jawaban + palet halaman menunggu |
 | `AppSpacing` | Skala numerik `space1`…`space16`, clearances, alias semantik `xxs`…`xxl` |
 | `AppRadius` | `sm 8`, `md 12`, `lg 16`, `xl 24`, `xxl 32`, `pill 999` |
-| `AppShadows` | 19 preset `List<BoxShadow>` (card, raised, hairline, layered, pillButton, brandGlow, softCard, navBar, authCard, authAction, homeQuizCard, homeAction, …) |
+| `AppShadows` | 18 preset `List<BoxShadow>` (card, raised, hairline, layered, pillButton, brandGlow, softCard, navBar, authCard, homeQuizCard, action, …) |
 | `AppElevation` | `none`, `subtle`, `medium`, `raised` |
 | `AppSizes` | Ukuran komponen tetap (tombol kembali, avatar, slot kosong, titik status, lingkar ikon & gambar kartu kuis beranda) |
 | `AppTextStyles` | sekitar 70 style siap pakai |
 | `AppFontSize` · `AppFontWeight` | Skala ukuran & bobot font untuk API widget |
 | `AppIconSize` · `AppBorderWidth` | Ukuran glyph ikon & ketebalan border |
 | `AppDecorations` | `BoxDecoration` siap pakai (card, statTile, pill, input, …) |
-| `AppGradients` | `heroGradient`, `solidHero`, `homeStatHighlight`, `homeAction`, `authHero`, `authAction` |
+| `AppGradients` | `heroGradient`, `solidHero`, `homeStatHighlight`, `action`, `authHero`, `toggleActive` |
 | `AppButtons` | `ButtonStyle`: `primary`, `primaryLarge`, `primaryCompact`, `outline`, `text`, `destructive` |
-| `AppStatus` | `danger`, `onLightAlpha` |
+| `AppColors` | Menyertakan `onLightAlpha` (semua status kini di `AppColors`) |
 | `AppTheme` | Satu-satunya tempat `ThemeData` dibangun (`AppTheme.light`) |
 
 **Font:** Montserrat (heading, display, angka statistik, display kalkulator) dan Plus Jakarta Sans (body, label, button, hint) lewat `google_fonts`; `monospace` untuk kode room.

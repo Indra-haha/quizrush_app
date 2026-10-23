@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../theme/app_theme.dart';
 
-/// Kerangka bottom sheet: sudut atas membulat, drag handle, judul, lalu konten.
 class AppBottomSheet extends StatelessWidget {
   final String title;
   final List<Widget> children;
