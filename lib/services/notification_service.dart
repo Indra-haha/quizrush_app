@@ -158,8 +158,8 @@ class NotificationService implements RoomNotificationGateway {
 
     final pin = formatKode(room.kode);
     final body = pin.isEmpty
-        ? 'Room ${room.displayTitle} masih aktif. Ketuk untuk kembali.'
-        : 'Room ${room.displayTitle} | PIN $pin masih aktif. '
+        ? 'Ketuk untuk kembali. '
+        : ''
               'Ketuk untuk kembali.';
 
     const details = NotificationDetails(
@@ -192,7 +192,7 @@ class NotificationService implements RoomNotificationGateway {
     try {
       await _plugin.show(
         id: _roomReminderId,
-        title: 'Kamu masih di room',
+        title: 'Kamu masih di Room',
         body: body,
         notificationDetails: details,
         payload: room.kode,

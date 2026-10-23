@@ -3,6 +3,8 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:quizrush/widgets/app_header_bar.dart';
+import 'package:quizrush/widgets/app_header_bar_with_actions.dart';
 import 'package:sensors_plus/sensors_plus.dart';
 
 import '../../helpers/format.dart';
@@ -432,7 +434,14 @@ class _WaitingRoomPageState extends State<WaitingRoomPage> {
       data: MediaQuery.of(context).copyWith(textScaler: textScaler),
       child: Scaffold(
         backgroundColor: AppColors.surface,
-        appBar: _buildHeader(context),
+        appBar: AppHeaderBarWithActions(
+        title: "Ruang Tunggu",
+        leading: IconButton(
+          tooltip: 'Kembali',
+          onPressed: () => Navigator.of(context).pop(),
+          icon: const Icon(Icons.arrow_back),
+        ),
+      ),
         body: SafeArea(
           top: false,
           child: ListView(
