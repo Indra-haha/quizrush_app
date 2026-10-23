@@ -8,9 +8,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:quizrush/pages/Ranking/ranking_region_page.dart';
 import 'package:quizrush/pages/Profiles/profile_page.dart';
-import 'package:quizrush/pages/saldo/saldo_page.dart';
-import 'package:quizrush/services/api_client.dart';
-import 'package:quizrush/services/points_service.dart';
+import 'package:quizrush/pages/Saldo/saldo_page.dart';
+import 'package:quizrush/services/api/api_client.dart';
+import 'package:quizrush/services/api/points_service.dart';
 import 'package:quizrush/services/profile_stats_service.dart';
 
 Widget _wrap(Widget child) {

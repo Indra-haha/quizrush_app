@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
 
-import 'points_service.dart';
+import 'api/points_service.dart';
 import 'session_service.dart';
 
 /// Sumber poin global untuk indikator poin di appbar.

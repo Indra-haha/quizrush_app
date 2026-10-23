@@ -7,7 +7,7 @@ import '../../helpers/room_launcher.dart';
 import '../../models/quiz.dart';
 import '../../models/room.dart';
 import '../../services/active_room_service.dart';
-import '../../services/api_client.dart';
+import '../../services/api/api_client.dart';
 import '../../services/quiz_feed.dart';
 import '../../services/quiz_index.dart';
 import '../../theme/app_theme.dart';

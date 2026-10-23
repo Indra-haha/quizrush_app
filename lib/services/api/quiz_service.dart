@@ -1,8 +1,8 @@
 import 'package:http/http.dart' as http;
 
-import '../helpers/json.dart';
-import '../helpers/quiz_image.dart';
-import '../models/quiz.dart';
+import '../../helpers/json.dart';
+import '../../helpers/quiz_image.dart';
+import '../../models/quiz.dart';
 import 'api_client.dart';
 
 /// Tahap proses unggah gambar kuis, dilaporkan ke UI sebagai progres.

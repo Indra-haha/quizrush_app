@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../helpers/room_launcher.dart';
 import '../../models/quiz.dart';
-import '../../services/api_client.dart';
+import '../../services/api/api_client.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/app_header_bar.dart';
 import '../../widgets/app_snackbar.dart';

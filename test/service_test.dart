@@ -5,12 +5,12 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:quizrush/helpers/password_hasher.dart';
 import 'package:quizrush/models/quiz.dart';
-import 'package:quizrush/services/ai_service.dart';
-import 'package:quizrush/services/api_client.dart';
-import 'package:quizrush/services/auth_service.dart';
-import 'package:quizrush/services/quiz_service.dart';
-import 'package:quizrush/services/result_service.dart';
-import 'package:quizrush/services/room_service.dart';
+import 'package:quizrush/services/api/ai_service.dart';
+import 'package:quizrush/services/api/api_client.dart';
+import 'package:quizrush/services/api/auth_service.dart';
+import 'package:quizrush/services/api/quiz_service.dart';
+import 'package:quizrush/services/api/result_service.dart';
+import 'package:quizrush/services/api/room_service.dart';
 
 ApiClient _api(Future<http.Response> Function(http.Request) handler) {
   return ApiClient(client: MockClient(handler), baseUrl: 'https://test.local');

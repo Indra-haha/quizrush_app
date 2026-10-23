@@ -1,8 +1,8 @@
-import 'points_service.dart';
+import 'api/points_service.dart';
 import 'points_store.dart';
 import 'quiz_feed.dart';
 import 'quiz_index.dart';
-import 'result_service.dart';
+import 'api/result_service.dart';
 import 'session_service.dart';
 
 class ProfileStats {

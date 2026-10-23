@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 
 import '../services/points_store.dart';
 import '../widgets/app_bottom_nav.dart';
-import 'home_page.dart';
-import 'QuizPage/quiz_page.dart';
+import 'Home/home_page.dart';
+import 'Quiz/quiz_page.dart';
 import 'Ranking/ranking_region_page.dart';
 import 'Profiles/profile_page.dart';
-import 'saldo/saldo_page.dart';
+import 'Saldo/saldo_page.dart';
 
 class MainShell extends StatefulWidget {
   final Map<String, dynamic>? user;

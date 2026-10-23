@@ -4,8 +4,8 @@ import 'package:flutter/material.dart';
 
 import '../helpers/auth_validator.dart';
 import '../helpers/format.dart';
-import '../services/api_client.dart';
-import '../services/auth_service.dart';
+import '../services/api/api_client.dart';
+import '../services/api/auth_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_snackbar.dart';
 import '../widgets/auth_fields.dart';

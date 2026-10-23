@@ -1,5 +1,5 @@
-import '../helpers/json.dart';
-import '../models/quiz.dart';
+import '../../helpers/json.dart';
+import '../../models/quiz.dart';
 import 'api_client.dart';
 
 /// Service untuk saran soal otomatis (AI) via `POST /api/ai/suggest`.

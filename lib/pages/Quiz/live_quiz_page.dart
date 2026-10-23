@@ -4,7 +4,7 @@ import '../../helpers/format.dart';
 import '../../models/live_game.dart';
 import '../../models/room.dart';
 import '../../services/live_game_controller.dart';
-import '../../services/room_socket.dart';
+import '../../services/api/room_socket.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/quiz_option_theme.dart';
 import '../../widgets/app_pill.dart';

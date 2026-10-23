@@ -2,7 +2,7 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
-import 'device_service.dart';
+import '../device_service.dart';
 
 class ApiException implements Exception {
   final String message;

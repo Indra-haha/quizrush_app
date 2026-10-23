@@ -1,5 +1,5 @@
-import '../helpers/json.dart';
-import '../models/live_game.dart';
+import '../../helpers/json.dart';
+import '../../models/live_game.dart';
 import 'api_client.dart';
 
 /// Klien endpoint permainan live.

@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../helpers/format.dart';
 import '../models/points.dart';
-import '../services/api_client.dart';
-import '../services/points_service.dart';
+import '../services/api/api_client.dart';
+import '../services/api/points_service.dart';
 import '../services/session_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_header_bar.dart';

@@ -1,8 +1,8 @@
 import 'api_client.dart';
-import 'device_service.dart';
-import '../helpers/json.dart';
-import '../helpers/password_hasher.dart';
-import '../models/user.dart';
+import '../device_service.dart';
+import '../../helpers/json.dart';
+import '../../helpers/password_hasher.dart';
+import '../../models/user.dart';
 
 class LoginResult {
   final String token;

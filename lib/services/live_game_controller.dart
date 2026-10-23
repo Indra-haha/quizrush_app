@@ -6,8 +6,8 @@ import '../engine/kalkulator_engine.dart';
 import '../helpers/json.dart';
 import '../models/live_game.dart';
 import '../models/room_message.dart';
-import 'game_service.dart';
-import 'room_socket.dart';
+import 'api/game_service.dart';
+import 'api/room_socket.dart';
 
 /// Fase permainan live di sisi klien.
 enum LivePhase { waiting, question, pause, ended }

@@ -1,6 +1,6 @@
-import '../helpers/json.dart';
-import '../models/room.dart';
-import '../models/room_verify.dart';
+import '../../helpers/json.dart';
+import '../../models/room.dart';
+import '../../models/room_verify.dart';
 import 'api_client.dart';
 
 class RoomService {

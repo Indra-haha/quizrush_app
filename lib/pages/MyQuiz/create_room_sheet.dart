@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../../models/quiz.dart';
 import '../../models/room.dart';
-import '../../services/api_client.dart';
-import '../../services/room_service.dart';
+import '../../services/api/api_client.dart';
+import '../../services/api/room_service.dart';
 import '../../services/session_service.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/app_bottom_sheet.dart';

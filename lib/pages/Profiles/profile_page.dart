@@ -4,7 +4,7 @@ import 'package:quizrush/pages/Profiles/sensor_settings.dart' show SensorSetting
 import '../../helpers/format.dart';
 import '../../helpers/password_hasher.dart';
 import '../../services/active_room_service.dart';
-import '../../services/auth_service.dart';
+import '../../services/api/auth_service.dart';
 import '../../services/biometric_service.dart';
 import '../../services/points_store.dart';
 import '../../services/profile_settings_service.dart';

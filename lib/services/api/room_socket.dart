@@ -3,9 +3,9 @@ import 'dart:convert';
 
 import 'package:web_socket_channel/io.dart';
 
-import '../models/room_message.dart';
+import '../../models/room_message.dart';
 import 'api_client.dart';
-import 'device_service.dart';
+import '../device_service.dart';
 
 /// Status koneksi WebSocket room, dipakai halaman ruang tunggu untuk
 /// menampilkan indikator "menyambung / tersambung / koneksi terputus".

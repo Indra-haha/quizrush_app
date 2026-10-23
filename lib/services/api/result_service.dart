@@ -1,5 +1,5 @@
-import '../helpers/json.dart';
-import '../models/quiz_result.dart';
+import '../../helpers/json.dart';
+import '../../models/quiz_result.dart';
 import 'api_client.dart';
 
 class ResultService {

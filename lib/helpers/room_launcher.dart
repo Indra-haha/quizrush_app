@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
-import '../pages/QuizPage/waiting_room_page.dart';
+import '../pages/Quiz/waiting_room_page.dart';
 import '../pages/login_redirect.dart';
 import '../services/active_room_service.dart';
-import '../services/room_service.dart';
+import '../services/api/room_service.dart';
 import '../services/session_service.dart';
 
 /// Alur bersama untuk masuk ke ruang tunggu, dipakai halaman input PIN maupun

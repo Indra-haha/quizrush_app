@@ -1,5 +1,5 @@
-import '../helpers/json.dart';
-import '../models/points.dart';
+import '../../helpers/json.dart';
+import '../../models/points.dart';
 import 'api_client.dart';
 
 /// Klien saldo poin dan riwayat koin user.

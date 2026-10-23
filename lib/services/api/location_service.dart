@@ -3,8 +3,8 @@ import 'dart:convert';
 import 'package:geolocator/geolocator.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../helpers/json.dart';
-import '../models/region_location.dart';
+import '../../helpers/json.dart';
+import '../../models/region_location.dart';
 import 'api_client.dart';
 
 /// Penyedia posisi perangkat; dapat diganti pada pengujian.

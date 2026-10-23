@@ -1,10 +1,10 @@
 import 'package:flutter/foundation.dart';
 
 import '../models/quiz.dart';
-import 'api_client.dart';
+import 'api/api_client.dart';
 import 'quiz_cache_service.dart';
 import 'quiz_index.dart';
-import 'quiz_service.dart';
+import 'api/quiz_service.dart';
 import 'session_service.dart';
 
 /// Hasil satu proses muat daftar quiz: indeks untuk ditampilkan, atau alasan
