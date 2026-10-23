@@ -50,15 +50,7 @@ class QuizSearchField extends StatelessWidget {
                   child: CircularProgressIndicator(strokeWidth: 2),
                 ),
               )
-            : IconButton(
-                tooltip: 'Refresh dari server',
-                onPressed: loading ? null : onRefresh,
-                icon: const Icon(
-                  Icons.refresh,
-                  size: AppIconSize.sm,
-                  color: AppColors.info,
-                ),
-              ),
+            : null,
         border: OutlineInputBorder(
           borderRadius: AppRadius.lg,
           borderSide: const BorderSide(color: AppColors.divider),

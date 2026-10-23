@@ -114,9 +114,6 @@ class AppColors {
   static const answerGreenSoft = Color(0xFFC8E6C9);
   static const answerGreenBorder = Color(0xFF1B5E20);
 
-  // Palet solid untuk editor jawaban desain Create Quiz. Warna ini hanya
-  // dipakai di halaman create agar baris jawaban langsung terbaca dari
-  // warnanya tanpa mengubah palet quiz yang sedang berjalan.
   static const answerRedSolid = Color(0xFFEF4444);
   static const answerBlueSolid = Color(0xFF2563EB);
   static const answerGreenSolid = Color(0xFF059669);

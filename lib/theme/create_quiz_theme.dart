@@ -300,15 +300,15 @@ class CreateQuizQuestionStyles {
     ),
   );
   static const durationChipPadding = EdgeInsets.symmetric(
-    horizontal: AppSpacing.space6,
-    vertical: AppSpacing.space4,
+    horizontal: AppSpacing.space8,
+    vertical: AppSpacing.space5,
   );
   static const durationChipSelectedDecoration = ShapeDecoration(
     color: AppColors.quizAction,
     shape: StadiumBorder(),
   );
   static const durationChipDecoration = ShapeDecoration(
-    color: Colors.transparent,
+    color: AppColors.fieldBackground,
     shape: StadiumBorder(),
   );
 

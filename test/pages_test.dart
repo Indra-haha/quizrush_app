@@ -6,8 +6,8 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'package:quizrush/pages/ranking_region_page.dart';
-import 'package:quizrush/pages/profile_page.dart';
+import 'package:quizrush/pages/Ranking/ranking_region_page.dart';
+import 'package:quizrush/pages/Profiles/profile_page.dart';
 import 'package:quizrush/pages/saldo/saldo_page.dart';
 import 'package:quizrush/services/api_client.dart';
 import 'package:quizrush/services/points_service.dart';

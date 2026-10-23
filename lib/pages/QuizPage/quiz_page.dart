@@ -12,6 +12,7 @@ import '../../services/quiz_feed.dart';
 import '../../services/quiz_index.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/active_room_banner.dart';
+import '../../widgets/app_options_select.dart';
 import '../../widgets/app_pill_button.dart';
 import '../../widgets/app_snackbar.dart';
 import '../../widgets/cache_info_bar.dart';
@@ -283,10 +284,10 @@ class _QuizPageState extends State<QuizPage> {
               padding: const EdgeInsets.symmetric(
                 horizontal: AppSpacing.space9,
               ),
-              child: StatusFilterRow(
-                statuses: _statuses,
-                selected: _selectedStatus,
-                onChanged: (status) => setState(() => _selectedStatus = status),
+              child: ListOptions(
+                optionLists: _statuses,
+                selectedOption: _selectedStatus,
+                onSelectedChange: (status) => setState(() => _selectedStatus = status),
               ),
             ),
             const SizedBox(height: AppSpacing.space4),

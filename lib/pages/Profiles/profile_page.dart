@@ -1,21 +1,22 @@
 import 'package:flutter/material.dart';
+import 'package:quizrush/pages/Profiles/sensor_settings.dart' show SensorSettingsPage;
 
-import '../helpers/format.dart';
-import '../helpers/password_hasher.dart';
-import '../services/active_room_service.dart';
-import '../services/auth_service.dart';
-import '../services/biometric_service.dart';
-import '../services/points_store.dart';
-import '../services/profile_settings_service.dart';
-import '../services/profile_stats_service.dart';
-import '../services/quiz_cache_service.dart';
-import '../services/session_service.dart';
-import '../theme/app_theme.dart';
-import '../widgets/app_header_bar_with_actions.dart';
-import '../widgets/app_snackbar.dart';
-import '../widgets/auth_fields.dart';
-import '../widgets/points_indicator.dart';
-import 'login_redirect.dart';
+import '../../helpers/format.dart';
+import '../../helpers/password_hasher.dart';
+import '../../services/active_room_service.dart';
+import '../../services/auth_service.dart';
+import '../../services/biometric_service.dart';
+import '../../services/points_store.dart';
+import '../../services/profile_settings_service.dart';
+import '../../services/profile_stats_service.dart';
+import '../../services/quiz_cache_service.dart';
+import '../../services/session_service.dart';
+import '../../theme/app_theme.dart';
+import '../../widgets/app_header_bar_with_actions.dart';
+import '../../widgets/app_snackbar.dart';
+import '../../widgets/auth_fields.dart';
+import '../../widgets/points_indicator.dart';
+import '../login_redirect.dart';
 
 /// Halaman profil pengguna sesuai desain kartu profil + pengaturan.
 class ProfilePage extends StatefulWidget {
@@ -207,20 +208,18 @@ class _ProfilePageState extends State<ProfilePage> {
     AppSnackBar.show(context, '$label belum tersedia saat ini.');
   }
 
+  void _sensorSettings() {
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const SensorSettingsPage()),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.surface,
       appBar: AppHeaderBarWithActions(
-        title: 'Profil',
-        titleStyle: AppTextStyles.heading1Strong,
-        elevation: ProfileTheme.headerElevation,
-        shadowColor: AppColors.headerShadow,
         actions: [
-          const PointsIndicator(
-            style: PointsIndicatorStyle.home,
-            autoRefresh: false,
-          ),
           _LogoutAction(
             loggingOut: _loggingOut,
             onPressed: _loggingOut ? null : _logout,
@@ -261,7 +260,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 biometricBusy: _biometricBusy,
                 onBiometricChanged: _toggleBiometric,
                 onStatsTap: () => _notAvailable('Statistik & riwayat kuis'),
-                onAdvancedTap: () => _notAvailable('Pengaturan lanjut'),
+                onAdvancedTap: () => _sensorSettings(),
               ),
             ),
           ],

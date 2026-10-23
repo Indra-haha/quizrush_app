@@ -16,8 +16,8 @@ class AppHeaderBarWithActions extends AppHeaderBar {
     this.actions,
     super.bottom,
     super.backgroundColor,
-    super.elevation,
-    super.shadowColor,
+    super.elevation = 4.0, 
+    super.shadowColor = const Color(0x33000000), 
   });
 
   @override

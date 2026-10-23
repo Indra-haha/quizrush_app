@@ -1,8 +1,82 @@
 import 'package:flutter/material.dart';
-
+import '../widgets/app_options_select.dart' as list_options;
+import '../theme/create_quiz_theme.dart';
 import '../theme/app_theme.dart';
 
-const _durations = [1.5, 2.0, 3.0, 5.0];
+const List<String> _durations = ['1.5', '2.0', '3.0', '5.0'];
+
+/// Field untuk jawaban quiz dengan marker dan toggle jawaban benar.
+/// Bisa dipakai di berbagai halaman.
+class QuizAnswerField extends StatelessWidget {
+  final int optionIndex;
+  final TextEditingController controller;
+  final int? correctIdx;
+  final ValueChanged<int> onCorrectChanged;
+  final String hintText;
+
+  const QuizAnswerField({
+    super.key,
+    required this.optionIndex,
+    required this.controller,
+    required this.correctIdx,
+    required this.onCorrectChanged,
+    this.hintText = 'Tulis jawaban...',
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final color = CreateQuizQuestionStyles
+        .answerColors[optionIndex % CreateQuizQuestionStyles.answerColors.length];
+    final shape = CreateQuizQuestionStyles
+        .answerShapes[optionIndex % CreateQuizQuestionStyles.answerShapes.length];
+    final selected = correctIdx == optionIndex;
+
+    return Container(
+      width: double.infinity,
+      padding: CreateQuizQuestionStyles.answerPadding,
+      color: color,
+      child: Row(
+        children: [
+          _AnswerMarker(shape: shape),
+          const SizedBox(width: CreateQuizQuestionStyles.answerGap),
+          Expanded(
+            child: TextField(
+              controller: controller,
+              maxLines: null,
+              style: CreateQuizTextStyles.answerInput,
+              decoration: InputDecoration(
+                hintText: hintText,
+                hintStyle: CreateQuizTextStyles.answerHint,
+                border: InputBorder.none,
+                isDense: true,
+                contentPadding: CreateQuizQuestionStyles.answerFieldPadding,
+              ),
+            ),
+          ),
+          const SizedBox(width: CreateQuizQuestionStyles.answerToggleGap),
+          GestureDetector(
+            onTap: () => onCorrectChanged(optionIndex),
+            child: Container(
+              width: CreateQuizQuestionStyles.toggleSize.width,
+              height: CreateQuizQuestionStyles.toggleSize.height,
+              alignment: Alignment.center,
+              decoration: CreateQuizQuestionStyles.toggleDecoration(
+                selected: selected,
+              ),
+              child: selected
+                  ? Icon(
+                      Icons.check,
+                      size: CreateQuizQuestionStyles.checkIconSize,
+                      color: color,
+                    )
+                  : null,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
 
 /// Kartu editor satu pertanyaan quiz: judul, empat pilihan jawaban berwarna,
 /// penanda jawaban benar, durasi, dan poin.
@@ -46,7 +120,12 @@ class QuizQuestionEditor extends StatelessWidget {
           _buildQuestionField(),
           const SizedBox(height: AppSpacing.space10),
           for (var i = 0; i < optionControllers.length; i++) ...[
-            _buildAnswerField(i),
+            QuizAnswerField(
+              optionIndex: i,
+              controller: optionControllers[i],
+              correctIdx: correctIdx,
+              onCorrectChanged: onCorrectChanged,
+            ),
             if (i < optionControllers.length - 1)
               const SizedBox(height: AppSpacing.space5),
           ],
@@ -105,59 +184,6 @@ class QuizQuestionEditor extends StatelessWidget {
     );
   }
 
-  Widget _buildAnswerField(int option) {
-    final color = CreateQuizQuestionStyles
-        .answerColors[option % CreateQuizQuestionStyles.answerColors.length];
-    final shape = CreateQuizQuestionStyles
-        .answerShapes[option % CreateQuizQuestionStyles.answerShapes.length];
-    final selected = correctIdx == option;
-
-    return Container(
-      width: double.infinity,
-      padding: CreateQuizQuestionStyles.answerPadding,
-      color: color,
-      child: Row(
-        children: [
-          _AnswerMarker(shape: shape),
-          const SizedBox(width: CreateQuizQuestionStyles.answerGap),
-          Expanded(
-            child: TextField(
-              controller: optionControllers[option],
-              maxLines: null,
-              style: CreateQuizTextStyles.answerInput,
-              decoration: InputDecoration(
-                hintText: 'Tulis jawaban...',
-                hintStyle: CreateQuizTextStyles.answerHint,
-                border: InputBorder.none,
-                isDense: true,
-                contentPadding: CreateQuizQuestionStyles.answerFieldPadding,
-              ),
-            ),
-          ),
-          const SizedBox(width: CreateQuizQuestionStyles.answerToggleGap),
-          GestureDetector(
-            onTap: () => onCorrectChanged(option),
-            child: Container(
-              width: CreateQuizQuestionStyles.toggleSize.width,
-              height: CreateQuizQuestionStyles.toggleSize.height,
-              alignment: Alignment.center,
-              decoration: CreateQuizQuestionStyles.toggleDecoration(
-                selected: selected,
-              ),
-              child: selected
-                  ? Icon(
-                      Icons.check,
-                      size: CreateQuizQuestionStyles.checkIconSize,
-                      color: color,
-                    )
-                  : null,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildDurationAndHadiah() {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -175,39 +201,12 @@ class QuizQuestionEditor extends StatelessWidget {
       children: [
         _label('Durasi'),
         const SizedBox(height: CreateQuizQuestionStyles.labelGap),
-        Container(
-          padding: CreateQuizQuestionStyles.durationTrackPadding,
-          decoration: CreateQuizQuestionStyles.durationTrackDecoration,
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              for (var i = 0; i < _durations.length; i++) ...[
-                if (i > 0) const SizedBox(width: AppSpacing.space1),
-                _durationChip(_durations[i], _durations[i] == duration),
-              ],
-            ],
-          ),
+        list_options.ListOptions<double>(
+          optionLists: const [1.5, 2.0, 3.0, 5.0],
+          selectedOption: duration,
+          onSelectedChange: onDurationChanged,
         ),
       ],
-    );
-  }
-
-  Widget _durationChip(double value, bool selected) {
-    return GestureDetector(
-      onTap: () => onDurationChanged(value),
-      child: Container(
-        padding: CreateQuizQuestionStyles.durationChipPadding,
-        decoration: selected
-            ? CreateQuizQuestionStyles.durationChipSelectedDecoration
-            : CreateQuizQuestionStyles.durationChipDecoration,
-        child: Text(
-          _durationPillLabel(value),
-          textAlign: TextAlign.center,
-          style: selected
-              ? CreateQuizTextStyles.durationSelected
-              : CreateQuizTextStyles.duration,
-        ),
-      ),
     );
   }
 
@@ -238,11 +237,6 @@ class QuizQuestionEditor extends StatelessWidget {
 
   Widget _label(String text) {
     return Text(text, style: CreateQuizTextStyles.duration);
-  }
-
-  String _durationPillLabel(double value) {
-    final shown = value == value.roundToDouble() ? value.toInt() : value;
-    return '${shown}s';
   }
 }
 

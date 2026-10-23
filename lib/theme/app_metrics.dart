@@ -115,7 +115,7 @@ class AppSizes {
   static const homeActionHeight = 56.0;
 
   /// Lebar maksimum kartu profil (desain 390px).
-  static const profileCard = 350.0;
+  static const profileCard = 390.0;
 
   /// Diameter avatar pada kartu profil.
   static const profileAvatar = 96.0;

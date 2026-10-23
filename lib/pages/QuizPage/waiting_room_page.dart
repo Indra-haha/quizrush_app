@@ -1,7 +1,9 @@
 import 'dart:async';
+import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:sensors_plus/sensors_plus.dart';
 
 import '../../helpers/format.dart';
 import '../../helpers/json.dart';
@@ -13,6 +15,7 @@ import '../../models/room.dart';
 import '../../models/room_message.dart';
 import '../../services/active_room_service.dart';
 import '../../services/api_client.dart';
+import '../../services/profile_settings_service.dart';
 import '../../services/quiz_feed.dart';
 import '../../services/room_service.dart';
 import '../../services/room_socket.dart';
@@ -53,6 +56,12 @@ class _WaitingRoomPageState extends State<WaitingRoomPage> {
 
   /// Minimal jumlah kartu di grid peserta (slot kosong ikut dihitung).
   static const _minParticipantSlots = 4;
+  static const _shakeThreshold = 12.0;
+  static const _shakeCooldown = Duration(milliseconds: 1500);
+
+  StreamSubscription<UserAccelerometerEvent>? _accelerometerSub;
+  DateTime _lastShakeAt = DateTime.fromMillisecondsSinceEpoch(0);
+  bool _accelerometerEnabled = false;
 
   /// Nama pemain yang terlihat di room. Roster awal diambil dari daftar
   /// `names` pada pesan `connected` (API.md §9.1), lalu dirawat lewat event
@@ -93,11 +102,44 @@ class _WaitingRoomPageState extends State<WaitingRoomPage> {
     // Status room dari server; `waiting` adalah default server (API.md §5.1)
     // supaya status kosong tidak membuat alur publish kehilangan tombol.
     _roomStatus = widget.room.status.isEmpty ? 'waiting' : widget.room.status;
+    _loadSensorSettings();
     _connect();
+  }
+
+  Future<void> _loadSensorSettings() async {
+    final enabled = await ProfileSettingsService.instance.accelerometerEnabled();
+    if (!mounted || !enabled) return;
+    _accelerometerEnabled = true;
+    _startShakeDetection();
+  }
+
+  void _startShakeDetection() {
+    _accelerometerSub?.cancel();
+    _accelerometerSub = userAccelerometerEventStream().listen((event) {
+      if (!_accelerometerEnabled || !mounted) return;
+      final magnitude = sqrt(event.x * event.x + event.y * event.y + event.z * event.z);
+      if (magnitude < _shakeThreshold) return;
+      final now = DateTime.now();
+      if (now.difference(_lastShakeAt) < _shakeCooldown) return;
+      _lastShakeAt = now;
+      _sendAutoCheer();
+    });
+  }
+
+  void _sendAutoCheer() {
+    if (_status != RoomSocketStatus.connected) return;
+    final emoji = _cheers[Random().nextInt(_cheers.length)];
+    HapticFeedback.mediumImpact();
+    final size = MediaQuery.of(context).size;
+    ReactionOverlay.show(context, emoji, x: size.width / 2);
+    final socket = _socket;
+    if (socket == null) return;
+    socket.sendReaction(emoji);
   }
 
   @override
   void dispose() {
+    _accelerometerSub?.cancel();
     _messageSub?.cancel();
     _statusSub?.cancel();
     _socket?.dispose();
@@ -389,9 +431,9 @@ class _WaitingRoomPageState extends State<WaitingRoomPage> {
           top: false,
           child: ListView(
             padding: const EdgeInsets.fromLTRB(
-              AppSpacing.space8,
+              AppSpacing.none,
               AppSpacing.space6,
-              AppSpacing.space8,
+              AppSpacing.none,
               AppSpacing.space12,
             ),
             children: [
