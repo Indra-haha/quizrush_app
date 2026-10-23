@@ -8,9 +8,11 @@ import 'package:quizrush/models/quiz.dart';
 import 'package:quizrush/services/api/ai_service.dart';
 import 'package:quizrush/services/api/api_client.dart';
 import 'package:quizrush/services/api/auth_service.dart';
+import 'package:quizrush/services/api/location_service.dart';
 import 'package:quizrush/services/api/quiz_service.dart';
 import 'package:quizrush/services/api/result_service.dart';
 import 'package:quizrush/services/api/room_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 ApiClient _api(Future<http.Response> Function(http.Request) handler) {
   return ApiClient(client: MockClient(handler), baseUrl: 'https://test.local');
@@ -325,37 +327,34 @@ void main() {
       },
     );
 
-    test(
-      'uploadQuizImage memakai type dari respons signature',
-      () async {
-        final service = QuizService.withApi(
-          _api((request) async {
-            if (request.url.path == '/api/create/signature') {
-              return _json(
-                '{"signature":"abc","timestamp":1,"apiKey":"k",'
-                '"cloudName":"c","type":"upload"}',
-                200,
-              );
-            }
-            final body = request.body;
-            expect(body, contains('name="type"'));
-            expect(body, contains('upload'));
-            expect(body, isNot(contains('authenticated')));
+    test('uploadQuizImage memakai type dari respons signature', () async {
+      final service = QuizService.withApi(
+        _api((request) async {
+          if (request.url.path == '/api/create/signature') {
             return _json(
-              '{"public_id":"x","format":"png",'
-              '"secure_url":"https://res.cloudinary.com/cloud/image/upload/x.png"}',
+              '{"signature":"abc","timestamp":1,"apiKey":"k",'
+              '"cloudName":"c","type":"upload"}',
               200,
             );
-          }),
-        );
+          }
+          final body = request.body;
+          expect(body, contains('name="type"'));
+          expect(body, contains('upload'));
+          expect(body, isNot(contains('authenticated')));
+          return _json(
+            '{"public_id":"x","format":"png",'
+            '"secure_url":"https://res.cloudinary.com/cloud/image/upload/x.png"}',
+            200,
+          );
+        }),
+      );
 
-        await service.uploadQuizImage(
-          token: 'token',
-          imageBytes: 'PNGDATA'.codeUnits,
-          imageFilename: 'x.png',
-        );
-      },
-    );
+      await service.uploadQuizImage(
+        token: 'token',
+        imageBytes: 'PNGDATA'.codeUnits,
+        imageFilename: 'x.png',
+      );
+    });
 
     test(
       'uploadQuizImage respons Cloudinary tanpa public_id melempar ApiException',
@@ -827,6 +826,69 @@ void main() {
         () => service.fetchResults(token: 'token'),
         throwsA(isA<ApiException>().having((e) => e.statusCode, 'status', 401)),
       );
+    });
+  });
+
+  group('LocationService', () {
+    setUp(() {
+      SharedPreferences.setMockInitialValues(<String, Object>{});
+    });
+
+    test('submit menyimpan seluruh respons (semua grup dan entri)', () async {
+      const body = '''
+      {
+        "status": 200,
+        "message": "Grouped leaderboard successfully retrieved",
+        "metadata": {
+          "user_location": {"latitude": -7.79558, "longitude": 110.36949},
+          "resolved_regions": {
+            "kecamatan": "kecamatan-depok",
+            "kota": "kota-sleman",
+            "provinsi": "provinsi-diy"
+          },
+          "timestamp": "2026-10-20T06:30:00Z"
+        },
+        "data": {
+          "kecamatan": [
+            {"rank": 1, "username": "ahmad", "nama": "Ahmad", "poin": 1450, "jarak_meter": 350.2},
+            {"rank": 2, "username": "siti", "nama": "Siti", "poin": 1200, "jarak_meter": 700.5}
+          ],
+          "kota": [
+            {"rank": 1, "username": "budi", "nama": "Budi", "poin": 4890, "jarak_meter": 4500.0}
+          ],
+          "provinsi": [
+            {"rank": 1, "username": "dewi", "nama": "Dewi", "poin": 18200, "jarak_meter": 12500.0}
+          ]
+        }
+      }
+      ''';
+
+      final service = LocationService.withApi(
+        _api((_) async => _json(body, 200)),
+      );
+
+      final result = await service.submit(
+        token: 'token',
+        latitude: -7.79558,
+        longitude: 110.36949,
+      );
+
+      expect(result.status, 200);
+      expect(result.kecamatan, hasLength(2));
+      expect(result.kota, hasLength(1));
+      expect(result.provinsi, hasLength(1));
+
+      final cached = await service.readCached();
+      expect(cached, isNotNull);
+      expect(cached!.status, 200);
+      expect(cached.message, 'Grouped leaderboard successfully retrieved');
+      expect(cached.metadata.kecamatanLabel, 'Depok');
+      expect(cached.kecamatan, hasLength(2));
+      expect(cached.kota, hasLength(1));
+      expect(cached.provinsi, hasLength(1));
+      expect(cached.kecamatan.last.username, 'siti');
+      expect(cached.kota.first.poin, 4890);
+      expect(cached.provinsi.first.jarakMeter, 12500.0);
     });
   });
 }

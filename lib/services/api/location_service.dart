@@ -46,12 +46,13 @@ class LocationService {
   );
 
   static const String _kCacheKey = 'region_location';
+  static const int _kCacheVersion = 2;
 
   final ApiClient _api;
   final PositionProvider _positionProvider;
 
   /// Kirim koordinat user; respons berisi metadata wilayah + grouped
-  /// leaderboard (kecamatan/kota/provinsi).
+  /// leaderboard (kecamatan/kota/provinsi). Seluruh respons disimpan utuh.
   Future<LocationResult> submit({
     required String token,
     required double latitude,
@@ -69,8 +70,9 @@ class LocationService {
         statusCode: response.statusCode,
       );
     }
-    await _writeCache(data);
-    return LocationResult.fromJson(jsonMap(data));
+    final result = LocationResult.fromJson(jsonMap(data));
+    await _writeCache(result);
+    return result;
   }
 
   /// Alur lengkap GPS → kirim. `null` bila izin ditolak atau lokasi tak tersedia.
@@ -85,21 +87,38 @@ class LocationService {
     );
   }
 
-  /// Hasil lokasi terakhir dari cache (tanpa GPS maupun server).
+  /// Hasil lokasi terakhir dari cache (tanpa GPS maupun server). Mendukung
+  /// cache versi lama (respons mentah) maupun cache versi baru (tersimpan utuh).
   Future<LocationResult?> readCached() async {
     final prefs = await SharedPreferences.getInstance();
     final raw = prefs.getString(_kCacheKey);
     if (raw == null) return null;
     try {
-      return LocationResult.fromJson(jsonMap(jsonDecode(raw)));
+      final decoded = jsonDecode(raw);
+      if (decoded is Map) {
+        final map = decoded.cast<String, dynamic>();
+        if (map.containsKey('result')) {
+          return LocationResult.fromJson(jsonMap(map['result']));
+        }
+        // Cache lama: seluruh respons API disimpan mentah.
+        return LocationResult.fromJson(map);
+      }
     } catch (_) {
       return null;
     }
+    return null;
   }
 
-  Future<void> _writeCache(dynamic data) async {
+  Future<void> _writeCache(LocationResult result) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_kCacheKey, jsonEncode(data));
+    await prefs.setString(
+      _kCacheKey,
+      jsonEncode({
+        'version': _kCacheVersion,
+        'savedAt': DateTime.now().toIso8601String(),
+        'result': result.toJson(),
+      }),
+    );
   }
 
   /// Minta akses lokasi: cek layanan GPS, izin tersimpan, lalu ajukan izin

@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quizrush/helpers/json.dart';
 import 'package:quizrush/models/quiz.dart';
+import 'package:quizrush/models/region_location.dart';
 import 'package:quizrush/models/room.dart';
 import 'package:quizrush/models/room_message.dart';
 import 'package:quizrush/models/room_verify.dart';
@@ -75,7 +76,12 @@ void main() {
         'status': 'open',
         'created_at': '2026-09-17T10:00:00Z',
         'questions': [
-          {'question': 'q', 'options': ['a', 'b'], 'duration': 2, 'skor': 10},
+          {
+            'question': 'q',
+            'options': ['a', 'b'],
+            'duration': 2,
+            'skor': 10,
+          },
         ],
         'rooms': [
           {'id': 'r1', 'kode': '123456', 'status': 'waiting'},
@@ -124,10 +130,20 @@ void main() {
         createdAt: '2026-09-17T10:00:00Z',
         status: 'open',
         questions: [
-          QuizQuestion(question: 'q', options: ['a', 'b'], duration: 1.5, skor: 5),
+          QuizQuestion(
+            question: 'q',
+            options: ['a', 'b'],
+            duration: 1.5,
+            skor: 5,
+          ),
         ],
         rooms: [
-          RoomSummary(id: 'r1', kode: '123456', status: 'waiting', createdAt: ''),
+          RoomSummary(
+            id: 'r1',
+            kode: '123456',
+            status: 'waiting',
+            createdAt: '',
+          ),
         ],
       );
 
@@ -216,6 +232,96 @@ void main() {
       expect(mine.open.length, 1);
       expect(mine.waiting, isEmpty);
       expect(mine.isEmpty, isFalse);
+    });
+  });
+
+  group('LocationResult', () {
+    Map<String, dynamic> sample() => {
+      'status': 200,
+      'message': 'Grouped leaderboard successfully retrieved',
+      'metadata': {
+        'user_location': {'latitude': -7.79558, 'longitude': 110.36949},
+        'resolved_regions': {
+          'kecamatan': 'kecamatan-depok',
+          'kota': 'kota-sleman',
+          'provinsi': 'provinsi-diy',
+        },
+        'timestamp': '2026-10-20T06:30:00Z',
+      },
+      'data': {
+        'kecamatan': [
+          {
+            'rank': 1,
+            'username': 'ahmad_fauzi',
+            'nama': 'Ahmad Fauzi',
+            'poin': 1450,
+            'jarak_meter': 350.2,
+          },
+          {
+            'rank': 2,
+            'username': 'siti',
+            'nama': 'Siti Aminah',
+            'poin': 1200,
+            'jarak_meter': 700.5,
+          },
+        ],
+        'kota': [
+          {
+            'rank': 1,
+            'username': 'budi_sleman',
+            'nama': 'Budi Santoso',
+            'poin': 4890,
+            'jarak_meter': 4500.0,
+          },
+        ],
+        'provinsi': [
+          {
+            'rank': 1,
+            'username': 'dewi_jogja',
+            'nama': 'Dewi Lestari',
+            'poin': 18200,
+            'jarak_meter': 12500.0,
+          },
+        ],
+      },
+    };
+
+    test('fromJson membaca seluruh field dan label level', () {
+      final result = LocationResult.fromJson(sample());
+
+      expect(result.status, 200);
+      expect(result.message, 'Grouped leaderboard successfully retrieved');
+      expect(result.metadata.userLocation.latitude, -7.79558);
+      expect(result.metadata.userLocation.longitude, 110.36949);
+      expect(result.metadata.kecamatanLabel, 'Depok');
+      expect(result.metadata.kotaLabel, 'Sleman');
+      expect(result.metadata.provinsiLabel, 'DIY');
+      expect(result.kecamatan, hasLength(2));
+      expect(result.kota, hasLength(1));
+      expect(result.provinsi, hasLength(1));
+      expect(result.kecamatan.first.username, 'ahmad_fauzi');
+    });
+
+    test('toJson mempertahankan semua grup dan entri', () {
+      final result = LocationResult.fromJson(sample());
+      final round = result.toJson();
+
+      expect(round['status'], 200);
+      expect(round['message'], 'Grouped leaderboard successfully retrieved');
+      expect(
+        round['metadata']['resolved_regions']['kecamatan'],
+        'kecamatan-depok',
+      );
+
+      final data = round['data'] as Map<String, dynamic>;
+      expect(data['kecamatan'], hasLength(2));
+      expect(data['kota'], hasLength(1));
+      expect(data['provinsi'], hasLength(1));
+
+      final again = LocationResult.fromJson(round);
+      expect(again.kecamatan.last.username, 'siti');
+      expect(again.kota.first.jarakMeter, 4500.0);
+      expect(again.provinsi.first.poin, 18200);
     });
   });
 

@@ -19,7 +19,7 @@ class RankingRegionPage extends StatefulWidget {
 }
 
 class _RankingRegionPageState extends State<RankingRegionPage> {
-  static const String _placeholderRegion = 'Sukajadi, Kota Bandung, Jawa Barat';
+  static const String _placeholderRegion = 'Kecamatan, Kota, Provinsi';
   static const List<String> _levels = ['kecamatan', 'kota', 'provinsi'];
 
   LocationResult? _location;
@@ -27,6 +27,7 @@ class _RankingRegionPageState extends State<RankingRegionPage> {
   String _meUsername = '';
   bool _locating = false;
   bool _opened = false;
+  final PageController _pageController = PageController();
 
   @override
   void initState() {
@@ -40,6 +41,12 @@ class _RankingRegionPageState extends State<RankingRegionPage> {
   void didUpdateWidget(covariant RankingRegionPage oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (!oldWidget.isActive && widget.isActive) _onOpened();
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadMe() async {
@@ -112,8 +119,9 @@ class _RankingRegionPageState extends State<RankingRegionPage> {
   void _applyLocation(LocationResult result) {
     setState(() {
       _location = result;
-      _activeLevel = 'kecamatan';
+      _activeLevel = _levels.first;
     });
+    if (_pageController.hasClients) _pageController.jumpToPage(0);
   }
 
   Future<void> _refreshLocation({bool silent = false}) async {
@@ -144,11 +152,11 @@ class _RankingRegionPageState extends State<RankingRegionPage> {
     }
   }
 
-  List<RegionRankingEntry> _entriesForLevel() {
+  List<RegionRankingEntry> _entriesForLevel(String level) {
     final location = _location;
     if (location == null) return const [];
     final List<RegionLeaderboardEntry> source;
-    switch (_activeLevel) {
+    switch (level) {
       case 'kota':
         source = location.kota;
       case 'provinsi':
@@ -165,260 +173,308 @@ class _RankingRegionPageState extends State<RankingRegionPage> {
     ];
   }
 
+  String _regionLabel(String? value, String fallback) {
+    final label = value?.trim() ?? '';
+    return label.isEmpty ? fallback : label;
+  }
+
+  String _levelLabel(String level) {
+    final metadata = _location?.metadata;
+    switch (level) {
+      case 'kota':
+        return _regionLabel(metadata?.kotaLabel, 'Kota');
+      case 'provinsi':
+        return _regionLabel(metadata?.provinsiLabel, 'Provinsi');
+      default:
+        return _regionLabel(metadata?.kecamatanLabel, 'Kecamatan');
+    }
+  }
+
+  void _selectLevel(String level) {
+    final index = _levels.indexOf(level);
+    if (index < 0) return;
+    if (!_pageController.hasClients) {
+      setState(() => _activeLevel = level);
+      return;
+    }
+    _pageController.animateToPage(
+      index,
+      duration: const Duration(milliseconds: 280),
+      curve: Curves.easeInOutCubic,
+    );
+  }
+
+  void _onPageChanged(int index) {
+    final level = _levels[index];
+    if (level == _activeLevel) return;
+    setState(() => _activeLevel = level);
+  }
+
   @override
   Widget build(BuildContext context) {
     final location = _location;
-    final entries = _entriesForLevel();
-    final hasData = location != null && entries.isNotEmpty;
-    final podium = entries.length >= 3
-        ? entries.sublist(0, 3)
-        : const <RegionRankingEntry>[];
-    final listEntries = entries.length > 3
-        ? entries.sublist(3, entries.length < 10 ? entries.length : 10)
-        : const <RegionRankingEntry>[];
-    final meIndex = entries.indexWhere((e) => e.isCurrentUser);
-    final meEntry = meIndex >= 10 ? entries[meIndex] : null;
-
-    final regionText = location?.displayName?.trim().isNotEmpty == true
+    final regionText = location?.displayName.trim().isNotEmpty == true
         ? location!.displayName.trim()
         : _placeholderRegion;
+    final kecamatanLabel = _levelLabel('kecamatan');
+    final kotaLabel = _levelLabel('kota');
+    final provinsiLabel = _levelLabel('provinsi');
 
     return Scaffold(
       backgroundColor: const Color(0xFFFCFCFC),
-      appBar: AppHeaderBarWithActions(
-        actions: const [PointsIndicator()],
-      ),
-      body: Stack(
+      appBar: AppHeaderBarWithActions(actions: const [PointsIndicator()]),
+      body: Column(
         children: [
-          SingleChildScrollView(
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                const SizedBox(height: 4),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
+                  decoration: ShapeDecoration(
+                    color: const Color(0xFFDEE8FF),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(9999),
+                    ),
+                  ),
+                  child: Row(
                     children: [
-                      const SizedBox(height: 4),
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 8),
-                        decoration: ShapeDecoration(
-                          color: const Color(0xFFDEE8FF),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(9999),
+                      const Icon(
+                        Icons.location_on,
+                        size: 16,
+                        color: Color(0xFF111C2D),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          regionText,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: Color(0xFF111C2D),
+                            fontSize: 12,
+                            fontFamily: 'Plus Jakarta Sans',
+                            fontWeight: FontWeight.w600,
+                            height: 1.33,
                           ),
                         ),
-                        child: Row(
-                          children: [
-                            const Icon(
-                              Icons.location_on,
-                              size: 16,
-                              color: Color(0xFF111C2D),
+                      ),
+                      const SizedBox(width: 8),
+                      GestureDetector(
+                        onTap: _locating ? null : _refreshLocation,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 4,
+                          ),
+                          decoration: ShapeDecoration(
+                            color: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(9999),
                             ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                regionText,
-                                overflow: TextOverflow.ellipsis,
+                            shadows: const [
+                              BoxShadow(
+                                color: Color(0x0C000000),
+                                blurRadius: 2,
+                                offset: Offset(0, 1),
+                                spreadRadius: 0,
+                              ),
+                            ],
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(
+                                Icons.edit_location_alt,
+                                size: 12,
+                                color: Color(0xFF4648D4),
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                _locating ? 'Memuat...' : 'Ubah',
                                 style: const TextStyle(
-                                  color: Color(0xFF111C2D),
+                                  color: Color(0xFF4648D4),
                                   fontSize: 12,
                                   fontFamily: 'Plus Jakarta Sans',
                                   fontWeight: FontWeight.w600,
                                   height: 1.33,
                                 ),
                               ),
-                            ),
-                            const SizedBox(width: 8),
-                            GestureDetector(
-                              onTap: _locating ? null : _refreshLocation,
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 12, vertical: 4),
-                                decoration: ShapeDecoration(
-                                  color: Colors.white,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(9999),
-                                  ),
-                                  shadows: const [
-                                    BoxShadow(
-                                      color: Color(0x0C000000),
-                                      blurRadius: 2,
-                                      offset: Offset(0, 1),
-                                      spreadRadius: 0,
-                                    )
-                                  ],
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    const Icon(
-                                      Icons.edit_location_alt,
-                                      size: 12,
-                                      color: Color(0xFF4648D4),
-                                    ),
-                                    const SizedBox(width: 4),
-                                    Text(
-                                      _locating ? 'Memuat...' : 'Ubah',
-                                      style: const TextStyle(
-                                        color: Color(0xFF4648D4),
-                                        fontSize: 12,
-                                        fontFamily: 'Plus Jakarta Sans',
-                                        fontWeight: FontWeight.w600,
-                                        height: 1.33,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      const Text(
-                        'Leaderboard Wilayah',
-                        style: TextStyle(
-                          color: Color(0xFF111C2D),
-                          fontSize: 24,
-                          fontFamily: 'Montserrat',
-                          fontWeight: FontWeight.w700,
-                          height: 1.42,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      const Text(
-                        'Lihat jagoan kuis di sekitarmu dan rebut posisi teratas!',
-                        style: TextStyle(
-                          color: Color(0xFF464554),
-                          fontSize: 14,
-                          fontFamily: 'Plus Jakarta Sans',
-                          fontWeight: FontWeight.w400,
-                          height: 1.71,
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      Center(
-                        child: SingleChildScrollView(
-                          scrollDirection: Axis.horizontal,
-                          child: Container(
-                            padding: const EdgeInsets.all(2),
-                            decoration: ShapeDecoration(
-                              color: const Color(0xFFF0F3FF),
-                              shape: RoundedRectangleBorder(
-                                side: const BorderSide(
-                                    width: 2, color: Color(0xFFC7C4D7)),
-                                borderRadius: BorderRadius.circular(9999),
-                              ),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                _TabButton(
-                                  label: 'Sukajadi',
-                                  selected: _activeLevel == 'kecamatan',
-                                  onTap: () =>
-                                      setState(() => _activeLevel = 'kecamatan'),
-                                ),
-                                _TabButton(
-                                  label: 'Kota Bandung',
-                                  selected: _activeLevel == 'kota',
-                                  onTap: () =>
-                                      setState(() => _activeLevel = 'kota'),
-                                ),
-                                _TabButton(
-                                  label: 'Jawa Barat',
-                                  selected: _activeLevel == 'provinsi',
-                                  onTap: () =>
-                                      setState(() => _activeLevel = 'provinsi'),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-                      if (!hasData)
-                        const _EmptyHint()
-                      else ...[
-                        Text(
-                          'Top 3 ${_activeLevel == 'kecamatan' ? 'Sukajadi' : _activeLevel == 'kota' ? 'Kota Bandung' : 'Jawa Barat'}',
-                          style: const TextStyle(
-                            color: Color(0xFF6063EE),
-                            fontSize: 24,
-                            fontFamily: 'Montserrat',
-                            fontWeight: FontWeight.w700,
-                            height: 1.33,
-                          ),
-                        ),
-                        const SizedBox(height: 60),
-                        SizedBox(
-                          height: 300,
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            children: [
-                              if (podium.length > 1)
-                                Expanded(
-                                    child: _PodiumItem(entry: podium[1], rank: 2)),
-                              if (podium.isNotEmpty)
-                                Expanded(
-                                    child: _PodiumItem(entry: podium[0], rank: 1)),
-                              if (podium.length > 2)
-                                Expanded(
-                                    child: _PodiumItem(entry: podium[2], rank: 3)),
                             ],
                           ),
                         ),
-                        const SizedBox(height: 24),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            const Text(
-                              'Peringkat 4 – 10',
-                              style: TextStyle(
-                                color: Color(0xFF111C2D),
-                                fontSize: 18,
-                                fontFamily: 'Montserrat',
-                                fontWeight: FontWeight.w700,
-                                height: 1.50,
-                              ),
-                            ),
-                            Text(
-                              _activeLevel == 'kecamatan'
-                                  ? 'Kec. Sukajadi'
-                                  : _activeLevel == 'kota'
-                                      ? 'Kota Bandung'
-                                      : 'Jawa Barat',
-                              style: const TextStyle(
-                                color: Color(0xFF6063EE),
-                                fontSize: 12,
-                                fontFamily: 'Plus Jakarta Sans',
-                                fontWeight: FontWeight.w700,
-                                height: 1.33,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        for (final entry in listEntries) ...[
-                          _RankListItem(entry: entry),
-                          const SizedBox(height: 8),
-                        ],
-                        if (meEntry != null) ...[
-                          const SizedBox(height: 8),
-                          _RankListItem(entry: meEntry, isMe: true),
-                        ],
-                        const SizedBox(height: 80),
-                      ],
+                      ),
                     ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  'Leaderboard Wilayah',
+                  style: TextStyle(
+                    color: Color(0xFF111C2D),
+                    fontSize: 24,
+                    fontFamily: 'Montserrat',
+                    fontWeight: FontWeight.w700,
+                    height: 1.42,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                const Text(
+                  'Lihat jagoan kuis di sekitarmu dan rebut posisi teratas!',
+                  style: TextStyle(
+                    color: Color(0xFF464554),
+                    fontSize: 14,
+                    fontFamily: 'Plus Jakarta Sans',
+                    fontWeight: FontWeight.w400,
+                    height: 1.71,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Center(
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Container(
+                      padding: const EdgeInsets.all(2),
+                      decoration: ShapeDecoration(
+                        color: const Color(0xFFF0F3FF),
+                        shape: RoundedRectangleBorder(
+                          side: const BorderSide(
+                            width: 2,
+                            color: Color(0xFFC7C4D7),
+                          ),
+                          borderRadius: BorderRadius.circular(9999),
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          _TabButton(
+                            label: kecamatanLabel,
+                            selected: _activeLevel == 'kecamatan',
+                            onTap: () => _selectLevel('kecamatan'),
+                          ),
+                          _TabButton(
+                            label: kotaLabel,
+                            selected: _activeLevel == 'kota',
+                            onTap: () => _selectLevel('kota'),
+                          ),
+                          _TabButton(
+                            label: provinsiLabel,
+                            selected: _activeLevel == 'provinsi',
+                            onTap: () => _selectLevel('provinsi'),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
                 ),
               ],
             ),
           ),
+          Expanded(
+            child: PageView(
+              controller: _pageController,
+              onPageChanged: _onPageChanged,
+              children: [
+                _buildLevelPage('kecamatan'),
+                _buildLevelPage('kota'),
+                _buildLevelPage('provinsi'),
+              ],
+            ),
+          ),
         ],
       ),
+    );
+  }
+
+  Widget _buildLevelPage(String level) {
+    final entries = _entriesForLevel(level);
+    final hasData = entries.isNotEmpty;
+    final podium = entries.take(3).toList();
+    final listEntries = entries.length > 3
+        ? entries.sublist(3)
+        : const <RegionRankingEntry>[];
+    final label = _levelLabel(level);
+    final listLabel = level == 'kecamatan'
+        ? 'Kec. $label'
+        : level == 'kota'
+        ? 'Kota $label'
+        : label;
+
+    return ListView(
+      key: PageStorageKey<String>('ranking-list-$level'),
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      children: [
+        const SizedBox(height: 24),
+        if (!hasData)
+          const _EmptyHint()
+        else ...[
+          Text(
+            'Top ${podium.length} $label',
+            style: const TextStyle(
+              color: Color(0xFF6063EE),
+              fontSize: 24,
+              fontFamily: 'Montserrat',
+              fontWeight: FontWeight.w700,
+              height: 1.33,
+            ),
+          ),
+          const SizedBox(height: 60),
+          SizedBox(
+            height: 320,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                if (podium.length > 1)
+                  Expanded(child: _PodiumItem(entry: podium[1], rank: 2)),
+                if (podium.isNotEmpty)
+                  Expanded(child: _PodiumItem(entry: podium[0], rank: 1)),
+                if (podium.length > 2)
+                  Expanded(child: _PodiumItem(entry: podium[2], rank: 3)),
+              ],
+            ),
+          ),
+          if (listEntries.isNotEmpty) ...[
+            const SizedBox(height: 24),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Peringkat 4 – ${entries.length}',
+                  style: const TextStyle(
+                    color: Color(0xFF111C2D),
+                    fontSize: 18,
+                    fontFamily: 'Montserrat',
+                    fontWeight: FontWeight.w700,
+                    height: 1.50,
+                  ),
+                ),
+                Text(
+                  listLabel,
+                  style: const TextStyle(
+                    color: Color(0xFF6063EE),
+                    fontSize: 12,
+                    fontFamily: 'Plus Jakarta Sans',
+                    fontWeight: FontWeight.w700,
+                    height: 1.33,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            for (final entry in listEntries) ...[
+              _RankListItem(entry: entry),
+              const SizedBox(height: 8),
+            ],
+          ],
+          const SizedBox(height: 80),
+        ],
+      ],
     );
   }
 }
@@ -428,8 +484,11 @@ class _TabButton extends StatelessWidget {
   final bool selected;
   final VoidCallback onTap;
 
-  const _TabButton(
-      {required this.label, required this.selected, required this.onTap});
+  const _TabButton({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -469,22 +528,26 @@ class _PodiumItem extends StatelessWidget {
     final isFirst = rank == 1;
     final avatarSize = isFirst ? 96.0 : 64.0;
     final badgeSize = isFirst ? 40.0 : 32.0;
-    final podiumHeight = isFirst ? 136.0 : rank == 2 ? 104.0 : 72.0;
+    final podiumHeight = isFirst
+        ? 136.0
+        : rank == 2
+        ? 104.0
+        : 72.0;
     final podiumColor = isFirst
         ? const Color(0xFF4648D4)
         : rank == 2
-            ? const Color(0xFFD8E3FB)
-            : const Color(0xFFFFDDB8);
+        ? const Color(0xFFD8E3FB)
+        : const Color(0xFFFFDDB8);
     final ringColor = isFirst
         ? const Color(0xFFFACC15)
         : rank == 2
-            ? const Color(0xFFC7C4D7)
-            : const Color(0xFFA36700);
+        ? const Color(0xFFC7C4D7)
+        : const Color(0xFFA36700);
     final badgeGradient = isFirst
         ? const [Color(0xFFFFD700), Color(0xFFFFA500)]
         : rank == 2
-            ? const [Color(0xFFC0C0C0), Color(0xFF808080)]
-            : const [Color(0xFFCD7F32), Color(0xFF825100)];
+        ? const [Color(0xFFC0C0C0), Color(0xFF808080)]
+        : const [Color(0xFFCD7F32), Color(0xFF825100)];
 
     return Column(
       mainAxisAlignment: MainAxisAlignment.end,
@@ -511,7 +574,7 @@ class _PodiumItem extends StatelessWidget {
                     blurRadius: 15,
                     offset: Offset(0, 10),
                     spreadRadius: -3,
-                  )
+                  ),
                 ],
               ),
               child: Container(
@@ -553,7 +616,7 @@ class _PodiumItem extends StatelessWidget {
                       blurRadius: 6,
                       offset: Offset(0, 4),
                       spreadRadius: -1,
-                    )
+                    ),
                   ],
                 ),
                 child: Center(
@@ -620,7 +683,7 @@ class _PodiumItem extends StatelessWidget {
                       blurRadius: 15,
                       offset: Offset(0, 10),
                       spreadRadius: -3,
-                    )
+                    ),
                   ]
                 : null,
           ),
@@ -632,26 +695,24 @@ class _PodiumItem extends StatelessWidget {
 
 class _RankListItem extends StatelessWidget {
   final RegionRankingEntry entry;
-  final bool isMe;
 
-  const _RankListItem({required this.entry, this.isMe = false});
+  const _RankListItem({required this.entry});
 
   @override
   Widget build(BuildContext context) {
+    final isMe = entry.isCurrentUser;
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: ShapeDecoration(
-        color: Colors.white,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
+        color: isMe ? const Color(0xFFF0F3FF) : Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         shadows: const [
           BoxShadow(
             color: Color(0x33000000),
             blurRadius: 2,
             offset: Offset(0, 1),
             spreadRadius: 0,
-          )
+          ),
         ],
       ),
       child: Row(
@@ -673,9 +734,9 @@ class _RankListItem extends StatelessWidget {
           Container(
             width: 40,
             height: 40,
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: Color(0xFFDEE8FF),
+              color: isMe ? const Color(0xFFDEE8FF) : const Color(0xFFDEE8FF),
             ),
             child: Center(
               child: Text(
@@ -754,25 +815,19 @@ class _EmptyHint extends StatelessWidget {
       padding: const EdgeInsets.all(32),
       decoration: ShapeDecoration(
         color: Colors.white,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         shadows: const [
           BoxShadow(
             color: Color(0x33000000),
             blurRadius: 2,
             offset: Offset(0, 1),
             spreadRadius: 0,
-          )
+          ),
         ],
       ),
       child: Column(
         children: const [
-          Icon(
-            Icons.public_off_outlined,
-            size: 32,
-            color: Color(0xFF6B7280),
-          ),
+          Icon(Icons.public_off_outlined, size: 32, color: Color(0xFF6B7280)),
           SizedBox(height: 16),
           Text(
             'Belum ada data peringkat wilayah.',

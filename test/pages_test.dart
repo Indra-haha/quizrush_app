@@ -66,6 +66,8 @@ void main() {
 
   Map<String, Object> locationCache({
     required List<Map<String, Object>> kecamatan,
+    List<Map<String, Object>> kota = const [],
+    List<Map<String, Object>> provinsi = const [],
     String timestamp = '2026-10-20T06:30:00Z',
   }) {
     return {
@@ -79,11 +81,7 @@ void main() {
           },
           'timestamp': timestamp,
         },
-        'data': {
-          'kecamatan': kecamatan,
-          'kota': <Map<String, Object>>[],
-          'provinsi': <Map<String, Object>>[],
-        },
+        'data': {'kecamatan': kecamatan, 'kota': kota, 'provinsi': provinsi},
       }),
     };
   }
@@ -117,31 +115,186 @@ void main() {
       });
 
       await tester.pumpWidget(_wrap(const RankingRegionPage()));
-      await tester.pump();
-      await tester.pump();
+      await tester.pumpAndSettle();
 
-      expect(find.text('Peringkat'), findsOneWidget);
-      expect(find.text('Lokasi Sekarang'), findsOneWidget);
+      expect(find.text('Leaderboard Wilayah'), findsOneWidget);
       // Slug wilayah dinormalisasi lewat `formatRegionLabel`
       // (lihat lib/helpers/region_label.dart).
       expect(
         find.text('Pasteur, kota Bandung, provinsi Jabar'),
         findsOneWidget,
       );
-      expect(find.text('Peringkat Wilayah'), findsOneWidget);
-      expect(find.text('Top 5'), findsOneWidget);
+      expect(find.text('Pasteur'), findsWidgets);
+      expect(find.text('Bandung'), findsWidgets);
+      expect(find.text('Jabar'), findsWidgets);
+      final top3 = find.text('Top 3 Pasteur');
+      await tester.scrollUntilVisible(
+        top3,
+        200,
+        scrollable: find
+            .descendant(
+              of: find.byKey(
+                const PageStorageKey<String>('ranking-list-kecamatan'),
+              ),
+              matching: find.byType(Scrollable),
+            )
+            .first,
+      );
+      expect(top3, findsOneWidget);
+      final peringkat = find.text('Peringkat 4 – 5');
+      await tester.scrollUntilVisible(
+        peringkat,
+        200,
+        scrollable: find
+            .descendant(
+              of: find.byKey(
+                const PageStorageKey<String>('ranking-list-kecamatan'),
+              ),
+              matching: find.byType(Scrollable),
+            )
+            .first,
+      );
+      expect(peringkat, findsOneWidget);
       expect(find.text('Arka Pratama'), findsOneWidget);
-      expect(find.text('@arka'), findsOneWidget);
-      expect(find.text('Juara 1'), findsOneWidget);
+      expect(find.text('@faris'), findsOneWidget);
+      expect(find.text('14.850'), findsOneWidget);
 
       final me = find.text('Kamu (Dimas Arya)');
       await tester.scrollUntilVisible(
         me,
         200,
-        scrollable: find.byType(Scrollable).first,
+        scrollable: find
+            .descendant(
+              of: find.byKey(
+                const PageStorageKey<String>('ranking-list-kecamatan'),
+              ),
+              matching: find.byType(Scrollable),
+            )
+            .first,
       );
       expect(me, findsOneWidget);
       expect(find.text('@dimas'), findsOneWidget);
+    });
+
+    testWidgets('menampilkan grup kota dan provinsi dari cache', (
+      WidgetTester tester,
+    ) async {
+      SharedPreferences.setMockInitialValues(<String, Object>{
+        'auth_token': 'token',
+        'auth_user': jsonEncode({'username': 'dimas', 'nama': 'Dimas Arya'}),
+        ...locationCache(
+          kecamatan: [entry(1, 'arka', 'Arka Pratama', 14850)],
+          kota: [entry(1, 'budi', 'Budi Santoso', 4890)],
+          provinsi: [entry(1, 'dewi', 'Dewi Lestari', 18200)],
+        ),
+      });
+
+      await tester.pumpWidget(_wrap(const RankingRegionPage()));
+      await tester.pumpAndSettle();
+
+      final arka = find.text('Arka Pratama');
+      await tester.scrollUntilVisible(
+        arka,
+        200,
+        scrollable: find
+            .descendant(
+              of: find.byKey(
+                const PageStorageKey<String>('ranking-list-kecamatan'),
+              ),
+              matching: find.byType(Scrollable),
+            )
+            .first,
+      );
+      expect(arka, findsOneWidget);
+      expect(find.text('Top 1 Pasteur'), findsOneWidget);
+
+      await tester.tap(find.text('Bandung').first);
+      await tester.pumpAndSettle();
+      final budi = find.text('Budi Santoso');
+      await tester.scrollUntilVisible(
+        budi,
+        200,
+        scrollable: find
+            .descendant(
+              of: find.byKey(const PageStorageKey<String>('ranking-list-kota')),
+              matching: find.byType(Scrollable),
+            )
+            .first,
+      );
+      expect(budi, findsOneWidget);
+      expect(find.text('Top 1 Bandung'), findsOneWidget);
+
+      await tester.tap(find.text('Jabar').first);
+      await tester.pumpAndSettle();
+      final dewi = find.text('Dewi Lestari');
+      await tester.scrollUntilVisible(
+        dewi,
+        200,
+        scrollable: find
+            .descendant(
+              of: find.byKey(
+                const PageStorageKey<String>('ranking-list-provinsi'),
+              ),
+              matching: find.byType(Scrollable),
+            )
+            .first,
+      );
+      expect(dewi, findsOneWidget);
+      expect(find.text('Top 1 Jabar'), findsOneWidget);
+    });
+
+    testWidgets('menggeser halaman menyinkronkan tab aktif', (
+      WidgetTester tester,
+    ) async {
+      SharedPreferences.setMockInitialValues(<String, Object>{
+        'auth_token': 'token',
+        ...locationCache(
+          kecamatan: [entry(1, 'arka', 'Arka Pratama', 14850)],
+          kota: [entry(1, 'budi', 'Budi Santoso', 4890)],
+          provinsi: [entry(1, 'dewi', 'Dewi Lestari', 18200)],
+        ),
+      });
+
+      await tester.pumpWidget(_wrap(const RankingRegionPage()));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Top 1 Pasteur'), findsOneWidget);
+
+      await tester.drag(find.byType(PageView), const Offset(-600, 0));
+      await tester.pump();
+      await tester.pumpAndSettle();
+      expect(find.text('Top 1 Bandung'), findsOneWidget);
+      final budi2 = find.text('Budi Santoso');
+      await tester.scrollUntilVisible(
+        budi2,
+        200,
+        scrollable: find
+            .descendant(
+              of: find.byKey(const PageStorageKey<String>('ranking-list-kota')),
+              matching: find.byType(Scrollable),
+            )
+            .first,
+      );
+      expect(budi2, findsOneWidget);
+
+      await tester.drag(find.byType(PageView), const Offset(-600, 0));
+      await tester.pump();
+      await tester.pumpAndSettle();
+      expect(find.text('Top 1 Jabar'), findsOneWidget);
+      final dewi2 = find.text('Dewi Lestari');
+      await tester.scrollUntilVisible(
+        dewi2,
+        200,
+        scrollable: find
+            .descendant(
+              of: find.byKey(
+                const PageStorageKey<String>('ranking-list-provinsi'),
+              ),
+              matching: find.byType(Scrollable),
+            )
+            .first,
+      );
+      expect(dewi2, findsOneWidget);
     });
 
     testWidgets('menempelkan baris "Kamu" di luar 10 besar', (
@@ -160,16 +313,35 @@ void main() {
       });
 
       await tester.pumpWidget(_wrap(const RankingRegionPage()));
-      await tester.pump();
-      await tester.pump();
+      await tester.pumpAndSettle();
 
-      expect(find.text('Top 13'), findsOneWidget);
+      final peringkat13 = find.text('Peringkat 4 – 13');
+      await tester.scrollUntilVisible(
+        peringkat13,
+        200,
+        scrollable: find
+            .descendant(
+              of: find.byKey(
+                const PageStorageKey<String>('ranking-list-kecamatan'),
+              ),
+              matching: find.byType(Scrollable),
+            )
+            .first,
+      );
+      expect(peringkat13, findsOneWidget);
 
       final me = find.text('Kamu (Dimas Arya)');
       await tester.scrollUntilVisible(
         me,
         300,
-        scrollable: find.byType(Scrollable).first,
+        scrollable: find
+            .descendant(
+              of: find.byKey(
+                const PageStorageKey<String>('ranking-list-kecamatan'),
+              ),
+              matching: find.byType(Scrollable),
+            )
+            .first,
       );
       expect(me, findsOneWidget);
     });
@@ -180,10 +352,10 @@ void main() {
       await tester.pumpWidget(_wrap(const RankingRegionPage()));
       await tester.pump();
 
-      expect(find.text('Lokasi Sekarang'), findsOneWidget);
+      expect(find.text('Leaderboard Wilayah'), findsOneWidget);
       expect(find.text('Kecamatan, Kota, Provinsi'), findsOneWidget);
       expect(find.text('Belum ada data peringkat wilayah.'), findsOneWidget);
-      expect(find.text('Peringkat Wilayah'), findsNothing);
+      expect(find.text('Peringkat 4 – 0'), findsNothing);
     });
   });
 
