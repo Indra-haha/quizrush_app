@@ -212,10 +212,8 @@ class _RankingRegionPageState extends State<RankingRegionPage> {
 
   @override
   Widget build(BuildContext context) {
-    final location = _location;
-    final regionText = location?.displayName.trim().isNotEmpty == true
-        ? location!.displayName.trim()
-        : 'Kecamatan, Kota, Provinsi';
+    final regionText = '${_levelLabel('kecamatan')}, ${_levelLabel('kota')}, ${_levelLabel('provinsi')}';
+
 
     return Scaffold(
       backgroundColor: const Color(0xFFFCFCFC),
