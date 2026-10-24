@@ -693,9 +693,6 @@ void main() {
           QuizSearchField(
             controller: TextEditingController(),
             onChanged: (_) {},
-            onRefresh: () {},
-            syncing: false,
-            loading: false,
           ),
         ),
       );

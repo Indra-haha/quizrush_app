@@ -8,7 +8,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:quizrush/pages/Ranking/ranking_region_page.dart';
 import 'package:quizrush/pages/Profiles/profile_page.dart';
-import 'package:quizrush/pages/Saldo/saldo_page.dart';
 import 'package:quizrush/services/api/api_client.dart';
 import 'package:quizrush/services/api/points_service.dart';
 import 'package:quizrush/services/profile_stats_service.dart';
@@ -24,40 +23,6 @@ class _FakeProfileStatsService implements ProfileStatsService {
   }
 }
 
-PointsService _saldoService() {
-  final client = MockClient((request) async {
-    final body = switch (request.url.path) {
-      '/api/me/points' => jsonEncode({
-        'message': 'Saldo poin',
-        'points': 28450,
-      }),
-      '/api/me/coins' => jsonEncode({
-        'message': 'Riwayat koin',
-        'coins': [
-          {
-            'id': '1',
-            'amount': 1500,
-            'reason': 'quiz_reward',
-            'room_kode': '482913',
-            'quiz_id': 'q1',
-            'created_at': '2026-10-05T20:03:00Z',
-            'prev_hash': '',
-            'hash': 'abc',
-          },
-        ],
-      }),
-      _ => jsonEncode({'message': 'not found'}),
-    };
-    return http.Response(
-      body,
-      200,
-      headers: {'content-type': 'application/json'},
-    );
-  });
-  return PointsService.withApi(
-    ApiClient(client: client, baseUrl: 'https://test.local'),
-  );
-}
 
 void main() {
   setUp(() {
@@ -367,7 +332,6 @@ void main() {
         'auth_token': 'token',
       });
 
-      await tester.pumpWidget(_wrap(SaldoPage(service: _saldoService())));
       await tester.pump();
       await tester.pump();
 
