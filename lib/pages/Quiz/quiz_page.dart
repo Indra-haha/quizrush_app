@@ -12,14 +12,12 @@ import '../../services/quiz_feed.dart';
 import '../../services/quiz_index.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/active_room_banner.dart';
-import '../../widgets/app_options_select.dart';
 import '../../widgets/app_pill_button.dart';
 import '../../widgets/app_snackbar.dart';
 import '../../widgets/cache_info_bar.dart';
 import '../../widgets/points_indicator.dart';
 import '../../widgets/quiz_results_list.dart';
 import '../../widgets/quiz_search_field.dart';
-import '../../widgets/section_header.dart';
 import '../../widgets/status_filter.dart';
 import '../login_redirect.dart';
 import 'detail_quiz_room_page.dart';
@@ -38,13 +36,13 @@ class _QuizPageState extends State<QuizPage> {
   static const _statuses = ['open', 'in-Game', 'ended'];
 
   QuizIndex? _index;
-  bool _loading = true;
   bool _syncing = false;
   String? _error;
   String _selectedStatus = 'open';
   bool _notFound = false;
   bool _reentering = false;
   final _searchController = TextEditingController();
+  final PageController _pageController = PageController();
   Timer? _notFoundTimer;
 
   Room? get _activeRoom => ActiveRoomService.instance.room;
@@ -64,6 +62,7 @@ class _QuizPageState extends State<QuizPage> {
   void dispose() {
     ActiveRoomService.instance.removeListener(_onActiveRoomChanged);
     _notFoundTimer?.cancel();
+    _pageController.dispose();
     _searchController.dispose();
     super.dispose();
   }
@@ -83,7 +82,6 @@ class _QuizPageState extends State<QuizPage> {
   Future<void> _run(Future<QuizFeedResult> Function() feed) async {
     if (_syncing) return;
     setState(() {
-      _loading = true;
       _syncing = true;
       _error = null;
     });
@@ -99,10 +97,39 @@ class _QuizPageState extends State<QuizPage> {
     setState(() {
       _index = result.index ?? _index;
       _error = result.error;
-      _loading = false;
       _syncing = false;
       _ensureSelectedStatus();
     });
+    _syncPageToSelected();
+  }
+
+  void _syncPageToSelected() {
+    final index = _statuses.indexOf(_selectedStatus);
+    if (index < 0) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_pageController.hasClients) return;
+      _pageController.jumpToPage(index);
+    });
+  }
+
+  void _selectStatus(String status) {
+    final index = _statuses.indexOf(status);
+    if (index < 0) return;
+    if (!_pageController.hasClients) {
+      setState(() => _selectedStatus = status);
+      return;
+    }
+    _pageController.animateToPage(
+      index,
+      duration: const Duration(milliseconds: 280),
+      curve: Curves.easeInOutCubic,
+    );
+  }
+
+  void _onPageChanged(int index) {
+    final status = _statuses[index];
+    if (status == _selectedStatus) return;
+    setState(() => _selectedStatus = status);
   }
 
   void _ensureSelectedStatus() {
@@ -117,11 +144,11 @@ class _QuizPageState extends State<QuizPage> {
     }
   }
 
-  List<Quizes> get _selectedQuizzes {
+  List<Quizes> _quizzesFor(String status) {
     final index = _index;
     if (index == null) return const [];
 
-    final quizzes = index.group(_selectedStatus);
+    final quizzes = index.group(status);
     final query = _searchController.text;
     if (query.trim().isEmpty) return quizzes;
 
@@ -233,90 +260,90 @@ class _QuizPageState extends State<QuizPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.surface,
+      appBar: AppBar(title: const Text('Kuis'), actions: [PointsIndicator(style: PointsIndicatorStyle.home)]),
       floatingActionButton: AppPillButton(
         label: 'Masukkan PIN',
         icon: Icons.pin_outlined,
         onPressed: _openEnterPin,
       ),
       // floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
-      body: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
-                AppSpacing.space9,
-                AppSpacing.space8,
-                AppSpacing.space9,
-                AppSpacing.space6,
-              ),
-              child: Row(
-                children: [
-                  const PointsIndicator(),
-                ],
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppSpacing.space9,
-              ),
-              child: QuizSearchField(
-                controller: _searchController,
-                onChanged: _onSearchChanged,
-              ),
-            ),
-            const SizedBox(height: AppSpacing.space4),
-            Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppSpacing.space9,
-              ),
-              child: CacheInfoBar(
-                savedAt: _index?.savedAt,
-                pinProgress: _pinProgress,
-              ),
-            ),
-            const SizedBox(height: AppSpacing.space4),
-            Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppSpacing.space9,
-              ),
-              child: StatusFilter<String>(
-                values: _statuses,
-                selected: _selectedStatus,
-                onChanged: (status) => setState(() => _selectedStatus = status),
-              ),            
-            ),
-            const SizedBox(height: AppSpacing.space4),
-            if (_activeRoom != null) ...[
-              Padding(
-                padding: const EdgeInsets.fromLTRB(
-                  AppSpacing.space9,
-                  0,
-                  AppSpacing.space9,
-                  AppSpacing.space4,
-                ),
-                child: ActiveRoomBanner(
-                  room: _activeRoom!,
-                  loading: _reentering,
-                  onEnter: _reenterRoom,
-                  onDismiss: _forgetActiveRoom,
-                ),
-              ),
-            ],
-            Expanded(
-              child: QuizResultsList(
-                loading: _loading,
-                error: _error,
-                notFound: _notFound,
-                pinProgress: _pinProgress,
-                quizzes: _selectedQuizzes,
-                query: _searchController.text.trim(),
-                onRetry: _sync,
-                onTapQuiz: _openRooms,
-              ),
-            ),
-          ],
+      body: _buildBody(),
+    );
+  }
+
+  Widget _buildBody() {
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.space9),
+          child: QuizSearchField(
+            controller: _searchController,
+            onChanged: _onSearchChanged,
+          ),
         ),
+        const SizedBox(height: AppSpacing.space4),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.space9),
+          child: CacheInfoBar(
+            savedAt: _index?.savedAt,
+            pinProgress: _pinProgress,
+          ),
+        ),
+        const SizedBox(height: AppSpacing.space4),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.space9),
+          child: StatusFilter<String>(
+            values: _statuses,
+            selected: _selectedStatus,
+            onChanged: _selectStatus,
+          ),
+        ),
+        const SizedBox(height: AppSpacing.space4),
+        if (_activeRoom != null)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.space9,
+              0,
+              AppSpacing.space9,
+              AppSpacing.space4,
+            ),
+            child: ActiveRoomBanner(
+              room: _activeRoom!,
+              loading: _reentering,
+              onEnter: _reenterRoom,
+              onDismiss: _forgetActiveRoom,
+            ),
+          ),
+        Expanded(
+          child: PageView(
+            controller: _pageController,
+            onPageChanged: _onPageChanged,
+            children: [
+              for (final status in _statuses) _buildStatusPage(status),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStatusPage(String status) {
+    return RefreshIndicator(
+      color: AppColors.primary,
+      onRefresh: _sync,
+      child: ListView(
+        key: PageStorageKey<String>('quiz-list-$status'),
+        physics: const AlwaysScrollableScrollPhysics(),
+        children: [
+          QuizResultsList(
+            error: _error,
+            notFound: _notFound,
+            pinProgress: _pinProgress,
+            quizzes: _quizzesFor(status),
+            query: _searchController.text.trim(),
+            onTapQuiz: _openRooms,
+          ),
+        ],
       ),
     );
   }
