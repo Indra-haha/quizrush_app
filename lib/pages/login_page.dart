@@ -4,10 +4,13 @@ import 'package:flutter/material.dart';
 
 import '../helpers/auth_validator.dart';
 import '../helpers/password_hasher.dart';
+import '../pages/Quiz/waiting_room_page.dart';
 import '../services/active_room_service.dart';
 import '../services/api/api_client.dart';
 import '../services/api/auth_service.dart';
+import '../services/api/room_service.dart';
 import '../services/biometric_service.dart';
+import '../services/pending_room_service.dart';
 import '../services/session_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_snackbar.dart';
@@ -21,6 +24,10 @@ class LoginPage extends StatefulWidget {
 
   @override
   State<LoginPage> createState() => _LoginPageState();
+}
+
+class _PendingRoomRedirect implements Exception {
+  const _PendingRoomRedirect();
 }
 
 class _LoginPageState extends State<LoginPage> {
@@ -41,7 +48,6 @@ class _LoginPageState extends State<LoginPage> {
     if (mounted) setState(() => _biometricEnabled = enabled);
   }
 
-  // Jika masih ada session tersimpan yang valid, langsung masuk ke menu utama.
   Future<void> _restoreSession() async {
     final token = await SessionService.instance.getToken();
     if (token == null || !mounted) return;
@@ -50,6 +56,14 @@ class _LoginPageState extends State<LoginPage> {
     try {
       final user = await AuthService.instance.checkSession(token);
       if (!mounted) return;
+      try {
+        await _handlePendingRoom(token);
+        if (!mounted) return;
+      } catch (e) {
+        if (e is _PendingRoomRedirect) {
+          return;
+        }
+      }
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(builder: (_) => MainShell(user: user)),
       );
@@ -58,6 +72,52 @@ class _LoginPageState extends State<LoginPage> {
       ActiveRoomService.instance.clear();
       if (!mounted) return;
       setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _handlePendingRoom(String token) async {
+    try {
+      final pending = await PendingRoomService.instance.getPending();
+      if (pending == null || pending.isEmpty) return;
+      await PendingRoomService.instance.clear();
+      final verify = await RoomService.instance.verifyPin(token: token, pin: pending);
+      ActiveRoomService.instance.set(verify.room, roomToken: verify.token, loginToken: token);
+      if (!mounted) return;
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (_) => WaitingRoomPage(
+            room: verify.room,
+            roomToken: verify.token,
+            loginToken: token,
+          ),
+        ),
+      );
+      throw const _PendingRoomRedirect();
+    } catch (e) {
+      if (e is _PendingRoomRedirect) rethrow;
+    }
+  }
+
+  Future<void> _handlePendingRoomAfterLogin(String token) async {
+    try {
+      final pending = await PendingRoomService.instance.getPending();
+      if (pending == null || pending.isEmpty) return;
+      await PendingRoomService.instance.clear();
+      final verify = await RoomService.instance.verifyPin(token: token, pin: pending);
+      ActiveRoomService.instance.set(verify.room, roomToken: verify.token, loginToken: token);
+      if (!mounted) return;
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (_) => WaitingRoomPage(
+            room: verify.room,
+            roomToken: verify.token,
+            loginToken: token,
+          ),
+        ),
+      );
+      throw const _PendingRoomRedirect();
+    } catch (e) {
+      if (e is _PendingRoomRedirect) rethrow;
     }
   }
 
@@ -87,6 +147,14 @@ class _LoginPageState extends State<LoginPage> {
         );
       }
       if (!mounted) return;
+      try {
+        await _handlePendingRoomAfterLogin(result.token);
+        if (!mounted) return;
+      } catch (e) {
+        if (e is _PendingRoomRedirect) {
+          return;
+        }
+      }
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(builder: (_) => MainShell(user: result.user)),
       );
@@ -150,8 +218,6 @@ class _LoginPageState extends State<LoginPage> {
         return;
       }
 
-      // Sesi lama sudah dihancurkan saat logout, jadi minta sesi baru ke server
-      // memakai kredensial tersimpan (sama seperti login manual).
       final result = await AuthService.instance.loginWithHash(
         username: credentials.username,
         passwordHash: credentials.passwordHash,
@@ -163,6 +229,14 @@ class _LoginPageState extends State<LoginPage> {
         user: result.user,
       );
       if (!mounted) return;
+      try {
+        await _handlePendingRoomAfterLogin(result.token);
+        if (!mounted) return;
+      } catch (e) {
+        if (e is _PendingRoomRedirect) {
+          return;
+        }
+      }
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(builder: (_) => MainShell(user: result.user)),
       );
@@ -203,7 +277,7 @@ class _LoginPageState extends State<LoginPage> {
   Widget build(BuildContext context) {
     return AuthPageScaffold(
       cardChildren: [
-        const AuthFormTitle(title: 'Login'),
+        const AuthBrandHeader(),
         Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -239,7 +313,7 @@ class _LoginPageState extends State<LoginPage> {
             ),
             const SizedBox(width: AppSpacing.space4),
             Material(
-              color: AppColors.primary,
+              color: AppColors.gradientEnd,
               shape: const CircleBorder(),
               child: InkWell(
                 onTap: _isLoading ? null : _loginWithBiometric,
@@ -254,7 +328,7 @@ class _LoginPageState extends State<LoginPage> {
                         : 'Aktifkan sidik jari di Profile',
                     child: Icon(
                       Icons.fingerprint,
-                      size: AppIconSize.lg,
+                      size: AppIconSize.xxl,
                       color: AppColors.textOnPrimary,
                     ),
                   ),
