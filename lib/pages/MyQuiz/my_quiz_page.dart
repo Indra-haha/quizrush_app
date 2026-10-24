@@ -56,7 +56,9 @@ class _MyQuizPageState extends State<MyQuizPage> {
   /// Quiz yang punya minimal satu room berstatus [status], sudah difilter
   /// lewat kolom pencarian. Tiap entri memuat daftar room yang cocok, diurutkan
   /// dari yang terbaru; urutan kartu mengikuti room terbarunya.
-  List<({Quizes quiz, List<RoomSummary> rooms})> _groupedQuizzes(String status) {
+  List<({Quizes quiz, List<RoomSummary> rooms})> _groupedQuizzes(
+    String status,
+  ) {
     final query = _searchController.text.trim();
     final groups = <({Quizes quiz, List<RoomSummary> rooms})>[];
 
@@ -197,6 +199,14 @@ class _MyQuizPageState extends State<MyQuizPage> {
   }
 
   Widget _buildBody() {
+    return RefreshIndicator(
+      color: AppColors.primary,
+      onRefresh: _sync,
+      child: _buildList(),
+    );
+  }
+
+  Widget _buildList() {
     return ListView(
       padding: const EdgeInsets.fromLTRB(
         AppSpacing.space8,
@@ -208,9 +218,6 @@ class _MyQuizPageState extends State<MyQuizPage> {
         QuizSearchField(
           controller: _searchController,
           onChanged: _onSearchChanged,
-          onRefresh: _sync,
-          syncing: _syncing,
-          loading: _syncing,
         ),
         const SizedBox(height: AppSpacing.space4),
         StatusFilterRow(

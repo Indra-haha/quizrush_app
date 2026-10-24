@@ -20,6 +20,7 @@ import '../../widgets/points_indicator.dart';
 import '../../widgets/quiz_results_list.dart';
 import '../../widgets/quiz_search_field.dart';
 import '../../widgets/section_header.dart';
+import '../../widgets/status_filter.dart';
 import '../login_redirect.dart';
 import 'detail_quiz_room_page.dart';
 import 'enter_pin_page.dart';
@@ -251,7 +252,6 @@ class _QuizPageState extends State<QuizPage> {
               ),
               child: Row(
                 children: [
-                  const Expanded(child: SectionHeader(title: 'Quiz')),
                   const PointsIndicator(),
                 ],
               ),
@@ -263,9 +263,6 @@ class _QuizPageState extends State<QuizPage> {
               child: QuizSearchField(
                 controller: _searchController,
                 onChanged: _onSearchChanged,
-                onRefresh: _sync,
-                syncing: _syncing,
-                loading: _loading,
               ),
             ),
             const SizedBox(height: AppSpacing.space4),
@@ -283,11 +280,11 @@ class _QuizPageState extends State<QuizPage> {
               padding: const EdgeInsets.symmetric(
                 horizontal: AppSpacing.space9,
               ),
-              child: ListOptions(
-                optionLists: _statuses,
-                selectedOption: _selectedStatus,
-                onSelectedChange: (status) => setState(() => _selectedStatus = status),
-              ),
+              child: StatusFilter<String>(
+                values: _statuses,
+                selected: _selectedStatus,
+                onChanged: (status) => setState(() => _selectedStatus = status),
+              ),            
             ),
             const SizedBox(height: AppSpacing.space4),
             if (_activeRoom != null) ...[

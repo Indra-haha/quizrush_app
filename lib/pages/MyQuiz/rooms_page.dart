@@ -93,6 +93,14 @@ class _RoomsPageState extends State<RoomsPage> {
   }
 
   Widget _buildBody() {
+    return RefreshIndicator(
+      color: AppColors.primary,
+      onRefresh: _sync,
+      child: _buildList(),
+    );
+  }
+
+  Widget _buildList() {
     final quiz = _quiz;
 
     if (quiz == null && _loading) {
