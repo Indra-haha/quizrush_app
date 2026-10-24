@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../pages/Quiz/waiting_room_page.dart';
 import '../pages/login_redirect.dart';
 import '../services/active_room_service.dart';
+import '../services/api/api_client.dart';
 import '../services/api/room_service.dart';
 import '../services/session_service.dart';
 
@@ -31,25 +32,37 @@ class RoomLauncher {
       return;
     }
 
-    final result = await RoomService.instance.verifyPin(token: token, pin: pin);
-    ActiveRoomService.instance.set(
-      result.room,
-      roomToken: result.token,
-      loginToken: token,
-    );
-    if (!context.mounted) return;
-
-    final route = MaterialPageRoute<void>(
-      builder: (_) => WaitingRoomPage(
-        room: result.room,
+    try {
+      final result = await RoomService.instance.verifyPin(token: token, pin: pin);
+      if (!context.mounted) return;
+      ActiveRoomService.instance.set(
+        result.room,
         roomToken: result.token,
         loginToken: token,
-      ),
-    );
-    if (replace) {
-      await Navigator.of(context).pushReplacement(route);
-    } else {
-      await Navigator.of(context).push(route);
+      );
+      if (!context.mounted) return;
+
+      final route = MaterialPageRoute<void>(
+        builder: (_) => WaitingRoomPage(
+          room: result.room,
+          roomToken: result.token,
+          loginToken: token,
+        ),
+      );
+      if (replace) {
+        await Navigator.of(context).pushReplacement(route);
+      } else {
+        await Navigator.of(context).push(route);
+      }
+    } on ApiException catch (e) {
+      if (e.statusCode == 401) {
+        await SessionService.instance.clear();
+        ActiveRoomService.instance.clear();
+        if (!context.mounted) return;
+        LoginRedirect.go(context);
+        return;
+      }
+      rethrow;
     }
   }
 }

@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 
 import '../../helpers/room_launcher.dart';
 import '../../models/quiz.dart';
+import '../../services/active_room_service.dart';
 import '../../services/api/api_client.dart';
+import '../../services/session_service.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/app_header_bar.dart';
 import '../../widgets/app_snackbar.dart';
@@ -10,12 +12,20 @@ import '../../widgets/empty_state_view.dart';
 import '../../widgets/quiz_detail_hero.dart';
 import '../../widgets/room_detail_card.dart';
 import '../../widgets/room_list_header.dart';
+import '../login_redirect.dart';
 
-class DetailQuizRoomPage extends StatelessWidget {
+class DetailQuizRoomPage extends StatefulWidget {
   final Quizes quiz;
   final String? focusKode;
 
   const DetailQuizRoomPage({super.key, required this.quiz, this.focusKode});
+
+  @override
+  State<DetailQuizRoomPage> createState() => _DetailQuizRoomPageState();
+}
+
+class _DetailQuizRoomPageState extends State<DetailQuizRoomPage> {
+  bool _joining = false;
 
   @override
   Widget build(BuildContext context) {
@@ -34,8 +44,8 @@ class DetailQuizRoomPage extends StatelessWidget {
   }
 
   Widget _buildBody(BuildContext context) {
-    final rooms = quiz.rooms
-        .where((room) => room.status != 'waiting' || room.kode == focusKode)
+    final rooms = widget.quiz.rooms
+        .where((room) => room.status != 'waiting' || room.kode == widget.focusKode)
         .toList();
 
     return ListView(
@@ -46,7 +56,7 @@ class DetailQuizRoomPage extends StatelessWidget {
         AppSpacing.space12,
       ),
       children: [
-        QuizDetailHero(quiz: quiz),
+        QuizDetailHero(quiz: widget.quiz),
         const SizedBox(height: AppSpacing.space10),
         RoomListHeader(count: rooms.length),
         const SizedBox(height: AppSpacing.space8),
@@ -56,8 +66,8 @@ class DetailQuizRoomPage extends StatelessWidget {
           RoomDetailCard(
             room: rooms[i],
             index: i,
-            isFocused: rooms[i].kode == focusKode && focusKode != null,
-            onJoin: () => _joinRoom(context, rooms[i].kode),
+            isFocused: rooms[i].kode == widget.focusKode && widget.focusKode != null,
+            onJoin: _joining ? null : () => _joinRoom(context, rooms[i].kode),
           ),
         ],
         const SizedBox(height: AppSpacing.space10),
@@ -66,17 +76,28 @@ class DetailQuizRoomPage extends StatelessWidget {
   }
 
   Future<void> _joinRoom(BuildContext context, String pin) async {
+    if (_joining) return;
+    setState(() => _joining = true);
     try {
       await RoomLauncher.enter(context: context, pin: pin);
     } on ApiException catch (e) {
-      if (!context.mounted) return;
+      if (!mounted) return;
+      if (e.statusCode == 401) {
+        await SessionService.instance.clear();
+        ActiveRoomService.instance.clear();
+        if (!mounted) return;
+        LoginRedirect.go(context);
+        return;
+      }
       AppSnackBar.error(
         context,
         e.message.isNotEmpty ? e.message : 'Gagal masuk ke room.',
       );
     } catch (_) {
-      if (!context.mounted) return;
+      if (!mounted) return;
       AppSnackBar.error(context, 'Tidak bisa terhubung ke server. Coba lagi.');
+    } finally {
+      if (mounted) setState(() => _joining = false);
     }
   }
 

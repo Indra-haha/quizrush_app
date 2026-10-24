@@ -3,7 +3,6 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:quizrush/widgets/app_header_bar.dart';
 import 'package:quizrush/widgets/app_header_bar_with_actions.dart';
 import 'package:sensors_plus/sensors_plus.dart';
 
@@ -116,9 +115,12 @@ class _WaitingRoomPageState extends State<WaitingRoomPage> {
     // Status room dari server; `waiting` adalah default server (API.md §5.1)
     // supaya status kosong tidak membuat alur publish kehilangan tombol.
     _roomStatus = widget.room.status.isEmpty ? 'waiting' : widget.room.status;
-    _loadSensorSettings();
-    _connect();
-    _persistActiveRoom();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _loadSensorSettings();
+      _connect();
+      _persistActiveRoom();
+    });
   }
 
   Future<void> _persistActiveRoom() async {
@@ -179,6 +181,7 @@ class _WaitingRoomPageState extends State<WaitingRoomPage> {
 
   Future<void> _connect() async {
     final user = await SessionService.instance.getUser();
+    if (!mounted) return;
     _me = (user?['username'] as String?)?.trim() ?? '';
     _myNama = (user?['nama'] as String?)?.trim() ?? '';
     _myLabel = _myNama.isNotEmpty ? _myNama : _me;
@@ -198,6 +201,7 @@ class _WaitingRoomPageState extends State<WaitingRoomPage> {
     try {
       RoomPresenceService.instance.setActiveSocket(socket, room: widget.room);
     } catch (_) {}
+    if (!mounted) return;
     _statusSub = socket.statuses.listen((status) {
       if (!mounted) return;
       setState(() => _status = status);
@@ -498,104 +502,8 @@ class _WaitingRoomPageState extends State<WaitingRoomPage> {
     );
   }
 
-  PreferredSizeWidget _buildHeader(BuildContext context) {
-    final topPadding = MediaQuery.of(context).padding.top;
-    const headerHeight = kToolbarHeight + AppSpacing.space4;
-    return PreferredSize(
-      preferredSize: Size.fromHeight(headerHeight + topPadding),
-      child: Container(
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          border: Border(
-            bottom: BorderSide(
-              color: AppColors.primaryBorder.withValues(alpha: 0.4),
-              width: AppBorderWidth.hairline,
-            ),
-          ),
-          boxShadow: AppShadows.hairline,
-        ),
-        child: SafeArea(
-          bottom: false,
-          child: SizedBox(
-            height: headerHeight,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppSpacing.space8,
-              ),
-              child: Row(
-                children: [
-                  _headerBoxButton(
-                    icon: Icons.arrow_back,
-                    tooltip: 'Kembali',
-                    onPressed: () => Navigator.of(context).pop(),
-                  ),
-                  const SizedBox(width: AppSpacing.space4),
-                  Expanded(
-                    child: Text(
-                      widget.room.displayTitle.toUpperCase(),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppTextStyles.heading3,
-                    ),
-                  ),
-                  const SizedBox(width: AppSpacing.space4),
-                  _headerBoxButton(
-                    icon: Icons.refresh,
-                    tooltip: 'Sambungkan ulang',
-                    enabled: _status != RoomSocketStatus.connected,
-                    onPressed: _reconnect,
-                  ),
-                  const SizedBox(width: AppSpacing.space3),
-                  _headerAvatar(),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
 
-  Widget _headerBoxButton({
-    required IconData icon,
-    required String tooltip,
-    required VoidCallback onPressed,
-    bool enabled = true,
-  }) {
-    return Tooltip(
-      message: tooltip,
-      child: IconButton(
-        onPressed: enabled ? onPressed : null,
-        icon: Icon(icon, size: AppIconSize.body),
-        color: enabled ? AppColors.primary : AppColors.textMuted,
-        style: IconButton.styleFrom(
-          minimumSize: const Size(AppIconSize.xxl + 8, AppIconSize.xxl + 8),
-          backgroundColor: AppColors.primarySoft,
-          shape: RoundedRectangleBorder(borderRadius: AppRadius.sm),
-        ),
-      ),
-    );
-  }
 
-  Widget _headerAvatar() {
-    final initial = _me.trim().isEmpty ? '?' : _me.trim()[0].toUpperCase();
-    return Container(
-      width: AppIconSize.xxl + 4,
-      height: AppIconSize.xxl + 4,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: AppColors.primary,
-        shape: BoxShape.circle,
-        boxShadow: AppShadows.card,
-      ),
-      child: Text(
-        initial,
-        style: AppTextStyles.labelStrongSmallOnPrimary.copyWith(
-          fontSize: AppFontSize.small,
-        ),
-      ),
-    );
-  }
 
   /// Kartu hero ruang tunggu: judul kuis, ringkasan jumlah soal & total poin,
   /// serta GAME PIN (ketuk untuk menyalin kode).
