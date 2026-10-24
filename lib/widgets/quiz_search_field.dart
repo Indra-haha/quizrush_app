@@ -6,17 +6,11 @@ import '../theme/app_theme.dart';
 class QuizSearchField extends StatelessWidget {
   final TextEditingController controller;
   final ValueChanged<String> onChanged;
-  final VoidCallback? onRefresh;
-  final bool syncing;
-  final bool loading;
 
   const QuizSearchField({
     super.key,
     required this.controller,
     required this.onChanged,
-    required this.onRefresh,
-    required this.syncing,
-    required this.loading,
   });
 
   @override
@@ -25,10 +19,10 @@ class QuizSearchField extends StatelessWidget {
       controller: controller,
       onChanged: onChanged,
       textInputAction: TextInputAction.search,
-      style: AppTextStyles.bodySmall.copyWith(color: AppColors.textPrimary),
+      style: AppTextStyles.accentCaption.copyWith(color: AppColors.primary),
       decoration: InputDecoration(
         hintText: 'Ketik judul kuis atau 6 digit PIN...',
-        hintStyle: AppTextStyles.bodySmall.copyWith(color: AppColors.info),
+        hintStyle: AppTextStyles.body.copyWith(color: AppColors.info),
         filled: true,
         fillColor: AppColors.textOnPrimary.withValues(alpha: 0.70),
         isDense: true,
@@ -41,16 +35,6 @@ class QuizSearchField extends StatelessWidget {
           size: AppIconSize.sm,
           color: AppColors.info,
         ),
-        suffixIcon: syncing
-            ? const Padding(
-                padding: EdgeInsets.all(AppSpacing.space7),
-                child: SizedBox(
-                  width: AppSpacing.space7,
-                  height: 14,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                ),
-              )
-            : null,
         border: OutlineInputBorder(
           borderRadius: AppRadius.lg,
           borderSide: const BorderSide(color: AppColors.divider),

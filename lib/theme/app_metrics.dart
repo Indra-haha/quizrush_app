@@ -88,7 +88,7 @@ class AppSizes {
   static const heroCard = 350.0;
 
   /// Tinggi panel gradien di atas halaman register.
-  static const authHero = 242.0;
+  static const authHero = 320.0;
 
   /// Jarak wordmark dari tepi atas panel hero halaman register.
   static const authHeroTop = 70.0;

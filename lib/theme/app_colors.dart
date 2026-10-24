@@ -18,6 +18,10 @@ class AppColors {
   static const surface = Color(0xFFF9F9FF);
   static const surfaceSoft = Color(0xFFDEE8FF);
 
+  //gradient
+  static const gradientStart = Color(0xFF4648D4);
+  static const gradientEnd = Color(0xFF6B38D4);
+
   // Putih murni (kartu form auth) & latar halaman auth (desain register).
   static const pureSurface = Color(0xFFFFFFFF);
   static const pageBase = Color(0xFFFCFCFC);

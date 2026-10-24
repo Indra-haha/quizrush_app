@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'app_colors.dart';
+
 /// Gradient presets. Setiap widget dan halaman WAJIB membaca gradient dari sini.
 class AppGradients {
   AppGradients._();
@@ -22,7 +24,7 @@ class AppGradients {
   static const authHero = LinearGradient(
     begin: Alignment(0.14, -0.14),
     end: Alignment(0.86, 1.14),
-    colors: [Color(0xFF4648D4), Color(0xFF6B38D4)],
+    colors: [Color(0xFF4648D4), AppColors.gradientEnd],
   );
 
   /// Kartu statistik unggulan beranda (desain baru).
@@ -36,13 +38,13 @@ class AppGradients {
   static const action = LinearGradient(
     begin: Alignment(0, 0.5),
     end: Alignment(1, 0.5),
-    colors: [Color(0xFF4648D4), Color(0xFF6B38D4)],
+    colors: [Color(0xFF4648D4), AppColors.gradientEnd],
   );
 
   /// Track toggle aktif pada kartu pengaturan profil (vertikal).
   static const toggleActive = LinearGradient(
     begin: Alignment(0.5, -0.0),
     end: Alignment(0.5, 1.0),
-    colors: [Color(0xFF4648D4), Color(0xFF6B38D4)],
+    colors: [Color(0xFF4648D4), AppColors.gradientEnd],
   );
 }

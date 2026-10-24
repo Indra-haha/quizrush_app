@@ -368,7 +368,7 @@ class AppTextStyles {
 
   /// Wordmark QUIZRUSH pada hero halaman register.
   static final brandWordmark = GoogleFonts.montserrat(
-    color: AppColors.textOnPrimary,
+    color: AppColors.primary,
     fontSize: 32,
     fontWeight: FontWeight.w700,
     fontStyle: FontStyle.italic,
@@ -378,7 +378,7 @@ class AppTextStyles {
 
   /// Tagline di bawah wordmark.
   static final heroTagline = GoogleFonts.plusJakartaSans(
-    color: AppColors.textOnPrimary,
+    color: AppColors.primary,
     fontSize: 16,
     fontWeight: FontWeight.w400,
     height: 1.5,

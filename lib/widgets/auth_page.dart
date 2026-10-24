@@ -15,38 +15,47 @@ class AuthPageScaffold extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.pageBase,
-      body: SingleChildScrollView(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(
-            minHeight: AppSizes.authPageMinHeight,
+      resizeToAvoidBottomInset: true,
+      body: Stack(
+        children: [
+          const Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: IgnorePointer(
+              ignoring: true,
+              child: AuthHeroPanel(),
+            ),
           ),
-          child: Stack(
-            children: [
-              const Positioned(
-                top: 0,
-                left: 0,
-                right: 0,
-                child: AuthHeroPanel(),
-              ),
-              Padding(
-                padding: const EdgeInsets.only(top: AppSizes.authHeroTop),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const AuthBrandHeader(),
-                    const SizedBox(height: AppSpacing.space13),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: AppSpacing.space8,
-                      ),
-                      child: AuthFormCard(children: cardChildren),
+          Positioned(
+            top: AppSizes.authHeroTop,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                return SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.space8,
+                    vertical: AppSpacing.space13,
+                  ),
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      minHeight: constraints.maxHeight - (AppSpacing.space13 * 2),
                     ),
-                  ],
-                ),
-              ),
-            ],
+                    child: Center(
+                      child: SizedBox(
+                        width: double.infinity,
+                        child: AuthFormCard(children: cardChildren),
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
@@ -132,12 +141,6 @@ class AuthBrandHeader extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.center,
           spacing: AppSpacing.space4,
           children: [
-            Image.asset(
-              'lib/assets/icon/logo.png',
-              width: AppIconSize.xxl,
-              height: AppIconSize.xxl,
-              fit: BoxFit.contain,
-            ),
             Text(
               'QUIZRUSH',
               textAlign: TextAlign.center,
@@ -188,25 +191,6 @@ class AuthFormCard extends StatelessWidget {
   }
 }
 
-/// Judul kartu form ("Login" / "Buat Akun") beserta spasi ke field pertama.
-class AuthFormTitle extends StatelessWidget {
-  final String title;
-
-  const AuthFormTitle({super.key, required this.title});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      spacing: AppSpacing.space2,
-      children: [
-        Text(title, style: AppTextStyles.authTitle),
-        SizedBox(width: double.infinity, height: AppSpacing.space10),
-      ],
-    );
-  }
-}
 
 /// Baris penutup form: teks biasa + tautan aksi, rata tengah horizontal.
 class AuthPageFooter extends StatelessWidget {
