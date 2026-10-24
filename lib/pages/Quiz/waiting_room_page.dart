@@ -100,6 +100,7 @@ class _WaitingRoomPageState extends State<WaitingRoomPage> {
   /// True sejak soal pertama diterima sampai halaman live ditutup; mencegah
   /// berpindah dua kali ke halaman permainan.
   bool _inGame = false;
+  bool _navigatingToLive = false;
 
   @override
   void initState() {
@@ -170,7 +171,9 @@ class _WaitingRoomPageState extends State<WaitingRoomPage> {
     _accelerometerSub?.cancel();
     _messageSub?.cancel();
     _statusSub?.cancel();
-    _socket?.dispose();
+    if (!_navigatingToLive) {
+      _socket?.dispose();
+    }
     super.dispose();
   }
 
@@ -341,6 +344,7 @@ class _WaitingRoomPageState extends State<WaitingRoomPage> {
 
     final question = LiveQuestion.fromJson(jsonMap(message.data));
     _inGame = true;
+    _navigatingToLive = true;
 
     Navigator.of(context)
         .push(
@@ -357,6 +361,7 @@ class _WaitingRoomPageState extends State<WaitingRoomPage> {
           ),
         )
         .whenComplete(() {
+          _navigatingToLive = false;
           if (mounted) setState(() => _inGame = false);
         });
   }
