@@ -705,13 +705,11 @@ void main() {
       await tester.pumpWidget(
         _wrap(
           QuizResultsList(
-            loading: true,
             error: null,
             notFound: false,
             pinProgress: null,
             quizzes: const [],
             query: '',
-            onRetry: () async {},
             onTapQuiz: (_) {},
           ),
         ),
