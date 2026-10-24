@@ -8,35 +8,28 @@ import '../widgets/quiz_card.dart';
 
 /// Menampilkan hasil daftar quiz (loading/error/empty/not found/searching/list).
 class QuizResultsList extends StatelessWidget {
-  final bool loading;
   final String? error;
   final bool notFound;
   final int? pinProgress;
   final List<Quizes> quizzes;
   final String query;
-  final Future<void> Function()? onRetry;
   final ValueChanged<Quizes> onTapQuiz;
 
   const QuizResultsList({
     super.key,
-    required this.loading,
     required this.error,
     required this.notFound,
     required this.pinProgress,
     required this.quizzes,
     required this.query,
-    required this.onRetry,
     required this.onTapQuiz,
   });
 
   @override
   Widget build(BuildContext context) {
-    if (loading) {
-      return const Center(child: CircularProgressIndicator());
-    }
 
     if (error != null) {
-      return ErrorStateView(message: error!, onRetry: onRetry);
+      return ErrorStateView(message: error!);
     }
 
     if (notFound) return const EmptyStateView.notFound();
@@ -48,6 +41,8 @@ class QuizResultsList extends StatelessWidget {
     }
 
     return ListView(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
       padding: const EdgeInsets.fromLTRB(
         AppSpacing.space9,
         AppSpacing.space4,

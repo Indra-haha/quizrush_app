@@ -61,7 +61,6 @@ class StatusFilter<T> extends StatelessWidget {
     final resolved = _resolvedItems;
 
     final pillBackground = AppColors.fieldBackground;
-    final pillBorder = AppColors.primaryBorder;
     final selectedBackground = AppColors.primary;
     final selectedForeground = AppColors.textOnPrimary;
     final unselectedForeground = AppColors.textPrimary;

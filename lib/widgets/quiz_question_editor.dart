@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import '../widgets/app_options_select.dart' as list_options;
-import '../theme/create_quiz_theme.dart';
 import '../theme/app_theme.dart';
 
-const List<String> _durations = ['1.5', '2.0', '3.0', '5.0'];
 
 /// Field untuk jawaban quiz dengan marker dan toggle jawaban benar.
 /// Bisa dipakai di berbagai halaman.
