@@ -184,8 +184,10 @@ class _SaldoPageState extends State<SaldoPage> {
     }
 
     return RefreshIndicator(
+      color: AppColors.primary,
       onRefresh: _load,
       child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.fromLTRB(
           AppSpacing.space8,
