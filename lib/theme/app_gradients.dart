@@ -10,41 +10,41 @@ class AppGradients {
   static const heroGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [Color(0xFF6063EE), Color(0xFF4648D4)],
+    colors: [AppColors.quizAction, AppColors.primary],
   );
 
   /// Flat brand fill used by hero cards without artwork.
   static const solidHero = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [Color(0xFF4648D4), Color(0xFF4648D4)],
+    colors: [AppColors.primary, AppColors.primary],
   );
 
   /// Panel gradien di atas halaman register (desain baru).
   static const authHero = LinearGradient(
     begin: Alignment(0.14, -0.14),
     end: Alignment(0.86, 1.14),
-    colors: [Color(0xFF4648D4), AppColors.gradientEnd],
+    colors: [AppColors.primary, AppColors.gradientEnd],
   );
 
   /// Kartu statistik unggulan beranda (desain baru).
   static const homeStatHighlight = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [Color(0xFF4648D4), Color(0xFF6063EE)],
+    colors: [AppColors.primary, AppColors.quizAction],
   );
 
   /// Gradien tombol aksi beranda (horizontal).
   static const action = LinearGradient(
     begin: Alignment(0, 0.5),
     end: Alignment(1, 0.5),
-    colors: [Color(0xFF4648D4), AppColors.gradientEnd],
+    colors: [AppColors.primary, AppColors.gradientEnd],
   );
 
   /// Track toggle aktif pada kartu pengaturan profil (vertikal).
   static const toggleActive = LinearGradient(
     begin: Alignment(0.5, -0.0),
     end: Alignment(0.5, 1.0),
-    colors: [Color(0xFF4648D4), AppColors.gradientEnd],
+    colors: [AppColors.primary, AppColors.gradientEnd],
   );
 }

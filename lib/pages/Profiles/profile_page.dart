@@ -264,46 +264,49 @@ class _ProfilePageState extends State<ProfilePage> {
         icon: Icons.feedback_rounded,
         onPressed: () => {},
       ),
-      body: RefreshIndicator(
+      body: _buildBody(context)
+      );
+  }
+
+
+  Widget _buildBody(BuildContext context) {
+    return 
+    RefreshIndicator(
         color: AppColors.primary,
         onRefresh: _loadStats,
-        child: ListView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          padding: ProfileTheme.contentPadding,
-          children: [
-            _centered(
-              _ProfileHeroCard(
-                nama: _nama,
-                username: _username,
-                kelas: _kelas,
-                initials: _initials,
-              ),
-            ),
-            const SizedBox(height: ProfileTheme.sectionGap),
-            _centered(
-              ListenableBuilder(
-                listenable: PointsStore.instance,
-                builder: (context, _) {
-                  final points = PointsStore.instance.points ?? _stats.points;
-                  return _StatsCard(stats: _stats, points: points);
-                },
-              ),
-            ),
-            const SizedBox(height: ProfileTheme.sectionGap),
-            _centered(
-              _SettingsCard(
-                notificationsEnabled: _notificationsEnabled,
-                onNotificationsChanged: _toggleNotifications,
-                biometricEnabled: _biometricEnabled,
-                biometricBusy: _biometricBusy,
-                onBiometricChanged: _toggleBiometric,
-                onStatsTap: () => _notAvailable('Statistik & riwayat kuis'),
-                onAdvancedTap: () => _sensorSettings(),
-              ),
-            ),
-          ],
-        ),
+        child: _buildList(),
+    );
+  }
+
+  Widget _buildList(){
+    return ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.only(
+        top: AppSpacing.space8,
+        left: AppSpacing.space9,
+        right: AppSpacing.space9,
+        bottom: AppSpacing.fabClearance,
       ),
+      children: [
+        _centered(_ProfileHeroCard(
+          nama: _nama,
+          username: _username,
+          kelas: _kelas,
+          initials: _initials,
+        )),
+        const SizedBox(height: AppSpacing.space10),
+        _centered(_StatsCard(stats: _stats, points: PointsStore.instance.points)),
+        const SizedBox(height: AppSpacing.space10),
+        _centered(_SettingsCard(
+          notificationsEnabled: _notificationsEnabled,
+          onNotificationsChanged: _toggleNotifications,
+          biometricEnabled: _biometricEnabled,
+          biometricBusy: _biometricBusy,
+          onBiometricChanged: _toggleBiometric,
+          onStatsTap: () => _notAvailable('Statistik & riwayat kuis'),
+          onAdvancedTap: () => _notAvailable('Pengaturan lanjut'),
+        )),
+      ],
     );
   }
 

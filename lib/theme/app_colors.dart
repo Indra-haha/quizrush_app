@@ -129,5 +129,23 @@ class AppColors {
   static const quizQuestionSurface = Color(0xFFE7EEFF);
   static const quizCoverSurface = Color(0xFFD8E3FB);
   static const quizCoverBorder = Color(0xFF767586);
+
+  // Brand/gradient extras
+  static const brandIndigo = Color(0xFF6063EE);
+
+  // Shadows / overlays
+  static const shadowBlack00 = Color(0x00000000);
+  static const shadowBlack05 = Color(0x0C000000);
+  static const shadowBlack06 = Color(0x0F000000);
+  static const shadowBlack08 = Color(0x14000000);
+  static const shadowBlack10 = Color(0x19000000);
+  static const shadowBlack12 = Color(0x1F000000);
+  static const shadowBlack20 = Color(0x33000000);
+  static const shadowBlack40 = Color(0x66000000);
+  static const shadowIndigo06 = Color(0x0F4B49D6);
+  static const shadowIndigo08 = Color(0x144648D4);
+  static const shadowIndigo14 = Color(0x244648D4);
+  static const shadowIndigo18 = Color(0x2D4648D4);
+  static const shadowIndigo20 = Color(0x334648D4);
 }
 

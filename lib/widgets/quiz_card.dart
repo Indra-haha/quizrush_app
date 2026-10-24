@@ -99,12 +99,12 @@ class QuizCard extends StatelessWidget {
                   loadingBuilder: (context, child, progress) =>
                       progress == null ? child : _buildCoverPlaceholder(),
                 ),
-                const DecoratedBox(
+                DecoratedBox(
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
-                      colors: [Color(0x66000000), Color(0x00000000)],
+                      colors: [AppColors.shadowBlack40, AppColors.shadowBlack00],
                     ),
                   ),
                 ),

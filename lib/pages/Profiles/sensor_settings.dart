@@ -51,10 +51,10 @@ class _SettingsState extends State<Settings> {
       text: index == 0
           ? 'Ke Kiri'
           : index == 1
-              ? 'Ke Kanan'
-              : index == 2
-                  ? 'Tilt Depan / Atas'
-                  : 'Tilt Belakang / Bawah',
+          ? 'Ke Kanan'
+          : index == 2
+          ? 'Tilt Depan / Atas'
+          : 'Tilt Belakang / Bawah',
     ),
   );
 
@@ -99,11 +99,11 @@ class _SettingsState extends State<Settings> {
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: AppSizes.profileCard),
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(
-            AppSpacing.space9,
-            AppSpacing.space8,
-            AppSpacing.space9,
-            AppSpacing.scrollClearance,
+          padding: const EdgeInsets.only(
+            top: AppSpacing.space8,
+            left: AppSpacing.space9,
+            right: AppSpacing.space9,
+            bottom: AppSpacing.fabClearance,
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -117,7 +117,8 @@ class _SettingsState extends State<Settings> {
                 enabled: _gyroscopeEnabled,
                 onChanged: _toggleGyroscope,
                 selectedTilt: _selectedTilt,
-                onTiltSelected: (index) => setState(() => _selectedTilt = index),
+                onTiltSelected: (index) =>
+                    setState(() => _selectedTilt = index),
                 tiltControllers: _tiltControllers,
               ),
             ],
@@ -181,10 +182,7 @@ class _AccelerometerCard extends StatelessWidget {
   final bool enabled;
   final ValueChanged<bool> onChanged;
 
-  const _AccelerometerCard({
-    required this.enabled,
-    required this.onChanged,
-  });
+  const _AccelerometerCard({required this.enabled, required this.onChanged});
 
   @override
   Widget build(BuildContext context) {
@@ -208,7 +206,11 @@ class _AccelerometerCard extends StatelessWidget {
                     ),
                   ),
                 ),
-                _SensorToggle(value: enabled, enabled: true, onChanged: onChanged),
+                _SensorToggle(
+                  value: enabled,
+                  enabled: true,
+                  onChanged: onChanged,
+                ),
               ],
             ),
             const SizedBox(height: AppSpacing.space6),
@@ -292,7 +294,11 @@ class _GyroscopeCard extends StatelessWidget {
                     ),
                   ),
                 ),
-                _SensorToggle(value: enabled, enabled: true, onChanged: onChanged),
+                _SensorToggle(
+                  value: enabled,
+                  enabled: true,
+                  onChanged: onChanged,
+                ),
               ],
             ),
             const SizedBox(height: AppSpacing.space6),
