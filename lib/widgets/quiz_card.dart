@@ -30,7 +30,7 @@ class QuizCard extends StatelessWidget {
         color: AppColors.surface,
         borderRadius: AppRadius.lg,
         border: Border.all(
-          color: AppColors.primaryBorder,
+          color: AppColors.divider,
         ),
         boxShadow: AppShadows.softLift,
       ),
@@ -155,27 +155,6 @@ class QuizCard extends StatelessWidget {
     );
   }
 
-  Widget _buildHomeBadge(String text, {bool outlined = false}) {
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.space6,
-        vertical: AppSpacing.space2,
-      ),
-      decoration: BoxDecoration(
-        color: outlined
-            ? AppColors.overlayLight
-            : AppColors.textPrimary.withValues(alpha: 0.50),
-        borderRadius: AppRadius.pill,
-        border: outlined
-            ? Border.all(
-                color: AppColors.overlayBorder,
-                width: AppBorderWidth.hairline,
-              )
-            : null,
-      ),
-      child: Text(text, style: AppTextStyles.statLabelOnPrimary),
-    );
-  }
 
   Widget _buildMeta(IconData icon, String text) {
     return Row(
@@ -189,6 +168,7 @@ class QuizCard extends StatelessWidget {
   }
 }
 
+// ignore: unused_element
 class _QuizCardIconBox extends StatelessWidget {
   const _QuizCardIconBox();
 

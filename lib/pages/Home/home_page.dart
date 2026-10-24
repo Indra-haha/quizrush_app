@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import '../../models/quiz.dart';
 import '../../services/quiz_feed.dart';
 import '../../services/quiz_index.dart';
-import '../../services/session_service.dart';
 import '../../theme/app_theme.dart';
 import '../../helpers/format.dart';
 import '../../widgets/app_header_bar_with_actions.dart';
@@ -31,7 +30,6 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  Map<String, dynamic>? _user;
   QuizIndex? _index;
   bool _loading = true;
   bool _syncing = false;
@@ -40,16 +38,7 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
-    _user = widget.user;
-    _loadUser();
     _load();
-  }
-
-  Future<void> _loadUser() async {
-    final user = await SessionService.instance.getUser();
-    if (user != null && mounted) {
-      setState(() => _user = user);
-    }
   }
 
   /// Daftar quiz dibaca dari cache lokal; server hanya dihubungi kalau cache
@@ -170,12 +159,7 @@ class _HomePageState extends State<HomePage> {
       children: [
         const SizedBox(height: AppSpacing.space8),
         _buildStats(),
-        if (_loading)
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: AppSpacing.space14),
-            child: Center(child: CircularProgressIndicator()),
-          )
-        else if (_error != null)
+        if (_error != null)
           _buildError()
         else if (section == null)
           _buildEmpty()

@@ -132,7 +132,7 @@ class RoomPresenceService with WidgetsBindingObserver {
     final leaverName = from.isNotEmpty ? from : 'Seseorang';
     try {
       if (_notifications is NotificationService) {
-        await (_notifications as NotificationService).showRoomLeaveNotification(
+        await (_notifications).showRoomLeaveNotification(
           leaverName: leaverName,
           roomCode: room.kode,
         );

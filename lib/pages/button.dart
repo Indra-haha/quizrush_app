@@ -6,7 +6,7 @@ import 'Home/home_page.dart';
 import 'Quiz/quiz_page.dart';
 import 'Ranking/ranking_region_page.dart';
 import 'Profiles/profile_page.dart';
-import 'Reward/saldo_page.dart';
+import 'Reward/reward_page.dart';
 
 class MainShell extends StatefulWidget {
   final Map<String, dynamic>? user;
@@ -32,7 +32,7 @@ class _MainShellState extends State<MainShell> {
   Widget build(BuildContext context) {
     final pages = [
       HomePage(user: widget.user),
-      SaldoPage(isActive: _index == 1),
+      RewardPage(isActive: _index == 1),
       QuizPage(user: widget.user),
       RankingRegionPage(isActive: _index == 3),
       ProfilePage(user: widget.user, isActive: _index == 4),
