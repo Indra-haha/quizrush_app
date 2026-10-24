@@ -5,16 +5,20 @@ import '../../theme/app_theme.dart';
 import '../../widgets/app_header_bar_with_actions.dart';
 import '../../widgets/points_indicator.dart';
 import '../../widgets/quiz_question_editor.dart';
+import '../../widgets/compass_calibration_modal.dart';
+
 
 class SensorSettingsPage extends StatelessWidget {
-  const SensorSettingsPage({super.key});
+  const SensorSettingsPage({super.key, required this.title});
+
+  final String title;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.surface,
       appBar: AppHeaderBarWithActions(
-        title: 'Sensor',
+        title: title,
         leading: IconButton(
           tooltip: 'Kembali',
           onPressed: () => Navigator.of(context).pop(),
@@ -23,13 +27,12 @@ class SensorSettingsPage extends StatelessWidget {
         ),
         actions: const [PointsIndicator()],
       ),
-      body: const SafeArea(
-        child: SingleChildScrollView(
-          physics: AlwaysScrollableScrollPhysics(),
-          child: Settings(),
-        ),
-      ),
+      body: _buildbody(),
     );
+  }
+
+  Widget _buildbody() {
+    return const Settings();
   }
 }
 
@@ -83,6 +86,9 @@ class _SettingsState extends State<Settings> {
   Future<void> _toggleGyroscope(bool value) async {
     setState(() => _gyroscopeEnabled = value);
     await ProfileSettingsService.instance.setGyroscopeEnabled(value);
+    if (value && mounted) {
+      await showCompassCalibrationModal(context);
+    }
   }
 
   @override
@@ -96,9 +102,7 @@ class _SettingsState extends State<Settings> {
   @override
   Widget build(BuildContext context) {
     return Center(
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: AppSizes.profileCard),
-        child: Padding(
+       child: Padding(
           padding: const EdgeInsets.only(
             top: AppSpacing.space8,
             left: AppSpacing.space9,
@@ -124,7 +128,6 @@ class _SettingsState extends State<Settings> {
             ],
           ),
         ),
-      ),
     );
   }
 }
@@ -192,7 +195,7 @@ class _AccelerometerCard extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.space8),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.start, 
           children: [
             Row(
               crossAxisAlignment: CrossAxisAlignment.center,

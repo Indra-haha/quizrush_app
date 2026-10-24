@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../../theme/app_colors.dart';
 import '../../widgets/app_header_bar_with_actions.dart';
-import '../../widgets/app_pill_button.dart';
 import '../../widgets/points_indicator.dart';
 
 class FeedbackPage extends StatelessWidget {
@@ -16,14 +15,10 @@ class FeedbackPage extends StatelessWidget {
         actions: const [PointsIndicator(style: PointsIndicatorStyle.home)],
       ),
       body: _buildBody(),
-      floatingActionButton: AppPillButton(
-        label: 'Feedback',
-        onPressed: () => (),
-      ),
     );
   }
 
-  Widget _buildBody(BuildContext context) {
+  Widget _buildBody() {
     return RefreshIndicator(
         color: AppColors.primary,
         onRefresh: () => Future.delayed(const Duration(seconds: 1)),
@@ -31,6 +26,28 @@ class FeedbackPage extends StatelessWidget {
     );
   }
 
-  Widget _buildList() {}
+  Widget _buildList() {
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        const Text(
+          'Feedback',
+          style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 16),
+        const Text(
+          'Kami sangat menghargai masukan Anda. Silakan kirimkan saran, kritik, atau pertanyaan Anda melalui formulir di bawah ini.',
+          style: TextStyle(fontSize: 16),
+        ),
+        const SizedBox(height: 16),
+        ElevatedButton(
+          onPressed: () {
+            // Aksi ketika tombol ditekan, misalnya membuka formulir feedback
+          },
+          child: const Text('Kirim Feedback'),
+        ),
+      ],
+    );
+  }
 
 }

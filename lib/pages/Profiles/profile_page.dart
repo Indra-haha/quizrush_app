@@ -241,10 +241,10 @@ class _ProfilePageState extends State<ProfilePage> {
     AppSnackBar.show(context, '$label belum tersedia saat ini.');
   }
 
-  void _sensorSettings() {
+  void _sensorSettings(String label) {
     Navigator.of(
       context,
-    ).push(MaterialPageRoute(builder: (_) => const SensorSettingsPage()));
+    ).push(MaterialPageRoute(builder: (_) => SensorSettingsPage(title: label)));
   }
 
   @override
@@ -274,11 +274,11 @@ class _ProfilePageState extends State<ProfilePage> {
     RefreshIndicator(
         color: AppColors.primary,
         onRefresh: _loadStats,
-        child: _buildList(),
+        child: _buildList(context),
     );
   }
 
-  Widget _buildList(){
+  Widget _buildList(BuildContext context){
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.only(
@@ -304,7 +304,7 @@ class _ProfilePageState extends State<ProfilePage> {
           biometricBusy: _biometricBusy,
           onBiometricChanged: _toggleBiometric,
           onStatsTap: () => _notAvailable('Statistik & riwayat kuis'),
-          onAdvancedTap: () => _notAvailable('Pengaturan lanjut'),
+          onAdvancedTap: () => _sensorSettings('Pengaturan Sensor'),
         )),
       ],
     );
@@ -337,7 +337,6 @@ class _ProfileHeroCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: ProfileTheme.heroPadding,
       decoration: ProfileTheme.cardDecoration,
       child: Column(
         mainAxisSize: MainAxisSize.min,
