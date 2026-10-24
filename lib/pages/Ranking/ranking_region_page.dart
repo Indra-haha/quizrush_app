@@ -8,6 +8,7 @@ import '../../services/session_service.dart';
 import '../../widgets/app_header_bar_with_actions.dart';
 import '../../widgets/app_snackbar.dart';
 import '../../widgets/points_indicator.dart';
+import '../../widgets/status_filter.dart';
 
 class RankingRegionPage extends StatefulWidget {
   final bool isActive;
@@ -19,7 +20,6 @@ class RankingRegionPage extends StatefulWidget {
 }
 
 class _RankingRegionPageState extends State<RankingRegionPage> {
-  static const String _placeholderRegion = 'Kecamatan, Kota, Provinsi';
   static const List<String> _levels = ['kecamatan', 'kota', 'provinsi'];
 
   LocationResult? _location;
@@ -215,10 +215,7 @@ class _RankingRegionPageState extends State<RankingRegionPage> {
     final location = _location;
     final regionText = location?.displayName.trim().isNotEmpty == true
         ? location!.displayName.trim()
-        : _placeholderRegion;
-    final kecamatanLabel = _levelLabel('kecamatan');
-    final kotaLabel = _levelLabel('kota');
-    final provinsiLabel = _levelLabel('provinsi');
+        : 'Kecamatan, Kota, Provinsi';
 
     return Scaffold(
       backgroundColor: const Color(0xFFFCFCFC),
@@ -335,43 +332,10 @@ class _RankingRegionPageState extends State<RankingRegionPage> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                Center(
-                  child: SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Container(
-                      padding: const EdgeInsets.all(2),
-                      decoration: ShapeDecoration(
-                        color: const Color(0xFFF0F3FF),
-                        shape: RoundedRectangleBorder(
-                          side: const BorderSide(
-                            width: 2,
-                            color: Color(0xFFC7C4D7),
-                          ),
-                          borderRadius: BorderRadius.circular(9999),
-                        ),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          _TabButton(
-                            label: kecamatanLabel,
-                            selected: _activeLevel == 'kecamatan',
-                            onTap: () => _selectLevel('kecamatan'),
-                          ),
-                          _TabButton(
-                            label: kotaLabel,
-                            selected: _activeLevel == 'kota',
-                            onTap: () => _selectLevel('kota'),
-                          ),
-                          _TabButton(
-                            label: provinsiLabel,
-                            selected: _activeLevel == 'provinsi',
-                            onTap: () => _selectLevel('provinsi'),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
+                StatusFilter<String>(
+                  values: const ['kecamatan', 'kota', 'provinsi'],
+                  selected: _activeLevel,
+                  onChanged: _selectLevel,
                 ),
               ],
             ),
@@ -479,43 +443,7 @@ class _RankingRegionPageState extends State<RankingRegionPage> {
   }
 }
 
-class _TabButton extends StatelessWidget {
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
 
-  const _TabButton({
-    required this.label,
-    required this.selected,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        decoration: ShapeDecoration(
-          color: selected ? const Color(0xFF6063EE) : Colors.transparent,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(9999),
-          ),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            color: selected ? Colors.white : const Color(0xFF464554),
-            fontSize: selected ? 14 : 13,
-            fontFamily: 'Plus Jakarta Sans',
-            fontWeight: FontWeight.w700,
-            height: 1.43,
-          ),
-        ),
-      ),
-    );
-  }
-}
 
 class _PodiumItem extends StatelessWidget {
   final RegionRankingEntry entry;

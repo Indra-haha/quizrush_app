@@ -124,10 +124,10 @@ class _RegisterPageState extends State<RegisterPage> {
   Widget build(BuildContext context) {
     return AuthPageScaffold(
       cardChildren: [
-        const AuthFormTitle(title: 'Buat Akun'),
+        const AuthBrandHeader(),
         Column(
           mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.center,
           spacing: AppSpacing.space8,
           children: [
             AuthField(
