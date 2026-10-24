@@ -24,9 +24,12 @@ class NotificationService implements RoomNotificationGateway {
   static final NotificationService instance = NotificationService._();
 
   static const int _roomReminderId = 41001;
+  static const int _roomLeaveId = 41002;
   static const String _channelId = 'quizrush_room_reminder';
+  static const String _leaveChannelId = 'quizrush_room_leave';
   static const String _actionOpenRoom = 'open_room';
   static const String _categoryId = 'quizrush_room_reminder_category';
+  static const String _leaveCategoryId = 'quizrush_room_leave_category';
 
   final FlutterLocalNotificationsPlugin _plugin =
       FlutterLocalNotificationsPlugin();
@@ -57,6 +60,16 @@ class NotificationService implements RoomNotificationGateway {
           notificationCategories: [
             DarwinNotificationCategory(
               _categoryId,
+              actions: [
+                DarwinNotificationAction.plain(
+                  _actionOpenRoom,
+                  'Kembali ke Room',
+                  options: const {DarwinNotificationActionOption.foreground},
+                ),
+              ],
+            ),
+            DarwinNotificationCategory(
+              _leaveCategoryId,
               actions: [
                 DarwinNotificationAction.plain(
                   _actionOpenRoom,
@@ -196,6 +209,55 @@ class NotificationService implements RoomNotificationGateway {
         body: body,
         notificationDetails: details,
         payload: room.kode,
+      );
+    } catch (_) {
+      // Gagal menampilkan notifikasi tidak boleh mengganggu navigasi aplikasi.
+    }
+  }
+
+  Future<void> showRoomLeaveNotification({
+    required String leaverName,
+    required String roomCode,
+  }) async {
+    if (!_supported) return;
+    await initialize();
+
+    final body = '$leaverName keluar dari ruang tunggu. Ketuk untuk kembali.';
+
+    const details = NotificationDetails(
+      android: AndroidNotificationDetails(
+        _leaveChannelId,
+        'Notifikasi Room',
+        channelDescription:
+            'Notifikasi saat ada pemain yang keluar dari ruang tunggu.',
+        importance: Importance.high,
+        priority: Priority.high,
+        category: AndroidNotificationCategory.event,
+        actions: [
+          AndroidNotificationAction(
+            _actionOpenRoom,
+            'Kembali ke Room',
+            showsUserInterface: true,
+            cancelNotification: true,
+          ),
+        ],
+      ),
+      iOS: DarwinNotificationDetails(
+        categoryIdentifier: _leaveCategoryId,
+        presentAlert: true,
+        presentBanner: true,
+        presentList: true,
+        presentSound: true,
+      ),
+    );
+
+    try {
+      await _plugin.show(
+        id: _roomLeaveId,
+        title: 'Pemain Keluar',
+        body: body,
+        notificationDetails: details,
+        payload: roomCode,
       );
     } catch (_) {
       // Gagal menampilkan notifikasi tidak boleh mengganggu navigasi aplikasi.

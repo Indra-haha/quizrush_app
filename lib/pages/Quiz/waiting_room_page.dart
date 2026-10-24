@@ -15,6 +15,7 @@ import '../../models/live_game.dart';
 import '../../models/quiz.dart';
 import '../../models/room.dart';
 import '../../models/room_message.dart';
+import '../../services/active_room_persistence_service.dart';
 import '../../services/active_room_service.dart';
 import '../../services/api/api_client.dart';
 import '../../services/profile_settings_service.dart';
@@ -22,6 +23,7 @@ import '../../services/quiz_feed.dart';
 import '../../services/api/room_service.dart';
 import '../../services/api/room_socket.dart';
 import '../../services/room_reminder_service.dart';
+import '../../services/room_presence_service.dart';
 import '../../services/session_service.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/app_primary_button.dart';
@@ -103,11 +105,26 @@ class _WaitingRoomPageState extends State<WaitingRoomPage> {
   void initState() {
     super.initState();
     RoomReminderService.instance.onRoomPageOpened();
+    RoomPresenceService.instance.setRoomPageOpen(true);
+    // Persist active room for notification tap after kill
+    ActiveRoomService.instance.set(
+      widget.room,
+      roomToken: widget.roomToken,
+      loginToken: widget.loginToken,
+    );
     // Status room dari server; `waiting` adalah default server (API.md §5.1)
     // supaya status kosong tidak membuat alur publish kehilangan tombol.
     _roomStatus = widget.room.status.isEmpty ? 'waiting' : widget.room.status;
     _loadSensorSettings();
     _connect();
+    _persistActiveRoom();
+  }
+
+  Future<void> _persistActiveRoom() async {
+    try {
+      final svc = ActiveRoomPersistenceService.instance;
+      await svc.save(widget.room);
+    } catch (_) {}
   }
 
   Future<void> _loadSensorSettings() async {
@@ -147,6 +164,9 @@ class _WaitingRoomPageState extends State<WaitingRoomPage> {
   @override
   void dispose() {
     RoomReminderService.instance.onRoomPageClosed();
+    RoomPresenceService.instance.setRoomPageOpen(false);
+    // Don't clear persistence here - keep for notification restore if app killed
+    // Will be cleared when room is truly left/ended
     _accelerometerSub?.cancel();
     _messageSub?.cancel();
     _statusSub?.cancel();
@@ -172,6 +192,9 @@ class _WaitingRoomPageState extends State<WaitingRoomPage> {
       name: _myLabel,
     );
     _socket = socket;
+    try {
+      RoomPresenceService.instance.setActiveSocket(socket, room: widget.room);
+    } catch (_) {}
     _statusSub = socket.statuses.listen((status) {
       if (!mounted) return;
       setState(() => _status = status);

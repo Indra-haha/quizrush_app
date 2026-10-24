@@ -7,6 +7,7 @@ import 'services/app_navigator.dart';
 import 'services/notification_service.dart';
 import 'services/room_notification_router.dart';
 import 'services/room_reminder_service.dart';
+import 'services/room_presence_service.dart';
 import 'theme/app_theme.dart';
 
 Future<void> main() async {
@@ -16,6 +17,7 @@ Future<void> main() async {
     () => unawaited(RoomNotificationRouter.instance.openActiveRoom()),
   );
   RoomReminderService.instance.start();
+  RoomPresenceService.instance.start();
   runApp(const QuizApp());
 }
 
