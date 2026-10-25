@@ -396,7 +396,7 @@ class _CreateQuizPageState extends State<CreateQuizPage> {
         shadowColor: CreateQuizPageStyles.headerShadowColor,
         leading: IconButton(
           tooltip: 'Kembali',
-          onPressed: _saving ? null : () => Navigator.of(context).pop(false),
+          onPressed: () => Navigator.of(context).pop(false),
           icon: const Icon(Icons.arrow_back),
         ),
         actions: [_buildSaveButton()],
@@ -501,50 +501,7 @@ class _CreateQuizPageState extends State<CreateQuizPage> {
     return Row(
       children: [
         Expanded(child: _buildLabel('Deskripsi Quiz')),
-        const SizedBox(width: AppSpacing.space4),
-        _buildKategoriButton(),
       ],
-    );
-  }
-
-  Widget _buildKategoriButton() {
-    final label = _selectedKategori ?? 'Kategori Quiz';
-
-    return ConstrainedBox(
-      constraints: const BoxConstraints(
-        maxWidth: CreateQuizPageStyles.categoryMaxWidth,
-      ),
-      child: PopupMenuButton<String>(
-        tooltip: 'Pilih kategori',
-        onSelected: (value) => setState(() => _selectedKategori = value),
-        itemBuilder: (_) => [
-          for (final option in _kategoriOptions)
-            PopupMenuItem<String>(value: option, child: Text(option)),
-        ],
-        child: Container(
-          padding: CreateQuizPageStyles.categoryPadding,
-          decoration: CreateQuizPageStyles.categoryDecoration,
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Flexible(
-                child: Text(
-                  label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: CreateQuizTextStyles.fieldValue,
-                ),
-              ),
-              const SizedBox(width: CreateQuizPageStyles.categoryGap),
-              const Icon(
-                Icons.keyboard_arrow_down,
-                size: CreateQuizPageStyles.categoryIconSize,
-                color: AppColors.textSecondary,
-              ),
-            ],
-          ),
-        ),
-      ),
     );
   }
 

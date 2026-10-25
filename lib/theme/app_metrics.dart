@@ -47,6 +47,9 @@ class AppRadius {
   static const xxl = BorderRadius.all(Radius.circular(32));
   static const pill = BorderRadius.all(Radius.circular(999));
 
+  /// Kartu riwayat poin pada halaman Reward.
+  static const rewardHistory = BorderRadius.all(Radius.circular(48));
+
   /// Panel hero halaman auth: sudut bawah membulat.
   static const authHero = BorderRadius.only(
     bottomLeft: Radius.circular(32),

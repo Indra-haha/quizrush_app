@@ -9,7 +9,7 @@
 | Header autentikasi | `Authorization: Bearer <token>` |
 | Token login | Diperoleh dari `POST /api/login`, berlaku 24 jam |
 | Token room | Diperoleh dari `POST /api/rooms/verify` (§5.4), berlaku 1 jam, hanya untuk WebSocket `GET /api/rooms` |
-| Koleksi DB | `users`, `quizzes`, `rooms`, `results`, `tokens`, `emojis`, `coins` |
+| Koleksi DB | `users`, `quizzes`, `rooms`, `results`, `game_results`, `tokens`, `emojis`, `coins` |
 | Batas body | 1 MiB per request (`413` bila lebih) |
 | Hashing password | SHA-256 (hex lowercase), dilakukan di sisi klien sebelum dikirim |
 | Transport | HTTPS (produksi) melindungi password hash dan token |
@@ -19,6 +19,8 @@ Semua endpoint wajib menyertakan header `Authorization` **kecuali** `POST /api/r
 Semua endpoint yang dilindungi `middleware.Auth` (dan `POST /api/login`) menerapkan **allowlist perangkat**: request wajib berasal dari smartphone, dicek dari header `User-Agent`. Request dari selain smartphone ditolak `401`.
 
 Respons `401` dari `middleware.Auth` memakai envelope bersarang `{ "status": 401, "error": "Unauthorized", "message": "..." }`. Pesan `Missing or expired authorization token` dipakai untuk token yang hilang, rusak, atau kedaluwarsa; pesan lain (`Sesi telah berakhir, silakan login kembali`, allowlist device, `User tidak ditemukan`) dipertahankan per kasus. `POST /api/login` yang ditolak karena bukan smartphone masih memakai bentuk lama `{ "message": "..." }`.
+
+**Frontend (`quizrush_app`):** login JWT disimpan di `SharedPreferences` dengan key `auth_token`; objek user disimpan di `auth_user`. Semua service Dart mengambil token lewat `SessionService.instance.getToken()`, lalu `ApiClient` menambahkan `Authorization: Bearer <login JWT>`, `User-Agent` smartphone, dan `Content-Type: application/json` untuk body JSON. Base URL frontend: `https://deera-server.my.id`.
 
 **Environment variables:**
 
@@ -60,11 +62,27 @@ Respons `401` dari `middleware.Auth` memakai envelope bersarang `{ "status": 401
 | POST | `/api/ai/suggest` | ✓ | Membuat saran soal (AI) dari topik teks |
 | GET | `/api/me/points` | ✓ | Saldo poin user yang login |
 | GET | `/api/me/coins` | ✓ | Riwayat perolehan koin user yang login |
-| GET | `/api/location` | ✓ | Grouped leaderboard per kecamatan/kota/provinsi dari koordinat GPS (lihat §12) |
+| GET | `/api/location` | ✓ | Grouped leaderboard per kecamatan/kota/provinsi dari koordinat GPS (lihat §11) |
 | GET | `/api/emojis` | ✓ | List semua emoji |
 | GET | `/api/emojis/{id}` | ✓ | Melihat satu emoji berdasarkan ID |
 | POST | `/api/emojis` | ✓ | Membuat emoji baru |
 | GET | `/api/rooms?token=<JWT room>` | ✓ | Koneksi WebSocket room (header login + JWT room) |
+
+### 2.1 Daftar Fitur
+
+| No Fitur | Fitur | Section |
+|---|---|---|
+| 1 | Auth | §3 |
+| 2 | Quiz | §4 |
+| 3 | Room | §5 |
+| 4 | Result | §6 |
+| 5 | AI | §7 |
+| 6 | Emoji | §8 |
+| 7 | WebSocket & Permainan | §9 |
+| 8 | Poin & Koin | §10 |
+| 9 | Grouped Leaderboard Wilayah (LBS) | §11 |
+| — | Kode Error Umum | §12 |
+| — | Ringkasan Alur Token | §13 |
 
 ---
 
@@ -250,7 +268,7 @@ Content-Type: application/json
 
 > **Device binding:** saat login sukses, `device_id` disimpan pada user. Jika
 > user yang sama login kembali, `device_id` harus sama; bila berbeda, ditolak `403`.
-> `device_id` tidak dikembalikan pada objek `user`. Objek `user` pada `POST /api/login`, `GET /api/session`, dan `POST /api/register` menyertakan `points` (saldo poin akrual dari permainan kuis; lihat §11).
+> `device_id` tidak dikembalikan pada objek `user`. Objek `user` pada `POST /api/login`, `GET /api/session`, dan `POST /api/register` menyertakan `points` (saldo poin akrual dari permainan kuis; lihat §10).
 
 ### 3.3 POST /api/logout
 
@@ -350,6 +368,144 @@ Authorization: Bearer <TOKEN>
 { "status": 401, "error": "Unauthorized", "message": "User tidak ditemukan" }
 ```
 
+### 3.5 Alur Token — Auth
+
+| Endpoint | Token yang dikirim | Token yang diterbitkan | Keterangan |
+|---|---|---|---|
+| `POST /api/register` | — | — | Hanya membuat akun; tidak ada sesi/token |
+| `POST /api/login` | — | Login JWT (24 jam) | Token ditandatangani HS256 dan hash-nya disimpan di `tokens` |
+| `GET /api/session` | Login JWT | — | Memvalidasi sesi dan mengembalikan user dari context |
+| `POST /api/logout` | Login JWT | — | Mencabut token aktif (`tokens.revoked_at`) |
+
+**Langkah alur token:**
+
+1. Klien memanggil `POST /api/register` tanpa `Authorization`. Server tidak menerbitkan token; klien harus login setelah registrasi.
+2. Klien memanggil `POST /api/login` dengan `username`, `password`, dan `device_id` tanpa `Authorization`. Server memeriksa allowlist smartphone, rate limit, kredensial, dan device binding.
+3. Login sukses: server membuat login JWT HS256 dengan klaim `sub` (username), `iat`, dan `exp` 24 jam, lalu menyimpan `SHA256(token)` di koleksi `tokens` bersama `user_id` dan `expires_at`.
+4. Untuk endpoint terlindungi, klien mengirim `Authorization: Bearer <login JWT>`.
+5. `middleware.Auth` memverifikasi signature/exp, menolak token ber-`typ="room"`, mengecek `revoked_at`, memeriksa allowlist smartphone, lalu memuat user dari klaim `sub` ke context.
+6. `GET /api/session` hanya membaca user dari context dan mengembalikan `{ valid: true, user }`.
+7. `POST /api/logout` memakai token dari context lalu menulis `revoked_at` pada record token tersebut. Token yang sudah dicabut atau kedaluwarsa harus diganti dengan login baru.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant U as User
+    participant UI as LoginPage / RegisterPage
+    participant SVC as AuthService
+    participant AC as ApiClient
+    participant API as API Server
+    participant MW as middleware.Auth
+    participant DB as MongoDB
+    participant SP as SessionService / SharedPreferences
+
+    Note over U,SP: Register - tidak menerbitkan token
+    U->>UI: isi nama, username, kelas, tanggal lahir, password
+    UI->>SVC: register(nama, username, kelas, tanggalLahir, password)
+    SVC->>SVC: hashPassword + formatTanggalLahir
+    SVC->>AC: POST /api/register
+    AC->>API: JSON body tanpa Authorization
+    API->>DB: cek username + InsertUser
+    DB-->>API: user
+    API-->>AC: 201 {message, user}
+    AC-->>SVC: decode response
+    SVC-->>UI: User tanpa token
+    UI-->>U: snackbar berhasil lalu kembali ke login
+
+    Note over U,SP: Login - menerbitkan login JWT
+    U->>UI: isi username dan password
+    UI->>SVC: login(username, password)
+    SVC->>SVC: hashPassword SHA-256
+    SVC->>AC: POST /api/login {username, password, device_id}
+    AC->>API: JSON body + User-Agent smartphone
+    API->>API: IsSmartphone(User-Agent) + rate limit
+    API->>DB: FindUserByUsername + cek device_id
+    DB-->>API: user
+    API->>API: GenerateToken(sub=username, exp=+24 jam, HS256)
+    API->>DB: InsertToken{SHA256(JWT), user_id, expires_at}
+    API-->>AC: 200 {token: login JWT, user}
+    AC-->>SVC: LoginResult(token, user)
+    SVC-->>UI: token + user
+    UI->>SP: saveSession(auth_token, auth_user)
+    UI-->>U: masuk ke MainShell
+
+    Note over U,SP: Restore sesi
+    U->>UI: buka aplikasi
+    UI->>SP: getToken()
+    SP-->>UI: auth_token
+    UI->>SVC: checkSession(token)
+    SVC->>AC: GET /api/session + Bearer login JWT
+    AC->>API: Authorization Bearer login JWT
+    API->>MW: Auth(CheckSession)
+    MW->>MW: VerifyToken(signature, exp, tolak typ=room)
+    MW->>DB: IsTokenRevoked(SHA256(token))
+    DB-->>MW: status revoked
+    MW->>MW: IsSmartphone(User-Agent)
+    MW->>DB: FindUserByUsername(sub)
+    DB-->>MW: user
+    MW-->>API: context user
+    alt token valid, belum revoked, device smartphone
+        API-->>AC: 200 {valid: true, user}
+        AC-->>SVC: sesi valid
+        SVC-->>UI: user
+        UI-->>U: langsung ke MainShell
+    else token hilang, rusak, kedaluwarsa, revoked, atau device salah
+        API-->>AC: 401 {status, error, message}
+        AC-->>SVC: ApiException
+        SVC-->>UI: error
+        UI->>SP: clear session + cache
+        UI-->>U: kembali ke LoginPage
+    end
+
+    Note over U,SP: Logout
+    U->>UI: tekan logout
+    UI->>SVC: logout(token)
+    SVC->>AC: POST /api/logout + Bearer login JWT
+    AC->>API: Authorization Bearer login JWT
+    API->>MW: Auth(Logout)
+    MW->>DB: Verifikasi token + FindUserByUsername
+    MW-->>API: context token + user
+    API->>DB: RevokeToken(tokens.revoked_at = now)
+    API-->>AC: 200 {message}
+    AC-->>SVC: sukses
+    SVC-->>UI: selesai
+    UI->>SP: clear session + cache
+    UI-->>U: kembali ke LoginPage
+```
+
+> Login JWT berlaku 24 jam dan dapat dicabut lewat logout. `JWT_SECRET` yang sama dipakai untuk login JWT dan room JWT, tetapi klaim `typ="room"` membuat room JWT tidak bisa dipakai sebagai Bearer di `middleware.Auth`.
+
+**Alur frontend `quizrush_app` → server:**
+
+| File frontend | Variabel/state | Isi yang dikirim |
+|---|---|---|
+| `lib/pages/login_page.dart` | `_usernameController.text.trim()` | `username` |
+| `lib/pages/login_page.dart` | `_passwordController.text` | plaintext, lalu di-hash `SHA-256` |
+| `lib/services/api/auth_service.dart` | `passwordHash` | hasil `hashPassword(password)` |
+| `lib/services/device_service.dart` | `DeviceService.instance.getId()` | `device_id` (`dev-<fnv1a>`) |
+| `lib/services/api/api_client.dart` | `headers()` | `User-Agent` smartphone; `Authorization` bila token ada |
+| `lib/services/session_service.dart` | `auth_token`, `auth_user` | disimpan setelah login berhasil |
+| `lib/pages/regis_page.dart` | controller nama/username/kelas/tanggal/password | body register; tanggal dikonversi `dd/mm/yyyy` → `YYYY-MM-DD` |
+
+1. `LoginPage._login()` memvalidasi `_usernameController` dan `_passwordController`, lalu memanggil `AuthService.login(username, password)`.
+2. `AuthService.login()` memanggil `hashPassword()` (SHA-256 hex lowercase), lalu `loginWithHash()` mengirim body `{username, password: passwordHash, device_id}` melalui `ApiClient.post`.
+3. `ApiClient.headers()` menambahkan `User-Agent` smartphone dari `DeviceService.instance.userAgent`; `device_id` dibuat stabil dari platform (`dev-...`).
+4. Respons `200` diubah menjadi `LoginResult(token, user)`. `LoginPage` menyimpan `token` ke `SharedPreferences` key `auth_token` dan `user` ke `auth_user` lewat `SessionService.saveSession`.
+5. Saat aplikasi dibuka kembali, `LoginPage._restoreSession()` mengambil `auth_token` lalu memanggil `AuthService.checkSession(token)`. Bila `checkSession` melempar error apa pun (`401`, timeout, atau masalah jaringan), `SessionService.clear()` dan `ActiveRoomService.clear()` dijalankan, lalu user diarahkan ke login.
+6. `RegisterPage._register()` mengisi `nama`, `username`, `kelas`, `tanggalLahir` (hasil `formatTanggalLahir`), dan `password`; `AuthService.register()` mengirim password yang sudah di-hash. Register **tidak** menyimpan token.
+7. Login biometrik memakai `loginWithHash()` dengan hash yang tersimpan, bukan plaintext. Logout di `ProfilePage._logout()` mengirim `AuthService.logout(token)`, lalu tetap menghapus sesi lokal dan cache walaupun server tidak terjangkau.
+
+**Output ke UI:**
+
+| Kondisi | Output |
+|---|---|
+| Register berhasil | Snackbar registrasi berhasil, lalu kembali ke halaman login; token belum dibuat |
+| Login berhasil | `SessionService.saveSession()` lalu `pushReplacement(MainShell(user))` |
+| Restore berhasil | Langsung ke `MainShell` dengan user dari `/api/session` |
+| Restore gagal | Sesi lokal dihapus dan user kembali ke `LoginPage` |
+| Logout | `AuthService.logout()` dipanggil; sesi lokal, cache quiz, dan `ActiveRoomService` tetap dibersihkan lalu redirect ke login |
+| Login/register gagal | Snackbar berisi pesan `ApiException` atau pesan koneksi |
+
 ---
 
 ## 4. Quiz
@@ -392,8 +548,7 @@ Authorization: Bearer <TOKEN>
       "user_id": "<user_id>",
       "title": "Kuis Pemrograman Mobile",
       "description": "Dasar Flutter & Dart",
-      "kategori": "Pemrograman",
-      "path": "https://res.cloudinary.com/quiz/image/upload/v123/galery-quiz/quiz-image/kuis-mobile.png",
+      "path": "https://res.cloudinary.com/quiz/image/authenticated/s--abc123--/v123/galery-quiz/quiz-image/kuis-mobile.png",
       "questions": [
         {
           "question": "Bahasa pemrograman utama Flutter?",
@@ -426,8 +581,7 @@ Authorization: Bearer <TOKEN>
       "user_id": "<user_id>",
       "title": "Kuis Basis Data MongoDB",
       "description": "Konsep dasar MongoDB",
-      "kategori": "Basis Data",
-      "path": "https://res.cloudinary.com/quiz/image/upload/v123/galery-quiz/quiz-image/kuis-mongodb.png",
+      "path": "https://res.cloudinary.com/quiz/image/authenticated/s--abc123--/v123/galery-quiz/quiz-image/kuis-mongodb.png",
       "questions": [
         {
           "question": "MongoDB termasuk database jenis apa?",
@@ -443,7 +597,7 @@ Authorization: Bearer <TOKEN>
 }
 ```
 
-> `status` pada kuis = status room yang paling terakhir dibuat; field ini dihilangkan (`omitempty`) jika kuis belum punya room (masuk grup `quarantine`). `path` berisi URL gambar kuis hasil unggahan Cloudinary (lihat §4.2–§4.4). `correct_idx` tidak dikembalikan pada response untuk menjaga jawaban benar tetap rahasia. Tiap room memuat `type` (`public` atau `private`); room lama tanpa field `type` ditampilkan sebagai `public`. `kategori` berisi kategori kuis; bila kosong atau tidak dikirim server, klien menampilkan nilai default `Umum`.
+> `status` pada kuis = status room yang paling terakhir dibuat; field ini dihilangkan (`omitempty`) jika kuis belum punya room (masuk grup `quarantine`). `path` berisi URL gambar kuis hasil unggahan Cloudinary (lihat §4.2–§4.4). `correct_idx` tidak dikembalikan pada response untuk menjaga jawaban benar tetap rahasia. Tiap room memuat `type` (`public` atau `private`); room lama tanpa field `type` ditampilkan sebagai `public`.
 
 **Contoh response — `401 Unauthorized`**
 
@@ -471,8 +625,9 @@ Authorization: Bearer <TOKEN>
 
 Endpoint ini digunakan klien untuk meminta tanda tangan digital (*signature*) resmi dari server
 sebelum mengunggah gambar langsung ke Cloudinary. Signature ditandatangani dari parameter
-`folder` dan `timestamp` (waktu server saat ini) memakai API secret Cloudinary; API secret itu
-sendiri **tidak pernah** dikembalikan.
+`folder`, `timestamp` (waktu server saat ini, format desimal basis 10), dan `type`
+(selalu `authenticated`) memakai API secret Cloudinary; API secret itu sendiri **tidak pernah**
+dikembalikan.
 
 **Request body:**
 
@@ -512,14 +667,20 @@ Content-Type: application/json
   "signature": "81f14371fa77c3852cd1d6ebbe382cf8476aa081",
   "timestamp": 1792154580,
   "apiKey": "123456789012345",
-  "cloudName": "dlxxyz123"
+  "cloudName": "dlxxyz123",
+  "type": "authenticated"
 }
 ```
 
 > `apiKey` dan `cloudName` adalah kredensial publik; `signature` dihitung dari `folder` +
-> `timestamp` (SHA-1). Klien mengirim ulang `api_key`, `timestamp`, `signature`, dan `folder`
-> yang sama saat upload ke Cloudinary (§4.3). Karena `timestamp` diambil saat permintaan,
-> signature hanya berlaku dalam jendela waktu singkat yang diterima Cloudinary.
+> `timestamp` + `type` (SHA-1). Klien mengirim ulang `api_key`, `timestamp`, `signature`, `folder`,
+> dan `type` yang sama saat upload ke Cloudinary (§4.3). Karena `timestamp` diambil saat
+> permintaan, signature hanya berlaku dalam jendela waktu singkat yang diterima Cloudinary.
+>
+> **Penting:** seluruh field yang ditandatangani (kecuali `file`, `cloud_name`,
+> `resource_type`, dan `api_key`) harus dikirim utuh saat upload. Kalau ada field yang
+> ditandatangani tapi tidak dikirim — atau sebaliknya — Cloudinary akan membalas
+> `401 Invalid Signature`.
 
 **Contoh response — `400 Bad Request`**
 
@@ -551,6 +712,7 @@ ini menggunakan data otorisasi yang didapatkan dari endpoint `POST /api/create/s
 | 3 | `timestamp` | int | ✅ | Diambil dari field `timestamp` hasil respons endpoint `/api/create/signature` |
 | 4 | `signature` | string | ✅ | Diambil dari field `signature` hasil respons endpoint `/api/create/signature` |
 | 5 | `folder` | string | ✅ | **Wajib sama** dengan folder yang dikirim pada endpoint `/api/create/signature` |
+| 6 | `type` | string | ✅ | **Wajib sama** dengan field `type` hasil respons endpoint `/api/create/signature` (saat ini `authenticated`) |
 
 **Contoh request:**
 
@@ -576,6 +738,10 @@ Content-Disposition: form-data; name="folder"
 
 galery-quiz/quiz-image
 ------WebKitFormBoundary
+Content-Disposition: form-data; name="type"
+
+authenticated
+------WebKitFormBoundary
 Content-Disposition: form-data; name="file"; filename="kuis-mobile.png"
 Content-Type: image/png
 
@@ -584,7 +750,8 @@ Content-Type: image/png
 ```
 
 **Response (JSON — `200 OK`):**
-Klien wajib menangkap nilai `secure_url` pada respons ini untuk dikirimkan ke backend sebagai `path` kuis (§4.4).
+Klien wajib menangkap nilai `public_id` dan `format` pada respons ini untuk dikirimkan ke
+backend sebagai `image_id` dan `image_format` (§4.4).
 
 ```json
 {
@@ -596,6 +763,10 @@ Klien wajib menangkap nilai `secure_url` pada respons ini untuk dikirimkan ke ba
 }
 ```
 
+> Aset diunggah dengan `type=authenticated`, jadi `secure_url` di atas tidak dapat dibuka
+> langsung. Backend menyusun ulang URL yang bisa dipakai klien dari `public_id` + `format`
+> (§4.4).
+
 ---
 
 ### 4.4 POST /api/create/quiz
@@ -604,8 +775,10 @@ Klien wajib menangkap nilai `secure_url` pada respons ini untuk dikirimkan ke ba
 |---|---|---|
 | POST | `/api/create/quiz` | ✓ |
 
-Endpoint ini dipanggil setelah klien berhasil mendapatkan `secure_url` dari Cloudinary (§4.3). URL
-gambar tersebut dikirim klien pada field **`path`** untuk disimpan ke database.
+Endpoint ini dipanggil setelah klien berhasil mengunggah gambar ke Cloudinary (§4.3). Klien
+mengirimkan `public_id` dan `format` aset pada field **`image_id`** dan **`image_format`**;
+backend menyimpannya dan menyusun ulang signed URL `authenticated` yang dikembalikan pada
+field `path`.
 
 Untuk submit kuis yang berhasil, klien wajib mengirimkan **minimal 5 soal** dan format data berupa **`application/json`**.
 
@@ -615,13 +788,14 @@ Untuk submit kuis yang berhasil, klien wajib mengirimkan **minimal 5 soal** dan 
 |---|---|---|---|---|
 | 1 | `title` | string | ✅ | Judul kuis |
 | 2 | `description` | string | ✗ | Deskripsi kuis |
-| 3 | `path` | string | ✅ | URL gambar kuis (`secure_url`) hasil balikan dari Cloudinary |
-| 4 | `questions` | array | ✅ | Array berisi objek pertanyaan, minimal 5 soal |
-| 5 | `questions[].question` | string | ✅ | Teks pertanyaan soal |
-| 6 | `questions[].options` | array\[4\] | ✅ | Tepat 4 opsi pilihan jawaban |
-| 7 | `questions[].correct_idx` | int | ✅ | Index jawaban yang benar (rentang 0–3) |
-| 8 | `questions[].duration` | float | ✅ | Durasi pengerjaan soal. Harus salah satu dari: `1.5`, `2`, `3`, `5` detik |
-| 9 | `questions[].skor` | int | ✅ | Skor bobot soal, wajib berada di antara rentang 1–50 |
+| 3 | `image_id` | string | ✅ | `public_id` aset gambar hasil balikan Cloudinary (tanpa ekstensi) |
+| 4 | `image_format` | string | ✅ | Format aset gambar hasil balikan Cloudinary, misalnya `png` atau `jpg` |
+| 5 | `questions` | array | ✅ | Array berisi objek pertanyaan, minimal 5 soal |
+| 6 | `questions[].question` | string | ✅ | Teks pertanyaan soal |
+| 7 | `questions[].options` | array\[4\] | ✅ | Tepat 4 opsi pilihan jawaban |
+| 8 | `questions[].correct_idx` | int | ✅ | Index jawaban yang benar (rentang 0–3) |
+| 9 | `questions[].duration` | float | ✅ | Durasi pengerjaan soal. Harus salah satu dari: `1.5`, `2`, `3`, `5` detik |
+| 10 | `questions[].skor` | int | ✅ | Skor bobot soal, wajib berada di antara rentang 1–50 |
 
 **Contoh request:**
 
@@ -634,7 +808,8 @@ Content-Type: application/json
 {
   "title": "Kuis Pemrograman Mobile",
   "description": "Dasar Flutter & Dart",
-  "path": "https://res.cloudinary.com/dlxxyz123/image/upload/v1792154580/galery-quiz/quiz-image/kuis-mobile.png",
+  "image_id": "galery-quiz/quiz-image/kuis-mobile",
+  "image_format": "png",
   "questions": [
     {
       "question": "Bahasa pemrograman utama Flutter?",
@@ -654,7 +829,7 @@ Content-Type: application/json
 | Status | Deskripsi |
 |---|---|
 | 201 | Kuis berhasil dibuat |
-| 400 | `title` / `path` kosong atau tidak valid |
+| 400 | `title` / `image_id` / `image_format` kosong atau tidak valid |
 | 400 | Jumlah soal di dalam `questions` kurang dari 5 |
 | 400 | Properti `question` pada soal ke-n kosong |
 | 400 | Jumlah item `options` pada soal ke-n tidak tepat 4 |
@@ -675,7 +850,7 @@ Content-Type: application/json
     "user_id": "usr_9921a",
     "title": "Kuis Pemrograman Mobile",
     "description": "Dasar Flutter & Dart",
-    "path": "https://res.cloudinary.com/dlxxyz123/image/upload/v1792154580/galery-quiz/quiz-image/kuis-mobile.png",
+    "path": "https://res.cloudinary.com/dlxxyz123/image/authenticated/s--abc123--/v1792154580/galery-quiz/quiz-image/kuis-mobile.png",
     "questions": [
       {
         "question": "Bahasa pemrograman utama Flutter?",
@@ -695,8 +870,11 @@ Content-Type: application/json
 // Judul kosong
 { "message": "Judul kuis wajib diisi" }
 
-// Public ID (URL Cloudinary) kosong
+// image_id kosong
 { "message": "public_id gambar kuis wajib diisi" }
+
+// image_format kosong
+{ "message": "format gambar kuis wajib diisi" }
 
 // Total item array pada questions < 5
 { "message": "Kuis harus memiliki minimal 5 soal" }
@@ -764,8 +942,7 @@ Authorization: Bearer <TOKEN>
       "host": "Budi Santoso",
       "title": "Kuis Pemrograman Mobile",
       "description": "Dasar Flutter & Dart",
-      "kategori": "Pemrograman",
-      "path": "https://res.cloudinary.com/quiz/image/upload/v123/galery-quiz/quiz-image/kuis-mobile.png",
+      "path": "https://res.cloudinary.com/quiz/image/authenticated/s--abc123--/v123/galery-quiz/quiz-image/kuis-mobile.png",
       "total_questions": 10,
       "total_duration": 20,
       "total_skor": 200,
@@ -788,13 +965,158 @@ Authorization: Bearer <TOKEN>
 }
 ```
 
-> `path` berisi URL gambar kuis hasil unggahan Cloudinary (lihat §4.2–§4.4). `host` berisi nama pemilik kuis (field `nama` pada koleksi `users`, diambil dari `user_id` kuis); `user_id` tidak dikembalikan pada feed ini. Feed publik **tidak** mengembalikan daftar soal; sebagai gantinya dikirim ringkasan `total_questions` (jumlah soal), `total_duration` (jumlah durasi semua soal dalam detik), dan `total_skor` (jumlah skor semua soal). `status` di level kuis tidak dikembalikan pada endpoint ini (status room terbaru sudah direpresentasikan oleh nama grup). Kuis berstatus `waiting` maupun yang belum punya room tidak ditampilkan. Room yang dikembalikan **hanya bertipe `public`**; karena itu pin (`kode`) ikut dikembalikan untuk room tersebut, sedangkan room `private` tidak ditampilkan. Room lama tanpa field `type` dianggap `public`. `kategori` berisi kategori kuis; bila kosong atau tidak dikirim server, klien menampilkan nilai default `Umum`.
+> `path` berisi URL gambar kuis hasil unggahan Cloudinary (lihat §4.2–§4.4). `host` berisi nama pemilik kuis (field `nama` pada koleksi `users`, diambil dari `user_id` kuis); `user_id` tidak dikembalikan pada feed ini. Feed publik **tidak** mengembalikan daftar soal; sebagai gantinya dikirim ringkasan `total_questions` (jumlah soal), `total_duration` (jumlah durasi semua soal dalam detik), dan `total_skor` (jumlah skor semua soal). `status` di level kuis tidak dikembalikan pada endpoint ini (status room terbaru sudah direpresentasikan oleh nama grup). Kuis berstatus `waiting` maupun yang belum punya room tidak ditampilkan. Room yang dikembalikan **hanya bertipe `public`**; karena itu pin (`kode`) ikut dikembalikan untuk room tersebut, sedangkan room `private` tidak ditampilkan. Room lama tanpa field `type` dianggap `public`.
 
 **Contoh response — `401 Unauthorized`**
 
 ```json
 { "status": 401, "error": "Unauthorized", "message": "Missing or expired authorization token" }
 ```
+
+### 4.6 Alur Token — Quiz
+
+| Endpoint | Token yang dikirim | Keterangan |
+|---|---|---|
+| `GET /api/my-quizzes` | Login JWT | `sub` menentukan user; kuis difilter berdasarkan `user.ID` dari context |
+| `POST /api/create/signature` | Login JWT | Token hanya untuk autentikasi; respons berisi signature Cloudinary, bukan token API |
+| `POST /image/upload` | — | Dilakukan langsung ke Cloudinary memakai signature dari §4.2; bukan endpoint server ini |
+| `POST /api/create/quiz` | Login JWT | `user.ID` dari context dipakai sebagai pemilik kuis |
+| `GET /api/quizzes` | Login JWT | Feed publik tetap mewajibkan login, tetapi tidak memakai room token |
+
+**Langkah alur token:**
+
+1. Klien memperoleh login JWT dari `POST /api/login` dan mengirimnya sebagai `Authorization: Bearer <login JWT>` pada seluruh endpoint Quiz milik server.
+2. `middleware.Auth` menjalankan urutan: signature/exp → status revoked → allowlist smartphone → muat user dari klaim `sub`.
+3. `GET /api/my-quizzes` memakai `user.ID` dari context untuk mengambil kuis milik user yang login; tidak ada `user_id` dari query/body yang dipercaya.
+4. `POST /api/create/signature` memakai login JWT untuk membuka akses, lalu menerbitkan signature Cloudinary berumur pendek. Signature ini **bukan** login JWT dan tidak dapat dipakai ke endpoint API.
+5. `POST /image/upload` dikirim klien langsung ke Cloudinary dengan signature tersebut, tanpa header login JWT ke server Deera.
+6. `POST /api/create/quiz` memakai login JWT dan `user.ID` dari context sebagai pemilik kuis. `GET /api/quizzes` memakai login JWT untuk mengakses feed publik.
+7. Tidak ada room JWT pada service Quiz. Jika token hilang, rusak, kedaluwarsa, dicabut, atau request bukan dari smartphone, server membalas `401`.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant U as User
+    participant UI as HomePage / CreateQuizPage
+    participant SVC as QuizService / AiService
+    participant SP as SessionService
+    participant AC as ApiClient
+    participant API as API Server
+    participant MW as middleware.Auth
+    participant DB as MongoDB
+    participant CL as Cloudinary
+    participant AI as AI Provider
+
+    U->>UI: buka daftar quiz atau form buat quiz
+    UI->>SVC: muat my quizzes
+    SVC->>SP: getToken()
+    SP-->>SVC: login JWT
+    SVC->>AC: GET /api/my-quizzes + Bearer token
+    AC->>API: Authorization Bearer login JWT + User-Agent
+    API->>MW: Auth(GetMyQuizzes)
+    MW->>MW: VerifyToken + tolak typ=room + IsSmartphone
+    MW->>DB: IsTokenRevoked(SHA256(token)) + FindUserByUsername(sub)
+    DB-->>MW: user
+    MW-->>API: context user
+    API->>DB: FindQuizzesByUserID(user.ID) + FindRoomsByQuizIDs
+    DB-->>API: waiting, open, in-Game, ended, quarantine
+    API-->>AC: 200 {waiting, open, in-Game, ended, quarantine}
+    AC-->>SVC: decode JSON
+    SVC-->>UI: daftar quiz
+    UI-->>U: tampilkan daftar quiz
+
+    opt Feed publik
+        UI->>SVC: muat feed quiz
+        SVC->>AC: GET /api/quizzes + Bearer token
+        AC->>API: Bearer login JWT
+        API->>MW: Auth(GetAllQuizzes)
+        MW->>DB: verifikasi token + FindUserByUsername
+        DB-->>MW: user
+        MW-->>API: context user
+        API->>DB: FindAllQuizzes + FindRoomsByQuizIDs + FindNameUser
+        DB-->>API: quiz + room + nama
+        API-->>AC: 200 {open, in-Game, ended}
+        AC-->>SVC: feed
+        SVC-->>UI: daftar feed
+        UI-->>U: tampilkan feed publik
+    end
+
+    opt Generate soal dari topik
+        U->>UI: isi topik pada _SuggestSheet
+        UI->>SVC: AiService.suggest(topic)
+        SVC->>AC: POST /api/ai/suggest {topic}
+        AC->>API: Bearer login JWT + User-Agent
+        API->>MW: Auth(SuggestQuestions)
+        MW->>DB: verifikasi token + FindUserByUsername
+        DB-->>MW: user
+        MW-->>API: context user
+        API->>AI: POST /chat/completions dengan AI_API_KEY server
+        alt model AI gagal
+            AI-->>API: error atau timeout
+            API-->>AC: 502/503/504
+            AC-->>SVC: error transient
+            SVC->>SVC: retry sekali setelah 1200 ms
+            SVC-->>UI: error bila retry tetap gagal
+        else model AI berhasil
+            AI-->>API: questions
+            API->>API: normalisasi soal
+            API-->>AC: 200 {message, questions}
+            AC-->>SVC: decode JSON
+            SVC->>SVC: buang soal tidak valid
+            SVC-->>UI: questions tervalidasi
+            UI-->>U: soal AI tampil di form
+        end
+    end
+
+    opt Upload gambar quiz
+        U->>UI: pilih gambar
+        UI->>SVC: createSignature(folder)
+        SVC->>AC: POST /api/create/signature {folder}
+        AC->>API: Bearer login JWT
+        API->>MW: Auth(CreateSignature)
+        MW->>DB: verifikasi token + user
+        MW-->>API: context user
+        API->>API: UploadSignature(folder, timestamp, type=authenticated)
+        API-->>AC: 200 {signature, timestamp, apiKey, cloudName, type}
+        AC-->>SVC: signature Cloudinary
+        SVC-->>UI: signature Cloudinary
+        UI->>CL: POST /image/upload dengan signature
+        CL-->>UI: 200 {public_id, format, secure_url}
+        UI-->>U: preview gambar
+    end
+
+    U->>UI: tekan Simpan
+    UI->>SVC: createQuiz(token, title, description, questions, imageId, imageFormat)
+    SVC->>AC: POST /api/create/quiz + Bearer token
+    AC->>API: Bearer login JWT + JSON body
+    API->>MW: Auth(CreateQuiz)
+    MW->>DB: verifikasi token + user
+    MW-->>API: context user
+    API->>DB: InsertQuiz(user_id = user.ID)
+    DB-->>API: quiz
+    API-->>AC: 201 {message, quiz}
+    AC-->>SVC: quiz
+    SVC-->>UI: sukses
+    UI->>UI: Navigator.pop(true) + HomePage._sync()
+    UI-->>U: snackbar dan daftar quiz diperbarui
+
+    Note over U,DB: GET /api/quizzes memakai login JWT yang sama, tidak ada room token pada Quiz.
+```
+
+> Login JWT pada Quiz tidak berubah menjadi room token. Room token hanya diterbitkan oleh `POST /api/rooms/verify` dan hanya dipakai untuk WebSocket (§5.3–§5.4, §9).
+
+**Alur end-to-end frontend → output:**
+
+| Tahap | File/state | Nilai yang diisi/dipakai | Request | Output |
+|---|---|---|---|---|
+| Buka form | `lib/pages/Home/home_page.dart` | `_onCreateQuiz()` | — | `CreateQuizPage` terbuka |
+| Isi quiz | `lib/pages/MyQuiz/create_quiz_page.dart` | `_titleController`, `_descriptionController`, `_questions` | — | Form terisi |
+| Generate soal | `create_quiz_page.dart` + `ai_service.dart` | `_SuggestSheet` topik, `_suggest(topic)` | `POST /api/ai/suggest {topic}` | `_questions` diganti hasil AI |
+| Upload gambar | `create_quiz_page.dart` | `_imageBytes`, `_imageUpload.publicId/format` | `POST /api/create/signature` lalu `POST /image/upload` ke Cloudinary | `image_id` + `image_format` |
+| Simpan | `create_quiz_page.dart` + `quiz_service.dart` | `title`, `description`, `questions`, `imageId`, `imageFormat` | `POST /api/create/quiz` | `201 {message, quiz}` |
+| Output | `home_page.dart` | `Navigator.pop(true)` lalu `_sync()` | — | Snackbar “Quiz berhasil dibuat” + daftar quiz diperbarui |
+
+> `_selectedKategori` hanya dipakai untuk dropdown lokal dan **tidak dikirim** ke API. Gambar quiz wajib berhasil diunggah sebelum tombol Simpan dijalankan.
 
 ---
 
@@ -858,7 +1180,7 @@ Content-Type: application/json
       "id": "6651a0ab...",
       "title": "Kuis Pemrograman Mobile",
       "description": "Dasar Flutter & Dart",
-      "path": "https://res.cloudinary.com/quiz/image/upload/v123/galery-quiz/quiz-image/kuis-mobile.png",
+      "path": "https://res.cloudinary.com/quiz/image/authenticated/s--abc123--/v123/galery-quiz/quiz-image/kuis-mobile.png",
       "total_questions": 10
     },
     "kode": "482913",
@@ -953,7 +1275,7 @@ Content-Type: application/json
       "id": "6651a0ab...",
       "title": "Kuis Pemrograman Mobile",
       "description": "Dasar Flutter & Dart",
-      "path": "https://res.cloudinary.com/quiz/image/upload/v123/galery-quiz/quiz-image/kuis-mobile.png",
+      "path": "https://res.cloudinary.com/quiz/image/authenticated/s--abc123--/v123/galery-quiz/quiz-image/kuis-mobile.png",
       "total_questions": 10
     },
     "kode": "482913",
@@ -1033,7 +1355,7 @@ Content-Type: application/json
       "id": "6651a0ab...",
       "title": "Kuis Pemrograman Mobile",
       "description": "Dasar Flutter & Dart",
-      "path": "https://res.cloudinary.com/quiz/image/upload/v123/galery-quiz/quiz-image/kuis-mobile.png",
+      "path": "https://res.cloudinary.com/quiz/image/authenticated/s--abc123--/v123/galery-quiz/quiz-image/kuis-mobile.png",
       "total_questions": 10
     },
     "kode": "482913",
@@ -1185,6 +1507,147 @@ Content-Type: application/json
 { "message": "Jawaban sudah dikirim" }
 ```
 
+> **Penyimpanan hasil:** selama permainan, jawaban hanya diakumulasi di memori. Saat seluruh
+> soal selesai (`game_end`), server menulis satu dokumen per peserta ke koleksi `game_results`
+> dengan field `room_id`, `user_id`, `length_question`, `correct_count`, dan `user_poin`
+> (skor final yang juga dikreditkan sebagai poin user). Penulisan bersifat upsert berdasarkan
+> `room_id + user_id`, sehingga satu peserta hanya punya satu hasil per room. Tidak ada endpoint
+> HTTP terpisah untuk menulis atau membaca koleksi ini.
+
+### 5.6 Alur Token — Room
+
+| Endpoint | Token yang dikirim | Token yang diterbitkan | Keterangan |
+|---|---|---|---|
+| `POST /api/create/room` | Login JWT | — | `user.ID` dari context dicek sebagai pemilik kuis |
+| `PUT /api/room/{id}/status` | Login JWT | — | `user.ID` dari context dicek sebagai pemilik room/kuis |
+| `POST /api/rooms/verify` | Login JWT | Room JWT (1 jam) | Pin diverifikasi; token ber-scope room diterbitkan |
+| `POST /api/room/{kode}/answer` | Login JWT | — | Peserta ditentukan dari `sub`/username di context |
+| `GET /api/rooms?token=...` | Login JWT + room JWT | — | Handshake WebSocket; rincian di §9.3 |
+
+**Langkah alur token:**
+
+1. Klien memakai login JWT untuk `POST /api/create/room` dan `PUT /api/room/{id}/status`. Setelah `middleware.Auth` memuat user, server memeriksa bahwa kuis/room yang diubah memang milik user tersebut (`403` bila bukan).
+2. Untuk masuk ke room, klien mengirim login JWT + `pin` ke `POST /api/rooms/verify`.
+3. Server memverifikasi login JWT, mencari room berdasarkan `pin`, lalu memastikan kuis room masih ada.
+4. Server menerbitkan room JWT HS256 dengan klaim `sub` (username login), `room` (kode room), `typ="room"`, `iat`, dan `exp` 1 jam. Room JWT **tidak disimpan** di `tokens`, sehingga tidak ikut logout/revocation.
+5. Room JWT hanya boleh dipakai pada query `?token=` saat handshake WebSocket. Token ini ditolak sebagai Bearer karena `middleware.Auth` menolak `typ="room"`.
+6. `POST /api/room/{kode}/answer` tetap memakai login JWT, bukan room JWT. Server memakai username dari context sebagai identitas peserta; host tidak boleh menjawab.
+7. Saat room JWT kedaluwarsa, klien harus memanggil ulang `POST /api/rooms/verify` untuk mendapatkan token room baru. Logout hanya mencabut login JWT, bukan room JWT.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant HU as Host User
+    participant HUI as Host UI
+    participant GU as Guest User
+    participant GUI as Guest UI
+    participant RL as RoomLauncher
+    participant SVC as RoomService
+    participant CTRL as LiveGameController
+    participant GS as GameService
+    participant SP as SessionService
+    participant AC as ApiClient
+    participant API as API Server
+    participant MW as middleware.Auth
+    participant DB as MongoDB
+    participant GH as gameHubs (in-memory)
+
+    Note over HU,DB: Host membuat dan mengatur room
+    HU->>HUI: buka form buat room
+    HUI->>SVC: createRoom(token, quizId, judul, isi, type)
+    SVC->>SP: getToken()
+    SP-->>SVC: login JWT
+    SVC->>AC: POST /api/create/room
+    AC->>API: Bearer login JWT + body {quiz_id, judul, isi, type}
+    API->>MW: Auth(CreateRoom)
+    MW->>MW: VerifyToken + tolak typ=room + IsSmartphone
+    MW->>DB: IsTokenRevoked + FindUserByUsername(sub)
+    DB-->>MW: user
+    MW-->>API: context user
+    API->>DB: cek owner quiz + InsertRoom(status=waiting)
+    DB-->>API: room
+    API-->>AC: 201 {message, room}
+    AC-->>SVC: Room
+    SVC-->>HUI: Room(kode)
+    HUI-->>HU: tampilkan kode room dan daftar room
+
+    HU->>HUI: ubah status room
+    HUI->>SVC: updateRoomStatus(token, roomId, status)
+    SVC->>AC: PUT /api/room/{id}/status {room_id, status}
+    AC->>API: Bearer login JWT
+    API->>MW: Auth(UpdateRoomStatus)
+    MW->>DB: verifikasi token + cek owner room/quiz
+    DB-->>MW: user + ownership
+    MW-->>API: context user
+    alt bukan owner
+        API-->>AC: 403
+        AC-->>SVC: error
+        SVC-->>HUI: tampilkan error
+        HUI-->>HU: status gagal diubah
+    else owner valid
+        API->>DB: update status room
+        DB-->>API: room
+        API-->>AC: 200 {room}
+        AC-->>SVC: room
+        SVC-->>HUI: status baru
+        HUI-->>HU: snackbar dan daftar di-refresh
+    end
+
+    Note over GU,DB: Peserta masuk dengan PIN
+    GU->>GUI: masukkan PIN
+    GUI->>RL: RoomLauncher.enter(pin)
+    RL->>SVC: verifyRoom(pin, loginToken)
+    SVC->>AC: POST /api/rooms/verify {pin}
+    AC->>API: Bearer login JWT
+    API->>MW: Auth(VerifyRoomPin)
+    MW->>DB: verifikasi token + FindUserByUsername(sub)
+    DB-->>MW: user
+    MW-->>API: context user
+    API->>DB: FindRoomByKode(pin) + FindQuizByID(room.QuizID)
+    DB-->>API: room + quiz
+    API->>API: GenerateRoomToken(sub=user.Username, room=kode, typ=room, exp=+1 jam)
+    API-->>AC: 200 {token: room JWT, room}
+    AC-->>SVC: room JWT + room
+    SVC-->>RL: room JWT + room
+    RL-->>GUI: WaitingRoomPage(loginToken, roomToken, room)
+    GUI-->>GU: lobby terbuka
+
+    Note over GU,GH: Peserta menjawab soal
+    GU->>GUI: pilih jawaban
+    GUI->>CTRL: answer(index)
+    CTRL->>CTRL: hitung isCorrect, elapsedMs, gained
+    CTRL->>GS: submitAnswer(token, kode, payload)
+    GS->>AC: POST /api/room/{kode}/answer
+    AC->>API: Bearer login JWT + JSON body
+    API->>MW: Auth(SubmitAnswer)
+    MW->>DB: verifikasi token + FindUserByUsername(sub)
+    DB-->>MW: user
+    MW-->>API: context user (username peserta)
+    API->>GH: submitAnswer(kode, user.Username, payload)
+    GH-->>API: status permainan + akumulasi skor
+    API-->>AC: 200 {message, score, correct, answered}
+    AC-->>GS: SubmitAnswerResult
+    GS-->>CTRL: hasil jawaban
+    CTRL-->>GUI: update skor
+    GUI-->>GU: tampilkan hasil
+
+    Note over GU,API: Room JWT hanya untuk handshake WebSocket, endpoint HTTP tetap memakai login JWT.
+```
+
+> Room JWT tidak dapat dipakai di endpoint HTTP Room sebagai pengganti login JWT. Endpoint `POST /api/room/{kode}/answer` tidak memerlukan room JWT karena room sudah ditentukan oleh path `{kode}` dan peserta oleh login JWT.
+
+**Alur end-to-end frontend → output:**
+
+| Tahap | File/state | Nilai yang diisi/dipakai | Request | Output |
+|---|---|---|---|---|
+| Buat room | `lib/pages/MyQuiz/create_room_sheet.dart` | `_selectedQuizId`, `_titleController`, `_descriptionController`, `_private` | `POST /api/create/room {quiz_id, judul, isi, type}` | `201 {room}` + dialog kode room |
+| Ubah status | `lib/pages/MyQuiz/detail_room_page.dart` | `room.id`, status `waiting/open/in-Game/ended` | `PUT /api/room/{id}/status {room_id, status}` | Status room berubah dan daftar di-refresh |
+| Masuk room | `lib/pages/Quiz/enter_pin_page.dart` | `_pinController.text` | `POST /api/rooms/verify {pin}` | `200 {token: room JWT, room}` |
+| Buka lobby | `lib/helpers/room_launcher.dart` | `loginToken`, `result.token`, `WaitingRoomPage` | — | `WaitingRoomPage` menerima login token + room token |
+| Jawab soal | `lib/services/live_game_controller.dart` | `question.index`, pilihan, `elapsedMs`, `score` | `POST /api/room/{kode}/answer` | `200 {message, score, correct, answered}` |
+
+> Saat create room, `status` tidak dikirim; server memakai default `waiting`. `_private` dipetakan menjadi `type: "private"` atau dihilangkan untuk room publik.
+
 ---
 
 ## 6. Result
@@ -1327,7 +1790,7 @@ Authorization: Bearer <TOKEN>
       "id": "6651a0ab...",
       "title": "Kuis Pemrograman Mobile",
       "description": "Dasar Flutter & Dart",
-      "path": "https://res.cloudinary.com/quiz/image/upload/v123/galery-quiz/quiz-image/kuis-mobile.png",
+      "path": "https://res.cloudinary.com/quiz/image/authenticated/s--abc123--/v123/galery-quiz/quiz-image/kuis-mobile.png",
       "total_questions": 10
     },
     "entries": [
@@ -1414,7 +1877,7 @@ Content-Type: application/json
       "id": "6651a0ab...",
       "title": "Kuis Pemrograman Mobile",
       "description": "Dasar Flutter & Dart",
-      "path": "https://res.cloudinary.com/quiz/image/upload/v123/galery-quiz/quiz-image/kuis-mobile.png",
+      "path": "https://res.cloudinary.com/quiz/image/authenticated/s--abc123--/v123/galery-quiz/quiz-image/kuis-mobile.png",
       "total_questions": 10
     },
     "entries": [
@@ -1504,6 +1967,137 @@ Authorization: Bearer <TOKEN>
 
 ```json
 { "status": 401, "error": "Unauthorized", "message": "Missing or expired authorization token" }
+```
+
+### 6.5 Alur Token — Result
+
+| Endpoint | Token yang dikirim | Otorisasi tambahan |
+|---|---|---|
+| `POST /api/room/{kode}/result` | Login JWT | `ownedRoom`: room → kuis harus milik user |
+| `GET /api/room/{kode}/result` | Login JWT | Cukup autentikasi |
+| `PUT /api/room/{kode}/result` | Login JWT | `ownedRoom`: room → kuis harus milik user |
+| `GET /api/results` | Login JWT | Cukup autentikasi |
+
+**Langkah alur token:**
+
+1. Klien memperoleh login JWT dari `POST /api/login` dan mengirimnya sebagai Bearer pada seluruh endpoint Result.
+2. `middleware.Auth` memverifikasi signature/exp, menolak `typ="room"`, mengecek `tokens.revoked_at`, memeriksa allowlist smartphone, lalu memuat user ke context.
+3. `POST` dan `PUT` result memakai `user.ID` dari context untuk memanggil `ownedRoom`; jika room/kuis bukan milik user, server membalas `403`.
+4. `GET /api/room/{kode}/result` dan `GET /api/results` hanya membutuhkan login JWT; tidak ada pengecekan kepemilikan tambahan.
+5. Tidak ada room JWT pada service Result. Room ditentukan dari path `{kode}`, bukan dari klaim token.
+6. Token yang hilang, rusak, kedaluwarsa, dicabut, atau berasal dari non-smartphone menghasilkan `401`.
+
+**Diagram alur token REST dan statistik profil:**
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant U as User
+    participant UI as ProfilePage
+    participant SVC as ProfileStatsService / ResultService
+    participant SP as SessionService
+    participant AC as ApiClient
+    participant API as API Server
+    participant MW as middleware.Auth
+    participant DB as MongoDB
+
+    U->>UI: buka halaman profil
+    UI->>SVC: load(nama)
+    SVC->>SP: getToken()
+    SP-->>SVC: login JWT
+    SVC->>AC: GET /api/my-quizzes + Bearer token
+    AC->>API: Authorization Bearer login JWT + User-Agent
+    API->>MW: Auth(GetMyQuizzes)
+    MW->>MW: VerifyToken + tolak typ=room + IsSmartphone
+    MW->>DB: IsTokenRevoked + FindUserByUsername(sub)
+    DB-->>MW: user
+    MW-->>API: context user
+    API->>DB: FindQuizzesByUserID + FindRoomsByQuizIDs
+    DB-->>API: quiz + room
+    API-->>AC: 200 data quiz
+    AC-->>SVC: daftar quiz + room
+    SVC->>SVC: hitung jumlah games
+    SVC->>AC: GET /api/results + Bearer token
+    AC->>API: Bearer login JWT
+    API->>MW: Auth(GetResultsInHost)
+    MW->>DB: verifikasi token + FindUserByUsername
+    DB-->>MW: user
+    MW-->>API: context user
+    API->>DB: FindResults(limit, skip)
+    DB-->>API: results
+    API-->>AC: 200 {results}
+    AC-->>SVC: results
+    SVC->>SVC: filter entries[].nama == nama + rata-rata skor
+    SVC->>AC: GET /api/me/points + Bearer token
+    AC->>API: Bearer login JWT
+    API->>MW: Auth(GetMyPoints)
+    MW->>DB: FindUserByUsername(sub)
+    DB-->>MW: user + points
+    MW-->>API: context user
+    API-->>AC: 200 {points}
+    AC-->>SVC: points
+    SVC-->>UI: ProfileStats(games, accuracy, points)
+    UI-->>U: tampilkan kartu statistik
+
+    Note over U,DB: POST, GET, dan PUT /api/room/{kode}/result adalah kontrak server, frontend saat ini tidak memanggilnya.
+```
+
+> Login JWT adalah satu-satunya token pada service Result. `GET` tidak memakai pengecekan owner; `POST`/`PUT` memakai user dari context untuk otorisasi.
+
+**Alur end-to-end frontend → output:**
+
+| Jalur | File/state | Nilai yang diisi/dipakai | Request | Output |
+|---|---|---|---|---|
+| Hasil live | `lib/pages/Quiz/live_quiz_page.dart` | `LiveGameEnd`, `myScore`, `myCorrect`, `myAnswered`, `roomTitle`, `isHost` | Pesan WebSocket `game_end` | `QuizResultPage`: podium, rank, akurasi, poin |
+| Statistik profil | `lib/pages/Profiles/profile_page.dart` | `_nama`, `_stats` | `GET /api/results` + `GET /api/me/points` + `GET /api/my-quizzes` | Kartu `games`, `accuracy`, `points` |
+| Backend-only | `lib/services/api/result_service.dart` | Hanya `fetchResults()` | `GET /api/results` | Dipakai profil; bukan scoreboard host |
+
+> `POST /api/room/{kode}/result`, `GET /api/room/{kode}/result`, dan `PUT /api/room/{kode}/result` **tidak dipanggil frontend saat ini**. Hasil permainan live dibentuk dari pesan `game_end`, sedangkan statistik profil memakai `GET /api/results` dan mencocokkan `entries[].nama`.
+
+**Diagram hasil live tanpa endpoint Result:**
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant U as User
+    participant UI as LiveQuizPage / QuizResultPage
+    participant CTRL as LiveGameController
+    participant SOCK as RoomSocket
+    participant WS as WebSocket Server
+    participant STORE as PointsStore
+    participant SVC as PointsService
+    participant SP as SessionService
+    participant AC as ApiClient
+    participant API as API Server
+    participant MW as middleware.Auth
+    participant DB as MongoDB
+
+    Note over U,WS: Hasil live dari game_end, tanpa request ke endpoint Result
+    WS-->>SOCK: {type: "game_end", data: {total, leaderboard, finished_at}}
+    SOCK-->>CTRL: message game_end
+    CTRL->>CTRL: LiveGameEnd.fromJson + phase ended
+    CTRL-->>UI: phase ended + last leaderboard
+    UI-->>U: tampilkan QuizResultPage, podium, rank, akurasi, poin
+    U->>UI: tekan Selesai
+    UI->>STORE: refresh()
+    STORE->>SVC: fetchPoints(token)
+    SVC->>SP: getToken()
+    SP-->>SVC: login JWT
+    SVC->>AC: GET /api/me/points
+    AC->>API: Bearer login JWT + User-Agent
+    API->>MW: Auth(GetMyPoints)
+    MW->>MW: VerifyToken + tolak typ=room + IsSmartphone
+    MW->>DB: IsTokenRevoked + FindUserByUsername(sub)
+    DB-->>MW: user + points
+    MW-->>API: context user
+    API-->>AC: 200 {message, points}
+    AC-->>SVC: points
+    SVC-->>STORE: points
+    STORE->>STORE: set(points) + notifyListeners()
+    STORE-->>UI: poin terbaru
+    UI-->>U: popUntil(route.isFirst) + indikator poin diperbarui
+
+    Note over U,DB: Statistik profil memakai GET /api/results, endpoint room-result POST/GET/PUT tidak dipanggil frontend.
 ```
 
 ---
@@ -1600,6 +2194,84 @@ Content-Type: application/json
 atau `options` tidak berjumlah 4) dibuang klien (`AiService`), bukan dijadikan
 isian form. Field dengan nilai di luar aturan (`duration`, `skor`,
 `correct_idx`) dinormalisasi ke nilai default yang aman sebelum ditampilkan.
+
+### 7.2 Alur Token — AI
+
+| Endpoint | Token yang dikirim | Keterangan |
+|---|---|---|
+| `POST /api/ai/suggest` | Login JWT | Hanya login JWT; tidak ada room token |
+
+**Langkah alur token:**
+
+1. Klien memperoleh login JWT dari `POST /api/login` dan mengirimnya sebagai Bearer ke `POST /api/ai/suggest`.
+2. `middleware.Auth` memverifikasi signature/exp, menolak `typ="room"`, mengecek `tokens.revoked_at`, memeriksa allowlist smartphone, lalu memuat user ke context.
+3. Handler memvalidasi `topic`; setelah itu server memanggil penyedia AI memakai `AI_API_KEY` dari environment server.
+4. Login JWT klien **tidak** diteruskan ke penyedia AI. `AI_API_KEY` tidak pernah dikembalikan ke klien.
+5. Tidak ada room token pada service AI. Token yang tidak valid/kedaluwarsa/dicabut atau request non-smartphone menghasilkan `401`.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant U as User
+    participant UI as CreateQuizPage / _SuggestSheet
+    participant SVC as AiService
+    participant SP as SessionService
+    participant AC as ApiClient
+    participant API as API Server
+    participant MW as middleware.Auth
+    participant DB as MongoDB
+    participant AI as AI Provider
+
+    U->>UI: buka _SuggestSheet dan isi topik
+    UI->>SVC: _suggest(topic)
+    SVC->>SP: getToken()
+    SP-->>SVC: login JWT
+    alt token tidak ada
+        SVC-->>UI: error "Sesi login berakhir"
+        UI-->>U: tampilkan pesan error
+    else token ada
+        SVC->>AC: POST /api/ai/suggest {topic} dengan timeout 90 detik
+        AC->>API: Bearer login JWT + User-Agent
+        API->>MW: Auth(SuggestQuestions)
+        MW->>MW: VerifyToken + tolak typ=room + IsSmartphone
+        MW->>DB: IsTokenRevoked + FindUserByUsername(sub)
+        DB-->>MW: user
+        MW-->>API: context user
+        API->>API: DecodeJSON + validasi topic + hitung jumlah soal
+        API->>AI: POST /chat/completions dengan AI_API_KEY server
+        alt model AI membalas 502, 503, atau 504
+            AI-->>API: transient error
+            API-->>AC: 502/503/504
+            AC-->>SVC: error transient
+            SVC->>SVC: tunggu 1200 ms lalu retry sekali
+            SVC-->>UI: error bila retry tetap gagal
+            UI-->>U: tampilkan pesan gagal
+        else model AI berhasil
+            AI-->>API: daftar soal
+            API->>API: normalisasi soal
+            API-->>AC: 200 {message, questions}
+            AC-->>SVC: decode JSON
+            SVC->>SVC: buang soal tidak valid
+            SVC-->>UI: List<QuizQuestionInput>
+            UI->>UI: _questions.clear() + addAll(...)
+            UI-->>U: snackbar "Berhasil membuat N soal"
+        end
+    end
+```
+
+> Service AI tidak menerbitkan token baru. Satu-satunya token yang terlibat adalah login JWT; kredensial `AI_API_KEY` sepenuhnya berada di server.
+
+**Alur end-to-end frontend → output:**
+
+| Tahap | File/state | Nilai yang diisi/dipakai | Request | Output |
+|---|---|---|---|---|
+| Buka sheet | `lib/pages/MyQuiz/create_quiz_page.dart` | `_openSuggestSheet()` | — | `_SuggestSheet` tampil |
+| Isi topik | `create_quiz_page.dart` | topik dari `_SuggestSheet` | — | `_suggest(topic)` dipanggil |
+| Minta saran | `lib/services/api/ai_service.dart` | `token`, `topic`, timeout 90 detik | `POST /api/ai/suggest {topic}` | `200 {message, questions}` |
+| Normalisasi | `ai_service.dart` | `question`, `options`, `correct_idx`, `duration`, `skor` | — | Soal tidak valid dibuang; nilai ekstrem dinormalisasi |
+| Tampilkan | `create_quiz_page.dart` | `_questionFrom(input)` | — | `_questions` diganti hasil AI + snackbar jumlah soal |
+
+> `AiService` mencoba ulang **sekali** setelah 1200 ms bila server membalas `502`, `503`, atau `504`. Hasil AI belum disimpan ke database sampai user menekan Simpan dan `POST /api/create/quiz` berhasil.
 
 ---
 
@@ -1782,6 +2454,105 @@ Content-Type: application/json
 { "message": "Emoji dengan path ini sudah ada" }
 ```
 
+### 8.4 Alur Token — Emoji
+
+| Endpoint | Token yang dikirim | Keterangan |
+|---|---|---|
+| `GET /api/emojis` | Login JWT | Cukup autentikasi |
+| `GET /api/emojis/{id}` | Login JWT | Cukup autentikasi |
+| `POST /api/emojis` | Login JWT | Cukup autentikasi; tidak ada pengecekan owner |
+
+**Langkah alur token:**
+
+1. Klien memperoleh login JWT dari `POST /api/login` dan mengirimnya sebagai Bearer pada seluruh endpoint Emoji.
+2. `middleware.Auth` memverifikasi signature/exp, menolak `typ="room"`, mengecek `tokens.revoked_at`, memeriksa allowlist smartphone, lalu memuat user ke context.
+3. Handler Emoji hanya membaca/menulis metadata di MongoDB; tidak ada operasi upload Cloudinary dan tidak ada kredensial Cloudinary yang dikirim ke klien.
+4. Tidak ada room token maupun pengecekan kepemilikan pada service Emoji. Semua user yang login dapat memanggil ketiga endpoint.
+5. Token yang hilang, rusak, kedaluwarsa, dicabut, atau request non-smartphone menghasilkan `401`.
+
+**Diagram kontrak REST Emoji, tidak dipanggil frontend:**
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant C as Client Kontrak
+    participant AC as ApiClient
+    participant API as API Server
+    participant MW as middleware.Auth
+    participant DB as MongoDB
+
+    Note over C,DB: Kontrak REST ini belum dipanggil frontend, alur tetap mengikuti token server.
+    C->>AC: GET /api/emojis atau GET /api/emojis/{id}
+    AC->>API: Bearer login JWT + User-Agent
+    API->>MW: Auth(GetAllEmojis / GetEmojiByID)
+    MW->>MW: VerifyToken + tolak typ=room + IsSmartphone
+    MW->>DB: IsTokenRevoked + FindUserByUsername(sub)
+    DB-->>MW: user
+    MW-->>API: context user
+    API->>DB: FindAllEmojis atau FindEmojiByID
+    DB-->>API: emoji
+    API-->>AC: 200 {emojis} atau {emoji}
+    AC-->>C: data emoji
+
+    C->>AC: POST /api/emojis {nama, path}
+    AC->>API: Bearer login JWT + JSON body
+    API->>MW: Auth(CreateEmoji)
+    MW->>DB: verifikasi token + FindUserByUsername
+    DB-->>MW: user
+    MW-->>API: context user
+    API->>API: validasi nama + path berakhiran .gif
+    API->>DB: InsertEmoji
+    alt path duplikat
+        DB-->>API: duplicate key
+        API-->>AC: 409 "Emoji dengan path ini sudah ada"
+        AC-->>C: error
+    else berhasil
+        API-->>AC: 201 {message, emoji}
+        AC-->>C: emoji baru
+    end
+```
+
+> Service Emoji tidak memakai room token. Login JWT hanya menjadi gerbang autentikasi; tidak ada data emoji yang dimiliki per user.
+
+**Alur end-to-end frontend → output:**
+
+| Tahap | File/state | Nilai yang diisi/dipakai | Request | Output |
+|---|---|---|---|---|
+| Pilih reaksi | `lib/pages/Quiz/waiting_room_page.dart` | `_cheers` (`_sendCheer`) | — | Overlay lokal langsung tampil |
+| Kirim reaksi | `lib/services/api/room_socket.dart` | `sendReaction(emoji)` | WS `{type: "reaction", data: {emoji}}` | Diteruskan server ke klien lain |
+| Terima reaksi | `room_socket.dart` | `_onData`, `RoomMessage.fromJson` | — | `ReactionOverlay.show` di room yang sama |
+| REST Emoji | `lib/services/api/*` | Tidak ada caller | `GET/POST /api/emojis` | Tidak dipakai UI saat ini |
+
+> Endpoint REST Emoji **tidak dipanggil frontend**. Reaksi memakai WebSocket; server memperlakukan tipe `reaction` sebagai broadcast ke klien lain. Pengirim menampilkan reaksinya sendiri secara lokal agar terasa instan.
+
+**Diagram reaksi WebSocket yang dipakai frontend:**
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant U as User Pengirim
+    participant UI as WaitingRoomPage
+    participant SOCK as RoomSocket
+    participant WS as WebSocket Server
+    participant HUB as wsHubs
+    participant OU as User Penerima
+    participant OUI as WaitingRoomPage Lain
+
+    U->>UI: tekan salah satu _cheers
+    UI->>UI: ReactionOverlay.show(emoji) untuk pengirim
+    UI->>SOCK: sendReaction(emoji)
+    SOCK->>WS: {type: "reaction", data: {emoji}}
+    WS->>HUB: route pesan ke room
+    HUB-->>WS: daftar koneksi room
+    WS-->>OUI: {type: "broadcast", room, from, data: {emoji}}
+    OUI->>OUI: RoomSocket.parseReaction(data)
+    OUI->>OUI: ReactionOverlay.show(emoji)
+    OUI-->>OU: reaksi tampil
+    UI-->>U: reaksi tampil instan
+
+    Note over U,HUB: Reaksi memakai room JWT saat handshake WebSocket, tidak ada request REST Emoji atau query MongoDB.
+```
+
 ---
 
 ## 9. WebSocket
@@ -1875,7 +2646,8 @@ room lewat WebSocket:
 3. Saat waktu soal habis, server menyiarkan `round_result` (kunci jawaban + papan peringkat
    sementara) dan berhenti selama `next_in_ms` (5000 ms) sebelum soal berikutnya.
 4. Langkah 1–3 diulang sampai soal habis; server menyiarkan `game_end`, menandai room `ended`,
-   lalu mengkreditkan **poin** (dan mencatat koin) ke tiap peserta sesuai skor (§11).
+   menyimpan ringkasan hasil tiap peserta ke `game_results`, lalu mengkreditkan **poin**
+    (dan mencatat koin) ke tiap peserta sesuai skor (§10).
 
 Peserta yang baru terhubung saat permainan berjalan otomatis didaftarkan ke papan peringkat
 (ikut dari ronde berikutnya). **Host (pemilik kuis) tidak didaftarkan ke papan peringkat**:
@@ -1946,28 +2718,198 @@ sesi dihentikan tanpa kredit poin.
 }
 ```
 
+### 9.3 Alur Token — WebSocket
+
+| Tahap | Endpoint/Aksi | Token yang dikirim | Token yang diterbitkan |
+|---|---|---|---|
+| 1 | `POST /api/login` | — | Login JWT (24 jam) |
+| 2 | `POST /api/rooms/verify` | Login JWT | Room JWT (1 jam) |
+| 3 | `GET /api/rooms?token=...` | Login JWT + room JWT | — |
+
+**Langkah alur token:**
+
+1. Klien login ke `POST /api/login` dan menyimpan login JWT.
+2. Klien mengirim login JWT + `pin` ke `POST /api/rooms/verify` untuk mendapatkan room JWT.
+3. Room JWT berisi `sub` (username), `room` (kode room), `typ="room"`, dan `exp` 1 jam; token ini tidak disimpan di database.
+4. Klien membuka `GET /api/rooms?token=<room JWT>` dengan header `Authorization: Bearer <login JWT>`, `User-Agent` smartphone, dan opsional `name`.
+5. `middleware.Auth` memvalidasi login JWT lebih dulu: signature/exp, menolak `typ="room"`, mengecek `tokens.revoked_at`, memeriksa allowlist smartphone, lalu memuat user ke context.
+6. Handler WebSocket membaca `?token=`, memanggil `VerifyRoomToken`, dan mewajibkan `typ="room"` serta klaim `sub` + `room` ada.
+7. Server membandingkan `sub` room JWT dengan username login. Jika berbeda → `403 Token room bukan milik pengguna ini`.
+8. Server mencari room berdasarkan klaim `room`. Jika tidak ada → `404 Room tidak ditemukan` sebelum upgrade.
+9. Jika semua valid, server melakukan upgrade dan mengirim frame `connected`. Login JWT menentukan identitas user; room JWT hanya menentukan room tujuan.
+10. Room JWT kedaluwarsa setelah 1 jam dan tidak bisa dicabut lewat logout. Logout hanya mencabut login JWT. Untuk sesi baru, klien memanggil ulang `POST /api/rooms/verify`; bila login JWT dicabut/kedaluwarsa, handshake ditolak `401`.
+
+**Diagram handshake WebSocket dengan login JWT dan room JWT:**
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant U as User
+    participant UI as WaitingRoomPage
+    participant RL as RoomLauncher
+    participant SVC as RoomService
+    participant SP as SessionService
+    participant AC as ApiClient
+    participant API as API Server
+    participant MW as middleware.Auth
+    participant DB as MongoDB
+    participant SOCK as RoomSocket
+    participant HUB as wsHubs
+
+    U->>RL: masukkan PIN room
+    RL->>SVC: verifyRoom(pin, loginToken)
+    SVC->>SP: getToken()
+    SP-->>SVC: login JWT
+    SVC->>AC: POST /api/rooms/verify {pin}
+    AC->>API: Bearer login JWT + User-Agent
+    API->>MW: Auth(VerifyRoomPin)
+    MW->>MW: VerifyToken(login, tolak typ=room) + IsSmartphone
+    MW->>DB: IsTokenRevoked(SHA256(login)) + FindUserByUsername(sub)
+    DB-->>MW: user
+    MW-->>API: context user
+    API->>DB: FindRoomByKode(pin) + FindQuizByID(room.QuizID)
+    DB-->>API: room + quiz
+    API->>API: GenerateRoomToken(sub=user.Username, room=kode, typ=room, exp=+1 jam)
+    API-->>AC: 200 {token: room JWT, room}
+    AC-->>SVC: room JWT + room
+    SVC-->>RL: room JWT + room
+    RL-->>UI: WaitingRoomPage(loginToken, roomToken, name)
+    UI-->>U: status connecting
+
+    UI->>SOCK: connect()
+    SOCK->>SOCK: _handshakeUri(http -> ws, https -> wss)
+    SOCK->>API: GET /api/rooms?token=room-JWT&name=... + Bearer login JWT + User-Agent
+    API->>MW: Auth(WebSocket)
+    MW->>MW: VerifyToken(login, tolak typ=room) + IsSmartphone
+    MW->>DB: IsTokenRevoked(SHA256(login)) + FindUserByUsername(sub)
+    DB-->>MW: user
+    MW-->>API: context user (identitas login)
+
+    API->>API: VerifyRoomToken(query token)
+    alt token room tidak ada, invalid, atau kedaluwarsa
+        API-->>SOCK: 401 "Token room tidak ditemukan" atau "Token room tidak valid"
+        SOCK-->>UI: status disconnected
+        UI-->>U: tampilkan gagal terhubung
+    else sub room JWT tidak sama dengan username login
+        API-->>SOCK: 403 "Token room bukan milik pengguna ini"
+        SOCK-->>UI: status disconnected
+        UI-->>U: tampilkan gagal terhubung
+    else token room valid dan sub cocok
+        API->>DB: FindRoomByKode(klaim room)
+        alt room tidak ditemukan
+            API-->>SOCK: 404 "Room tidak ditemukan"
+            SOCK-->>UI: status disconnected
+            UI-->>U: tampilkan gagal terhubung
+        else room ada
+            API->>API: Upgrade HTTP ke WebSocket
+            API->>HUB: register koneksi ke room
+            API-->>SOCK: 101 Switching Protocols
+            API-->>SOCK: {type: "connected", room, users, names}
+            SOCK-->>UI: status connected + daftar peserta
+            UI-->>U: lobby tersambung
+        end
+    end
+
+    Note over SOCK,UI: Reconnect 1/2/4/8 detik memakai room JWT yang sama.
+```
+
+> Ringkasnya: login JWT = identitas user; room JWT = scope room. Keduanya wajib pada handshake. Room JWT tidak dapat dipakai sebagai Bearer dan tidak ikut revocation logout.
+
+**Alur end-to-end frontend → output (koneksi):**
+
+| Tahap | File/state | Nilai yang diisi/dipakai | Request | Output |
+|---|---|---|---|---|
+| Masuk room | `lib/helpers/room_launcher.dart` | `loginToken`, `pin` | `POST /api/rooms/verify` | `room JWT` + data room |
+| Buat socket | `lib/pages/Quiz/waiting_room_page.dart` | `RoomSocket(roomToken, loginToken, name)` | — | Status `connecting` |
+| Handshake | `lib/services/api/room_socket.dart` | `roomToken`, `loginToken`, `name` | `GET /api/rooms?token=...&name=...` | `101` + frame `connected` |
+| Tampilkan lobby | `waiting_room_page.dart` | `_status`, `_names`, `_users` | — | Indikator tersambung + daftar peserta |
+
+**Alur end-to-end frontend → output (permainan):**
+
+| Tahap | File/state | Nilai yang diisi/dipakai | Request | Output |
+|---|---|---|---|---|
+| Mulai game | `detail_room_page.dart` | status `in-Game` | `PUT /api/room/{id}/status` | Server mulai game loop |
+| Terima soal | `lib/services/live_game_controller.dart` | `_question`, `_maxDuration`, timer | WS `question` | Soal + pilihan tampil |
+| Jawab | `live_game_controller.dart` | `selectedIndex`, `isCorrect`, `elapsedMs`, `score` | `POST /api/room/{kode}/answer` | `200 {message, score, correct, answered}` |
+| Ronde selesai | `live_game_controller.dart` | `_roundResult`, `_lastLeaderboard` | WS `round_result` | Kunci jawaban + leaderboard sementara |
+| Game selesai | `live_game_controller.dart` | `_gameEnd` | WS `game_end` | `QuizResultPage` |
+
+> `SubmitAnswer` tetap memakai **login JWT**, bukan room JWT. Skor dihitung klien lalu diakumulasi server; kegagalan satu request jawaban tidak menghentikan permainan. Reconnect `RoomSocket` memakai room JWT yang sama dan belum memverifikasi ulang PIN.
+
+**Diagram permainan dan pengiriman jawaban:**
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant HU as Host User
+    participant HUI as Host UI
+    participant GU as Guest User
+    participant GUI as LiveQuizPage
+    participant CTRL as LiveGameController
+    participant SOCK as RoomSocket
+    participant SVC as RoomService
+    participant GS as GameService
+    participant SP as SessionService
+    participant AC as ApiClient
+    participant API as API Server
+    participant MW as middleware.Auth
+    participant DB as MongoDB
+    participant HUB as wsHubs
+
+    HU->>HUI: tekan mulai game
+    HUI->>SVC: updateRoomStatus(token, roomId, in-Game)
+    SVC->>SP: getToken()
+    SP-->>SVC: login JWT
+    SVC->>AC: PUT /api/room/{id}/status {status: "in-Game"}
+    AC->>API: Bearer login JWT + User-Agent
+    API->>MW: Auth(UpdateRoomStatus)
+    MW->>MW: VerifyToken + tolak typ=room + IsSmartphone
+    MW->>DB: IsTokenRevoked + FindUserByUsername(sub)
+    DB-->>MW: user + ownership
+    MW-->>API: context user
+    API->>DB: update status room
+    API->>HUB: mulai game loop untuk room
+    API-->>AC: 200 {room}
+    AC-->>SVC: room
+    SVC-->>HUI: status in-Game
+    HUI-->>HU: game dimulai
+
+    HUB-->>SOCK: {type: "question", data: {index, total, question, options, duration, expires_at}}
+    SOCK-->>CTRL: message question
+    CTRL-->>GUI: render soal + timer
+    GUI-->>GU: soal dan pilihan tampil
+    GU->>GUI: pilih jawaban
+    GUI->>CTRL: answer(index)
+    CTRL->>CTRL: hitung isCorrect, elapsedMs, gained
+    CTRL->>GS: submitAnswer(loginToken, kode, payload)
+    GS->>AC: POST /api/room/{kode}/answer
+    AC->>API: Bearer login JWT + JSON body {question_index, selected_idx, is_correct, elapsed_ms, score}
+    API->>MW: Auth(SubmitAnswer)
+    MW->>DB: verifikasi token + FindUserByUsername(sub)
+    DB-->>MW: user
+    MW-->>API: context user
+    API->>HUB: submitAnswer(kode, user.Username, payload)
+    HUB-->>API: skor + status permainan
+    API-->>AC: 200 {message, score, correct, answered}
+    AC-->>GS: SubmitAnswerResult
+    GS-->>CTRL: hasil jawaban
+    CTRL-->>GUI: update skor
+    GUI-->>GU: feedback jawaban
+
+    HUB-->>SOCK: {type: "round_result", data: {correct_idx, leaderboard, next_in_ms}}
+    SOCK-->>CTRL: update _roundResult + _lastLeaderboard
+    CTRL-->>GUI: kunci jawaban + leaderboard sementara
+    GUI-->>GU: tampilkan hasil ronde
+
+    HUB-->>SOCK: {type: "game_end", data: {total, leaderboard, finished_at}}
+    SOCK-->>CTRL: _gameEnd + phase ended
+    CTRL-->>GUI: tampilkan QuizResultPage
+    GUI-->>GU: podium, rank, akurasi, poin
+```
+
 ---
 
-## 10. Kode Error Umum
-
-| Kode | Arti | Contoh pesan |
-|---|---|---|
-| 400 | Request/atribut tidak valid | `Request tidak valid` / `Status room harus salah satu dari: waiting, open, in-Game, ended` / `Tipe room harus salah satu dari: public, private` |
-| 401 | Autentikasi gagal atau sesi berakhir | `Missing or expired authorization token` / `Sesi telah berakhir, silakan login kembali` / `User tidak ditemukan` — envelope `{ "status": 401, "error": "Unauthorized", "message": "..." }` (endpoint dengan `middleware.Auth`) / `Token room tidak ditemukan` / `Token room tidak valid` (WebSocket, bentuk lama) |
-| 401 | Bukan dari perangkat smartphone (allowlist device) | `Akses hanya diizinkan dari perangkat smartphone` |
-| 403 | Otorisasi gagal (resource bukan milik Anda / perangkat lain) | `Anda tidak punya akses ke kuis ini` / `Token room bukan milik pengguna ini` / `Akun sudah terikat pada perangkat lain` |
-| 404 | Data tidak ditemukan | `Kuis tidak ditemukan` / `Room tidak ditemukan` / `Result tidak ditemukan` / `Emoji tidak ditemukan` / `Permainan tidak sedang berjalan` |
-| 409 | Konflik data (duplikat / state permainan) | `Username sudah terdaftar` / `Room sudah memiliki result` / `Emoji dengan path ini sudah ada` / `Soal sedang tidak berjalan` / `Soal sudah berganti` / `Jawaban sudah dikirim` |
-| 413 | Body request terlalu besar (> 1 MiB) | `Body request terlalu besar (maksimal 1 MiB)` |
-| 415 | Content-Type bukan JSON | `Content-Type harus application/json` |
-| 429 | Rate limit terlampaui | `Terlalu banyak percobaan login, coba lagi nanti` |
-| 500 | Error server | `Gagal membuat akun` / `Gagal membuat room` / `Gagal membuat token room` |
-
-> Semua endpoint yang menerima body JSON memakai validator yang sama sehingga dapat mengembalikan `413` dan `415` di luar daftar contoh per-endpoint di atas. Endpoint dengan `middleware.Auth` juga dapat mengembalikan `401` allowlist device. Endpoint `POST /image/upload` (§4.3) disediakan Cloudinary, bukan oleh server ini.
-
----
-
-## 11. Poin & Koin
+## 10. Poin & Koin
 
 Poin adalah saldo akrual milik user (field `points` pada objek `user`, lihat §3.2–§3.4). Saldo ini
 bertambah otomatis saat sebuah permainan selesai (§9.2): tiap peserta menerima poin sebesar **total
@@ -1975,7 +2917,7 @@ skor** yang dikumpulkannya. Setiap penambahan juga dicatat sebagai satu baris ko
 dengan **rantai hash SHA-256** (`hash = SHA256(prev_hash + payload)`, terhubung per user) sehingga
 riwayat menjadi ledger yang tidak bisa diubah diam-diam tanpa memutus rantai.
 
-### 11.1 GET /api/me/points
+### 10.1 GET /api/me/points
 
 | Metode | Path | Auth |
 |---|---|---|
@@ -2007,7 +2949,7 @@ Authorization: Bearer <TOKEN>
 }
 ```
 
-### 11.2 GET /api/me/coins
+### 10.2 GET /api/me/coins
 
 | Metode | Path | Auth |
 |---|---|---|
@@ -2071,12 +3013,96 @@ Authorization: Bearer <TOKEN>
 { "message": "Gagal membaca riwayat koin" }
 ```
 
+### 10.3 Alur Token — Poin & Koin
+
+| Endpoint | Token yang dikirim | Keterangan |
+|---|---|---|
+| `GET /api/me/points` | Login JWT | Saldo dibaca dari `user.Points` di context |
+| `GET /api/me/coins` | Login JWT | Riwayat difilter dengan `user.ID` dari context |
+
+**Langkah alur token:**
+
+1. Klien memperoleh login JWT dari `POST /api/login` dan mengirimnya sebagai Bearer ke endpoint Poin & Koin.
+2. `middleware.Auth` memverifikasi signature/exp, menolak `typ="room"`, mengecek `tokens.revoked_at`, memeriksa allowlist smartphone, lalu memuat user ke context.
+3. `GET /api/me/points` membaca `user.Points` langsung dari objek user di context; tidak ada query saldo berdasarkan username dari input klien.
+4. `GET /api/me/coins` memakai `user.ID` dari context untuk mengambil riwayat koin milik user tersebut.
+5. Tidak ada room token pada service ini. Token yang hilang, rusak, kedaluwarsa, dicabut, atau request non-smartphone menghasilkan `401`.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant U as User
+    participant UI as SaldoPage / ProfilePage / PointsIndicator
+    participant STORE as PointsStore
+    participant SVC as PointsService
+    participant SP as SessionService
+    participant AC as ApiClient
+    participant API as API Server
+    participant MW as middleware.Auth
+    participant DB as MongoDB
+
+    U->>UI: buka saldo atau profil
+    UI->>STORE: refresh()
+    STORE->>SVC: fetchPoints(token)
+    SVC->>SP: getToken()
+    SP-->>SVC: login JWT
+    SVC->>AC: GET /api/me/points
+    AC->>API: Bearer login JWT + User-Agent
+    API->>MW: Auth(GetMyPoints)
+    MW->>MW: VerifyToken + tolak typ=room + IsSmartphone
+    MW->>DB: IsTokenRevoked + FindUserByUsername(sub)
+    DB-->>MW: user + points
+    MW-->>API: context user
+    API->>API: baca user.Points dari context
+    API-->>AC: 200 {message, points}
+    AC-->>SVC: points
+    SVC-->>STORE: points
+    STORE->>STORE: set(points) + notifyListeners()
+    STORE-->>UI: angka poin baru
+
+    UI->>SVC: SaldoPage._load() fetchPoints + fetchCoins
+    SVC->>AC: GET /api/me/points
+    AC->>API: Bearer login JWT
+    API->>MW: Auth(GetMyPoints)
+    MW->>DB: FindUserByUsername(sub)
+    DB-->>MW: user + points
+    MW-->>API: context user
+    API-->>AC: 200 {message, points}
+    AC-->>SVC: points
+    SVC->>AC: GET /api/me/coins
+    AC->>API: Bearer login JWT
+    API->>MW: Auth(GetMyCoins)
+    MW->>DB: FindUserByUsername(sub)
+    DB-->>MW: user
+    MW-->>API: context user
+    API->>DB: FindCoinsByUserID(user.ID, sort created_at desc)
+    DB-->>API: daftar koin
+    API->>API: map ke dto.CoinToResponse
+    API-->>AC: 200 {message, coins}
+    AC-->>SVC: coins
+    SVC-->>UI: points + coins
+    UI-->>U: tampilkan saldo, riwayat, dan indikator poin
+```
+
+> Poin & Koin tidak menerbitkan token baru. Login JWT menentukan user yang saldo/riwayatnya dibaca; tidak ada `user_id` dari klien yang dipakai.
+
+**Alur end-to-end frontend → output:**
+
+| Tahap | File/state | Nilai yang diisi/dipakai | Request | Output |
+|---|---|---|---|---|
+| Refresh poin | `lib/services/points_store.dart` | `PointsStore.refresh()` | `GET /api/me/points` | `PointsIndicator` dan kartu profil diperbarui |
+| Buka saldo | `lib/pages/Saldo/saldo_page.dart` | `_load()` | `GET /api/me/points` + `GET /api/me/coins` | Saldo poin + daftar koin |
+| Riwayat koin | `lib/pages/points_history_page.dart` | `_load()` | `GET /api/me/coins` | Daftar transaksi koin |
+| Statistik profil | `lib/services/profile_stats_service.dart` | `fetchPoints(token)` | `GET /api/me/points` | Field `points` pada `ProfileStats` |
+
+> Poin bertambah otomatis saat `game_end` dan dicatat sebagai koin. Frontend tidak pernah mengirim `user_id`; server memakai user dari context hasil verifikasi login JWT.
+
 ---
 
-## 12. Grouped Leaderboard Wilayah (LBS)
+## 11. Grouped Leaderboard Wilayah (LBS)
 
 > Bagian ini mendefinisikan kontrak **LBS Grouped Leaderboard** yang dipakai klien
-> (`LocationService` di `lib/services/location_service.dart`) untuk halaman **Peringkat Wilayah**.
+> (`LocationService` di `lib/services/api/location_service.dart`) untuk halaman **Peringkat Wilayah**.
 > Koordinat diambil dari GPS perangkat (`geolocator`) lalu dikirim sebagai query parameter;
 > server menentukan wilayah administratif device, menyimpan lokasi terakhir user, lalu
 > mengembalikan leaderboard user yang dikelompokkan per kecamatan, kota, dan provinsi.
@@ -2085,7 +3111,7 @@ Authorization: Bearer <TOKEN>
 > minimal satu detik sesuai kebijakan penggunaan OSM, sehingga klien **wajib menampilkan
 > atribusi "© OpenStreetMap contributors"**.
 
-### 12.1 GET /api/location
+### 11.1 GET /api/location
 
 | Metode | Path | Auth |
 |---|---|---|
@@ -2236,4 +3262,153 @@ Accept: application/json
 ```json
 { "message": "Terlalu banyak permintaan lokasi, coba lagi nanti" }
 ```
+
+### 11.2 Alur Token — LBS
+
+| Endpoint | Token yang dikirim | Keterangan |
+|---|---|---|
+| `GET /api/location` | Login JWT | Tidak ada room token; user ditentukan dari `sub` di login JWT |
+
+**Langkah alur token:**
+
+1. Klien memperoleh login JWT dari `POST /api/login` dan menyimpannya di `SharedPreferences` dengan key `auth_token`.
+2. Halaman `RankingRegionPage` memanggil `SessionService.instance.getToken()`. Bila token kosong, request tidak dikirim.
+3. `LocationService.locate()` meminta izin GPS lalu mengambil `Position` perangkat (latitude/longitude). `accuracy` tersedia di objek posisi tetapi **tidak dikirim** ke API; yang dikirim hanya `latitude` dan `longitude`.
+4. `LocationService.submit()` memanggil `GET /api/location?latitude=<lat>&longitude=<lon>` melalui `ApiClient.get(token: token)`.
+5. `ApiClient.headers` menambahkan `Authorization: Bearer <login JWT>` dan `User-Agent` smartphone. `middleware.Auth` memvalidasi token, revocation, allowlist device, lalu memuat user ke context.
+6. Server memakai user dari context untuk menyimpan lokasi terakhir dan membatasi rate limit per user (10 request/menit). Tidak ada `user_id` dari klien.
+7. Respons sukses disimpan sebagai cache `region_location` oleh frontend. Token tidak valid/kedaluwarsa/dicabut menghasilkan `401`; terlalu sering memanggil menghasilkan `429`.
+
+**Alur end-to-end frontend → output:**
+
+| Tahap | File/state | Nilai yang diisi/dipakai | Request | Output |
+|---|---|---|---|---|
+| Buka halaman | `lib/pages/Profiles/ranking_region_page.dart` | `_opened`, `_location` | — | Minta izin GPS sekali |
+| Ambil posisi | `ranking_region_page.dart` | `_refreshLocation()` | `LocationService.locate(token)` | `Position(latitude, longitude)` |
+| Kirim lokasi | `lib/services/api/location_service.dart` | `latitude`, `longitude` | `GET /api/location?latitude=...&longitude=...` | `200 {metadata, data}` |
+| Simpan cache | `location_service.dart` | key `region_location` | — | `LocationResult` |
+| Tampilkan | `ranking_region_page.dart` | `_location`, `_activeLevel` | — | Leaderboard kecamatan/kota/provinsi |
+
+> `accuracy` dari GPS **tidak** masuk query API. Filter wilayah di UI memakai `_activeLevel`; data mentah berasal dari respons server yang sudah dikelompokkan.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant U as User
+    participant UI as RankingRegionPage
+    participant SVC as LocationService
+    participant GPS as Geolocator
+    participant SP as SessionService
+    participant AC as ApiClient
+    participant API as API Server
+    participant MW as middleware.Auth
+    participant DB as MongoDB
+    participant OSM as OpenStreetMap Nominatim
+
+    U->>UI: buka halaman Peringkat Wilayah
+    UI->>SVC: locate(token)
+    SVC->>SP: getToken()
+    SP-->>SVC: login JWT
+    SVC->>GPS: ensurePermission + getCurrentPosition
+    GPS-->>SVC: Position(latitude, longitude, accuracy)
+    SVC->>SVC: submit(token, latitude, longitude)
+    SVC->>AC: GET /api/location?latitude=...&longitude=...
+    AC->>API: Bearer login JWT + User-Agent
+    API->>MW: Auth(Location)
+    MW->>MW: VerifyToken + tolak typ=room + IsSmartphone
+    MW->>DB: IsTokenRevoked + FindUserByUsername(sub)
+    DB-->>MW: user
+    MW-->>API: context user
+    API->>API: rate limit 10 request per menit per user
+    API->>OSM: reverse geocode latitude + longitude
+    OSM-->>API: wilayah kecamatan, kota, provinsi
+    API->>DB: update last_lat/last_lon user + query leaderboard wilayah
+    DB-->>API: data leaderboard
+    API-->>AC: 200 {metadata, data}
+    AC-->>SVC: LocationResult
+    SVC->>SVC: cache region_location
+    SVC-->>UI: LocationResult
+    UI-->>U: tampilkan leaderboard kecamatan, kota, provinsi
+```
+
+> `accuracy` dari GPS tidak termasuk query API. Login JWT adalah satu-satunya token pada LBS; tidak ada room token.
+
+---
+
+## 12. Kode Error Umum
+
+| Kode | Arti | Contoh pesan |
+|---|---|---|
+| 400 | Request/atribut tidak valid | `Request tidak valid` / `Status room harus salah satu dari: waiting, open, in-Game, ended` / `Tipe room harus salah satu dari: public, private` |
+| 401 | Autentikasi gagal atau sesi berakhir | `Missing or expired authorization token` / `Sesi telah berakhir, silakan login kembali` / `User tidak ditemukan` — envelope `{ "status": 401, "error": "Unauthorized", "message": "..." }` (endpoint dengan `middleware.Auth`) / `Token room tidak ditemukan` / `Token room tidak valid` (WebSocket, bentuk lama) |
+| 401 | Bukan dari perangkat smartphone (allowlist device) | `Akses hanya diizinkan dari perangkat smartphone` |
+| 403 | Otorisasi gagal (resource bukan milik Anda / perangkat lain) | `Anda tidak punya akses ke kuis ini` / `Token room bukan milik pengguna ini` / `Akun sudah terikat pada perangkat lain` |
+| 404 | Data tidak ditemukan | `Kuis tidak ditemukan` / `Room tidak ditemukan` / `Result tidak ditemukan` / `Emoji tidak ditemukan` / `Permainan tidak sedang berjalan` |
+| 409 | Konflik data (duplikat / state permainan) | `Username sudah terdaftar` / `Room sudah memiliki result` / `Emoji dengan path ini sudah ada` / `Soal sedang tidak berjalan` / `Soal sudah berganti` / `Jawaban sudah dikirim` |
+| 413 | Body request terlalu besar (> 1 MiB) | `Body request terlalu besar (maksimal 1 MiB)` |
+| 415 | Content-Type bukan JSON | `Content-Type harus application/json` |
+| 429 | Rate limit terlampaui | `Terlalu banyak percobaan login, coba lagi nanti` |
+| 500 | Error server | `Gagal membuat akun` / `Gagal membuat room` / `Gagal membuat token room` |
+
+> Semua endpoint yang menerima body JSON memakai validator yang sama sehingga dapat mengembalikan `413` dan `415` di luar daftar contoh per-endpoint di atas. Endpoint dengan `middleware.Auth` juga dapat mengembalikan `401` allowlist device. Endpoint `POST /image/upload` (§4.3) disediakan Cloudinary, bukan oleh server ini.
+
+---
+
+## 13. Ringkasan Alur Token User → Frontend → Server → User
+
+Alur umum yang berlaku untuk semua service:
+
+1. Halaman Flutter mengisi variabel (controller/state), lalu memanggil service Dart (`lib/services/api/*.dart`).
+2. Service mengambil login JWT dari `SessionService.instance.getToken()` (key `SharedPreferences`: `auth_token`).
+3. `ApiClient.headers()` menambahkan `Authorization: Bearer <login JWT>`, `Content-Type: application/json` bila ada body, dan `User-Agent` smartphone dari `DeviceService.instance.userAgent`.
+4. Body di-encode dengan `jsonEncode`; path memakai `ApiClient.baseUrl` (`https://deera-server.my.id`).
+5. `middleware.Auth` memvalidasi token dan memuat user; handler memakai user dari context untuk identitas/ownership.
+6. Room JWT hanya dibuat oleh `POST /api/rooms/verify` dan hanya dipakai pada query WebSocket; token ini tidak disimpan di `SharedPreferences` sebagai pengganti login JWT.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant U as User
+    participant UI as Flutter Page
+    participant SVC as Service Dart
+    participant SP as SessionService / SharedPreferences
+    participant AC as ApiClient
+    participant API as API Server
+    participant MW as middleware.Auth
+    participant DB as MongoDB
+
+    U->>UI: isi variabel dan lakukan aksi
+    UI->>SVC: panggil method service
+    SVC->>SP: getToken()
+    SP-->>SVC: login JWT
+    SVC->>AC: get/post/put(path, token, body)
+    AC->>AC: headers: Authorization + User-Agent + Content-Type
+    AC->>API: HTTP request JSON
+    API->>MW: Auth(handler)
+    MW->>MW: VerifyToken + tolak typ=room + IsSmartphone
+    MW->>DB: IsTokenRevoked + FindUserByUsername(sub)
+    DB-->>MW: user
+    MW-->>API: context user
+    API->>DB: query atau mutasi sesuai service
+    DB-->>API: data
+    API-->>AC: JSON response
+    AC-->>SVC: http.Response
+    SVC->>SVC: decode + map model
+    SVC-->>UI: state/UI update
+    UI-->>U: hasil terlihat di layar
+```
+
+**Diagram end-to-end per service:**
+
+| Service | Bagian |
+|---|---|
+| Auth | §3.5 |
+| Quiz | §4.6 |
+| Room | §5.6 |
+| Result | §6.5 |
+| AI | §7.2 |
+| Emoji | §8.4 |
+| WebSocket | §9.3 |
+| Poin & Koin | §10.3 |
+| LBS | §11.2 |
 

@@ -126,9 +126,7 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.pageBase,
-      appBar: AppHeaderBarWithActions(
-        actions: const [PointsIndicator(style: PointsIndicatorStyle.home)],
-      ),
+      appBar: AppHeaderBarWithActions(),
       body: _buildBody(),
       floatingActionButton: AppPillButton(
         label: 'Create Quiz',
@@ -157,7 +155,6 @@ class _HomePageState extends State<HomePage> {
         bottom: AppSpacing.fabClearance,
       ),
       children: [
-        const SizedBox(height: AppSpacing.space8),
         _buildStats(),
         if (_error != null)
           _buildError()

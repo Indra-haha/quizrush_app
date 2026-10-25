@@ -264,21 +264,19 @@ class _ProfilePageState extends State<ProfilePage> {
         icon: Icons.feedback_rounded,
         onPressed: () => {},
       ),
-      body: _buildBody(context)
-      );
-  }
-
-
-  Widget _buildBody(BuildContext context) {
-    return 
-    RefreshIndicator(
-        color: AppColors.primary,
-        onRefresh: _loadStats,
-        child: _buildList(context),
+      body: _buildBody(context),
     );
   }
 
-  Widget _buildList(BuildContext context){
+  Widget _buildBody(BuildContext context) {
+    return RefreshIndicator(
+      color: AppColors.primary,
+      onRefresh: _loadStats,
+      child: _buildList(context),
+    );
+  }
+
+  Widget _buildList(BuildContext context) {
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.only(
@@ -288,24 +286,30 @@ class _ProfilePageState extends State<ProfilePage> {
         bottom: AppSpacing.fabClearance,
       ),
       children: [
-        _centered(_ProfileHeroCard(
-          nama: _nama,
-          username: _username,
-          kelas: _kelas,
-          initials: _initials,
-        )),
+        _centered(
+          _ProfileHeroCard(
+            nama: _nama,
+            username: _username,
+            kelas: _kelas,
+            initials: _initials,
+          ),
+        ),
         const SizedBox(height: AppSpacing.space10),
-        _centered(_StatsCard(stats: _stats, points: PointsStore.instance.points)),
+        _centered(
+          _StatsCard(stats: _stats, points: PointsStore.instance.points),
+        ),
         const SizedBox(height: AppSpacing.space10),
-        _centered(_SettingsCard(
-          notificationsEnabled: _notificationsEnabled,
-          onNotificationsChanged: _toggleNotifications,
-          biometricEnabled: _biometricEnabled,
-          biometricBusy: _biometricBusy,
-          onBiometricChanged: _toggleBiometric,
-          onStatsTap: () => _notAvailable('Statistik & riwayat kuis'),
-          onAdvancedTap: () => _sensorSettings('Pengaturan Sensor'),
-        )),
+        _centered(
+          _SettingsCard(
+            notificationsEnabled: _notificationsEnabled,
+            onNotificationsChanged: _toggleNotifications,
+            biometricEnabled: _biometricEnabled,
+            biometricBusy: _biometricBusy,
+            onBiometricChanged: _toggleBiometric,
+            onStatsTap: () => _notAvailable('Statistik & riwayat kuis'),
+            onAdvancedTap: () => _sensorSettings('Pengaturan Sensor'),
+          ),
+        ),
       ],
     );
   }
@@ -338,6 +342,9 @@ class _ProfileHeroCard extends StatelessWidget {
     return Container(
       width: double.infinity,
       decoration: ProfileTheme.cardDecoration,
+      padding: const EdgeInsets.symmetric(
+        vertical: AppSpacing.space8,
+      ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [

@@ -50,7 +50,12 @@ class AppColors {
   static const onPrimarySubtle = Color(0x99FFFFFF);
   static const onPrimarySoft = Color(0x73FFFFFF);
   static const onPrimaryFaint = Color(0x4DFFFFFF);
+  static const onPrimaryWash = Color(0x1AFFFFFF);
+  static const onPrimaryVeil = Color(0x33FFFFFF);
   static const onLightAlpha = Color(0x3DFFFFFF);
+
+  // Reward: tinta nominal pada riwayat poin.
+  static const rewardAmountInk = Color(0xFF825100);
 
   // Scrim/overlay di atas gambar cover Create Quiz.
   static const scrim = Color(0x8C111C2D);
@@ -147,5 +152,5 @@ class AppColors {
   static const shadowIndigo14 = Color(0x244648D4);
   static const shadowIndigo18 = Color(0x2D4648D4);
   static const shadowIndigo20 = Color(0x334648D4);
+  static const shadowViolet30 = Color(0x4C6B38D4);
 }
-

@@ -19,7 +19,7 @@ class QuizSearchField extends StatelessWidget {
       controller: controller,
       onChanged: onChanged,
       textInputAction: TextInputAction.search,
-      style: AppTextStyles.accentCaption.copyWith(color: AppColors.primary),
+      style: AppTextStyles.accentLabel.copyWith(color: AppColors.primary),
       decoration: InputDecoration(
         hintText: 'Ketik judul kuis atau 6 digit PIN...',
         hintStyle: AppTextStyles.body.copyWith(color: AppColors.info),

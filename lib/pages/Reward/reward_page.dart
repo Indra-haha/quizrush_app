@@ -6,10 +6,12 @@ import '../../services/api/api_client.dart';
 import '../../services/api/points_service.dart';
 import '../../services/points_store.dart';
 import '../../services/session_service.dart';
+import '../../theme/app_theme.dart';
+import '../../widgets/app_header_bar_with_actions.dart';
 import '../../widgets/app_snackbar.dart';
 import '../../widgets/status_filter.dart';
 
-/// Halaman tab "Reward" dengan dua bagian yang bisa digeser: Reward dan Saldo.
+/// Halaman tab "Reward" dengan dua bagian yang bisa digeser: Poin dan Saldo.
 class RewardPage extends StatefulWidget {
   /// Apakah tab ini sedang aktif/dibuka. Data dimuat saat halaman dibuka,
   /// bukan saat dibuat di dalam `IndexedStack`.
@@ -25,7 +27,7 @@ class RewardPage extends StatefulWidget {
 }
 
 class _RewardPageState extends State<RewardPage> {
-  static const List<String> _tabs = ['Reward', 'Saldo'];
+  static const List<String> _tabs = ['Poin (Pts)', 'Saldo'];
   static const int _koinToRupiah = 10;
   static const List<String> _historyFilters = ['Semua', 'Hadiah', 'Tarik'];
 
@@ -182,218 +184,547 @@ class _RewardPageState extends State<RewardPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Reward')),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: StatusFilter<String>(
-              values: _tabs,
-              selected: _selectedTab,
-              onChanged: _selectTab,
-            ),
-          ),
-          Expanded(
-            child: PageView(
-              controller: _pageController,
-              onPageChanged: _onPageChanged,
-              children: [_buildRewardTab(), _buildSaldoTab()],
-            ),
-          ),
-        ],
-      ),
+      backgroundColor: AppColors.pureSurface,
+      appBar: AppHeaderBarWithActions(),
+      body: _buildBody(),
     );
   }
 
-  Widget _buildRewardTab() {
-    return const Center(
-      child: Padding(
-        padding: EdgeInsets.all(24),
-        child: Text(
-          'Belum ada konten reward.',
-          textAlign: TextAlign.center,
+  Widget _buildBody() {
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(top: AppSpacing.space8),
+          child: StatusFilter<String>(
+            values: _tabs,
+            selected: _selectedTab,
+            onChanged: _selectTab,
+          ),
         ),
-      ),
+        Expanded(
+          child: PageView(
+            controller: _pageController,
+            onPageChanged: _onPageChanged,
+            children: [_buildPointTab(), _buildSaldoTab()],
+          ),
+        ),
+      ],
     );
   }
+
+  // ============================================================
+  // STATE KONVERSI POIN DAN SALDO
+  // ============================================================
+
+  // Isi dari API saldo yang sudah ada di aplikasi.
+  int _saldoRupiah = 0;
+
+  // Controller input jumlah poin.
+  final TextEditingController _pointConversionController =
+      TextEditingController();
+
+  // Hasil konversi poin menjadi rupiah.
+  int _conversionResultRupiah = 0;
+
+  bool _isConverting = false;
+
+  int get _conversionPoints =>
+      int.tryParse(_pointConversionController.text.trim()) ?? 0;
+
+  int get _conversionRupiah => (_conversionPoints * _koinToRupiah).round();
+
+  // ============================================================
+  // TAB POIN
+  // ============================================================
+
+  Widget _buildPointTab() {
+    return _buildRewardTab(isPointTab: true);
+  }
+
+  // ============================================================
+  // TAB SALDO
+  // ============================================================
 
   Widget _buildSaldoTab() {
+    return _buildRewardTab(isPointTab: false);
+  }
+
+  // ============================================================
+  // BUILDER UTAMA
+  // ============================================================
+
+  Widget _buildRewardTab({required bool isPointTab}) {
     if (_loading && _points == null && _coins.isEmpty) {
       return const Center(child: CircularProgressIndicator());
     }
+
     if (_error != null && _points == null) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(_error!, textAlign: TextAlign.center),
-              const SizedBox(height: 16),
-              FilledButton(onPressed: _load, child: const Text('Coba lagi')),
-            ],
-          ),
-        ),
-      );
+      return _buildError();
     }
 
     return RefreshIndicator(
+      color: AppColors.primary,
       onRefresh: _load,
       child: ListView(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
+        padding: RewardTheme.pagePadding,
         children: [
-          _buildBalanceCard(),
-          const SizedBox(height: 16),
-          _buildConversionCard(),
-          const SizedBox(height: 16),
-          _buildHistoryCard(),
-          const SizedBox(height: 300),
+          _buildPointHeroCard(isPointTab: isPointTab),
+
+          const SizedBox(height: RewardTheme.sectionGap),
+
+          _buildConversionTeaserCard(isPointTab: isPointTab),
+
+          if (isPointTab) ...[
+            const SizedBox(height: RewardTheme.sectionGap),
+            _buildPointHistory(),
+          ],
         ],
       ),
     );
   }
 
-  Widget _buildBalanceCard() {
-    final value = _points ?? 0;
-    return Card(
-      child: ListTile(
-        title: const Text('Saldo Koin'),
-        subtitle: Text('≈ ${formatRupiah(value * _koinToRupiah)}'),
-        trailing: Text(
-          '${formatPoints(value)} KOIN',
-          style: Theme.of(context).textTheme.titleMedium,
+  // ============================================================
+  // ERROR
+  // ============================================================
+
+  Widget _buildError() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.space10),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(_error!, textAlign: TextAlign.center),
+
+            const SizedBox(height: AppSpacing.space8),
+
+            FilledButton(onPressed: _load, child: const Text('Coba lagi')),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildConversionCard() {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(
-              'Konversi Koin',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _amountController,
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                labelText: 'Jumlah koin',
-                border: OutlineInputBorder(),
+  // ============================================================
+  // HERO CARD POIN / SALDO
+  // ============================================================
+
+  Widget _buildPointHeroCard({required bool isPointTab}) {
+    final int points = _points ?? 0;
+    final int saldo = _saldoRupiah;
+
+    final String title = isPointTab ? 'TOTAL POIN QUIZRUSH' : 'TOTAL RUPIAH';
+
+    final String value = isPointTab
+        ? formatPoints(points)
+        : formatRupiah(saldo);
+
+    final String unit = isPointTab ? 'PTS' : 'IDR';
+
+    final String equivalent = isPointTab
+        ? 'Setara: ${formatRupiah((points * _koinToRupiah).round())}'
+        : 'Setara: ${formatPoints(_koinToRupiah > 0 ? (saldo / _koinToRupiah).floor() : 0)} PTS';
+
+    return Container(
+      width: double.infinity,
+      padding: RewardTheme.heroPadding,
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        gradient: AppGradients.rewardHero,
+        borderRadius: RewardTheme.heroRadius,
+        boxShadow: RewardTheme.heroShadow,
+      ),
+      child: Stack(
+        children: [
+          Positioned(
+            right: RewardTheme.heroOrbOverlap,
+            top: RewardTheme.heroOrbOverlap,
+            child: Container(
+              width: RewardTheme.heroOrbSize,
+              height: RewardTheme.heroOrbSize,
+              decoration: const BoxDecoration(
+                color: RewardTheme.heroOrbColor,
+                shape: BoxShape.circle,
               ),
             ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                for (final amount in const [1000, 5000, 10000]) ...[
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () => _setAmount(amount),
-                      child: Text(formatPoints(amount)),
+          ),
+
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(title, style: RewardTextStyles.heroLabel),
+
+              const SizedBox(height: AppSpacing.space6),
+
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.baseline,
+                textBaseline: TextBaseline.alphabetic,
+                children: [
+                  Flexible(
+                    child: Text(
+                      value,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: RewardTextStyles.heroValue,
                     ),
                   ),
-                  if (amount != 10000) const SizedBox(width: 8),
+
+                  const SizedBox(width: AppSpacing.space4),
+
+                  Text(unit, style: RewardTextStyles.heroUnit),
                 ],
-              ],
-            ),
-            const SizedBox(height: 12),
-            DropdownButtonFormField<String>(
-              initialValue: _currencies.containsKey(_currency)
-                  ? _currency
-                  : _currencies.keys.first,
-              decoration: const InputDecoration(
-                labelText: 'Mata uang',
-                border: OutlineInputBorder(),
               ),
-              items: [
-                for (final code in _currencies.keys)
-                  DropdownMenuItem(value: code, child: Text(code)),
-              ],
-              onChanged: (value) {
-                if (value == null || !_currencies.containsKey(value)) return;
-                setState(() => _currency = value);
-              },
-            ),
-            const SizedBox(height: 12),
-            Text('Hasil: $_conversionLabel'),
-            const SizedBox(height: 16),
-            FilledButton(
-              onPressed: () => _notAvailable('Cairkan saldo'),
-              child: const Text('Cairkan'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 
-  Widget _buildHistoryCard() {
-    final coins = _filteredCoins;
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(
-              'Riwayat Transaksi',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            const SizedBox(height: 12),
-            Wrap(
-              spacing: 8,
-              children: [
-                for (final filter in _historyFilters)
-                  ChoiceChip(
-                    label: Text(filter),
-                    selected: filter == _historyFilter,
-                    onSelected: (_) =>
-                        setState(() => _historyFilter = filter),
-                  ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            if (coins.isEmpty)
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 16),
-                child: Text(
-                  'Belum ada transaksi koin.',
-                  textAlign: TextAlign.center,
+              const SizedBox(height: AppSpacing.space6),
+
+              Container(
+                padding: RewardTheme.equivalentBadgePadding,
+                decoration: const BoxDecoration(
+                  color: RewardTheme.equivalentBadgeColor,
+                  borderRadius: RewardTheme.equivalentBadgeRadius,
                 ),
-              )
-            else ...[
-              for (final coin in coins) _buildTransactionTile(coin),
+                child: Text(equivalent, style: RewardTextStyles.heroEquivalent),
+              ),
             ],
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildTransactionTile(CoinEntry coin) {
-    final positive = coin.amount >= 0;
-    final sign = positive ? '+' : '-';
-    final time = relativeTime(coin.createdAt);
-    final subtitle = coin.roomKode.isEmpty
-        ? '${coin.reasonLabel} • $time'
+  // ============================================================
+  // KARTU KONVERSI POIN / SALDO
+  // ============================================================
+
+  Widget _buildConversionTeaserCard({required bool isPointTab}) {
+    return Container(
+      width: double.infinity,
+      padding: RewardTheme.cardPadding,
+      decoration: BoxDecoration(
+        color: AppColors.pureSurface,
+        borderRadius: RewardTheme.cardRadius,
+        boxShadow: RewardTheme.cardShadow,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: RewardTheme.iconCircleSize,
+                height: RewardTheme.iconCircleSize,
+                decoration: const BoxDecoration(
+                  color: AppColors.heroPeach,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  isPointTab
+                      ? Icons.currency_exchange_rounded
+                      : Icons.account_balance_wallet_rounded,
+                  size: RewardTheme.iconSize,
+                  color: AppColors.rewardAmountInk,
+                ),
+              ),
+
+              const SizedBox(width: RewardTheme.contentGap),
+
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      isPointTab
+                          ? 'Tukarkan Menjadi Mata Uang!'
+                          : 'Konversi Poin ke Rupiah',
+                      style: RewardTextStyles.cardTitle,
+                    ),
+
+                    const SizedBox(height: AppSpacing.space1),
+
+                    Text(
+                      isPointTab
+                          ? 'Tukarkan poin Anda agar mendapatkan kesempatan membuat soal lagi.'
+                          : 'Masukkan jumlah poin yang ingin ditukarkan untuk melihat nilai rupiahnya.',
+                      style: RewardTextStyles.cardBody,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: RewardTheme.actionGap),
+
+          // ----------------------------------------------------
+          // KONTEN KHUSUS TAB SALDO
+          // ----------------------------------------------------
+          if (!isPointTab) ...[
+            _buildConversionInput(),
+
+            const SizedBox(height: RewardTheme.actionGap),
+
+            _buildConversionResult(),
+
+            const SizedBox(height: RewardTheme.actionGap),
+
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton(
+                onPressed: _isConverting ? null : _calculateConversion,
+                child: const Text('Konversi'),
+              ),
+            ),
+
+            const SizedBox(height: RewardTheme.actionGap),
+          ],
+
+          // ----------------------------------------------------
+          // TOMBOL BAWAH
+          // ----------------------------------------------------
+          Container(
+            decoration: RewardTheme.actionDecoration,
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                borderRadius: RewardTheme.actionRadius,
+                onTap: () {
+                  if (isPointTab) {
+                    _selectTab('Saldo');
+                  } else {
+                    _onWithdrawPressed();
+                  }
+                },
+                child: Padding(
+                  padding: RewardTheme.actionPadding,
+                  child: Text(
+                    isPointTab ? 'Konversi sekarang!' : 'Tarik saldo!',
+                    textAlign: TextAlign.center,
+                    style: RewardTextStyles.actionLabel,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ============================================================
+  // FIELD 1: INPUT JUMLAH POIN
+  // ============================================================
+
+  Widget _buildConversionInput() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Jumlah Poin', style: RewardTextStyles.cardTitle),
+
+        const SizedBox(height: AppSpacing.space2),
+
+        TextField(
+          controller: _pointConversionController,
+          keyboardType: TextInputType.number,
+          onChanged: (_) {
+            setState(() {
+              _conversionResultRupiah = 0;
+            });
+          },
+          decoration: InputDecoration(
+            hintText: 'Masukkan jumlah poin',
+            suffixText: 'PTS',
+            prefixIcon: const Icon(Icons.toll_rounded),
+            border: OutlineInputBorder(borderRadius: RewardTheme.actionRadius),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // ============================================================
+  // FIELD 2: HASIL RUPIAH
+  // ============================================================
+
+  Widget _buildConversionResult() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Hasil Konversi', style: RewardTextStyles.cardTitle),
+
+        const SizedBox(height: AppSpacing.space2),
+
+        TextField(
+          controller: TextEditingController(
+            text: formatRupiah(_conversionResultRupiah),
+          ),
+          readOnly: true,
+          decoration: InputDecoration(
+            prefixIcon: const Icon(Icons.payments_rounded),
+            suffixText: 'IDR',
+            labelText: 'Estimasi Rupiah',
+            border: OutlineInputBorder(borderRadius: RewardTheme.actionRadius),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // ============================================================
+  // PROSES HITUNG KONVERSI
+  // ============================================================
+
+  void _calculateConversion() {
+    final int points = _conversionPoints;
+
+    if (points <= 0) {
+      _showRewardMessage('Masukkan jumlah poin yang valid.');
+      return;
+    }
+
+    if (points > (_points ?? 0)) {
+      _showRewardMessage('Poin kamu tidak mencukupi.');
+      return;
+    }
+
+    if (_koinToRupiah <= 0) {
+      _showRewardMessage('Nilai konversi belum tersedia.');
+      return;
+    }
+
+    setState(() {
+      _conversionResultRupiah = _conversionRupiah;
+    });
+  }
+
+  // ============================================================
+  // NOTIFIKASI
+  // ============================================================
+
+  void _showRewardMessage(String message) {
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  // ============================================================
+  // TOMBOL TARIK SALDO
+  // ============================================================
+
+  void _onWithdrawPressed() {
+    // Ganti dengan navigasi ke halaman penarikan saldo
+    // atau dialog penarikan yang sudah tersedia di aplikasi.
+    _showRewardMessage('Hubungkan ke halaman penarikan saldo.');
+  }
+
+  // ============================================================
+  // RIWAYAT POIN
+  // ============================================================
+
+  Widget _buildPointHistory() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text('Riwayat Poin Kuis', style: RewardTextStyles.historyTitle),
+
+        const SizedBox(height: RewardTheme.historyTitleGap),
+
+        if (_coins.isEmpty)
+          Container(
+            padding: RewardTheme.historyCardPadding,
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: RewardTheme.historyCardRadius,
+              boxShadow: RewardTheme.historyCardShadow,
+            ),
+            child: Text(
+              'Belum ada riwayat poin kuis.',
+              textAlign: TextAlign.center,
+              style: RewardTextStyles.historyEmpty,
+            ),
+          )
+        else
+          for (var i = 0; i < _coins.length; i++) ...[
+            if (i > 0) const SizedBox(height: RewardTheme.historyItemGap),
+
+            _buildPointHistoryCard(_coins[i]),
+          ],
+      ],
+    );
+  }
+
+  // ============================================================
+  // ITEM RIWAYAT POIN
+  // ============================================================
+
+  Widget _buildPointHistoryCard(CoinEntry coin) {
+    final bool positive = coin.amount >= 0;
+    final String time = relativeTime(coin.createdAt);
+
+    final String meta = coin.roomKode.isEmpty
+        ? '$time • ${coin.reasonLabel}'
         : 'Room ${formatKode(coin.roomKode)} • $time';
 
-    return ListTile(
-      contentPadding: EdgeInsets.zero,
-      leading: Icon(
-        coin.reason == 'quiz_reward'
-            ? Icons.emoji_events_rounded
-            : Icons.toll_rounded,
+    final String amount =
+        '${positive ? '+' : '-'}${formatPoints(coin.amount.abs())} Pts';
+
+    return Container(
+      width: double.infinity,
+      padding: RewardTheme.historyCardPadding,
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: RewardTheme.historyCardRadius,
+        boxShadow: RewardTheme.historyCardShadow,
       ),
-      title: Text(coin.reasonLabel),
-      subtitle: Text(subtitle),
-      trailing: Text('$sign${formatPoints(coin.amount.abs())} KOIN'),
+      child: Row(
+        children: [
+          Container(
+            width: RewardTheme.iconCircleSize,
+            height: RewardTheme.iconCircleSize,
+            decoration: BoxDecoration(
+              color: RewardTheme.historyIconBackground(coin.amount),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              RewardTheme.historyIcon(coin.reason, coin.amount),
+              size: RewardTheme.iconSize,
+              color: RewardTheme.historyIconColor(coin.amount),
+            ),
+          ),
+
+          const SizedBox(width: RewardTheme.contentGap),
+
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  coin.reasonLabel,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: RewardTextStyles.historyItemTitle,
+                ),
+
+                const SizedBox(height: AppSpacing.space1),
+
+                Text(
+                  meta,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: RewardTextStyles.historyItemMeta,
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(width: AppSpacing.space3),
+
+          Text(amount, style: RewardTextStyles.historyAmount),
+        ],
+      ),
     );
   }
 }

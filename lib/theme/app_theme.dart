@@ -22,3 +22,4 @@ export 'app_theme_data.dart';
 export 'app_typography.dart';
 export 'create_quiz_theme.dart';
 export 'profile_theme.dart';
+export 'reward_theme.dart';

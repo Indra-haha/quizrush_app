@@ -12,10 +12,10 @@ import '../../services/quiz_feed.dart';
 import '../../services/quiz_index.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/active_room_banner.dart';
+import '../../widgets/app_header_bar_with_actions.dart';
 import '../../widgets/app_pill_button.dart';
 import '../../widgets/app_snackbar.dart';
 import '../../widgets/cache_info_bar.dart';
-import '../../widgets/points_indicator.dart';
 import '../../widgets/quiz_results_list.dart';
 import '../../widgets/quiz_search_field.dart';
 import '../../widgets/status_filter.dart';
@@ -259,8 +259,8 @@ class _QuizPageState extends State<QuizPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.surface,
-      appBar: AppBar(title: const Text('Kuis'), actions: [PointsIndicator(style: PointsIndicatorStyle.home)]),
+      backgroundColor: AppColors.pageBase,
+      appBar: AppHeaderBarWithActions(),
       floatingActionButton: AppPillButton(
         label: 'Masukkan PIN',
         icon: Icons.pin_outlined,
@@ -275,7 +275,7 @@ class _QuizPageState extends State<QuizPage> {
     return Column(
       children: [
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.space9),
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.space9, vertical: AppSpacing.space8),
           child: QuizSearchField(
             controller: _searchController,
             onChanged: _onSearchChanged,

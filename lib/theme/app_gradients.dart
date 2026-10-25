@@ -41,6 +41,13 @@ class AppGradients {
     colors: [AppColors.primary, AppColors.gradientEnd],
   );
 
+  /// Kartu total poin halaman Reward (desain poin).
+  static const rewardHero = LinearGradient(
+    begin: Alignment(0.31, -0.31),
+    end: Alignment(0.69, 1.31),
+    colors: [AppColors.primary, AppColors.quizAction, AppColors.gradientEnd],
+  );
+
   /// Track toggle aktif pada kartu pengaturan profil (vertikal).
   static const toggleActive = LinearGradient(
     begin: Alignment(0.5, -0.0),

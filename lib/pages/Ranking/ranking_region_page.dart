@@ -5,6 +5,8 @@ import '../../models/region_ranking.dart';
 import '../../services/api/api_client.dart';
 import '../../services/api/location_service.dart';
 import '../../services/session_service.dart';
+import '../../theme/app_colors.dart' show AppColors;
+import '../../theme/app_spacing.dart';
 import '../../widgets/app_header_bar_with_actions.dart';
 import '../../widgets/app_snackbar.dart';
 import '../../widgets/points_indicator.dart';
@@ -212,145 +214,159 @@ class _RankingRegionPageState extends State<RankingRegionPage> {
 
   @override
   Widget build(BuildContext context) {
-    final regionText = '${_levelLabel('kecamatan')}, ${_levelLabel('kota')}, ${_levelLabel('provinsi')}';
-
-
     return Scaffold(
       backgroundColor: const Color(0xFFFCFCFC),
-      appBar: AppHeaderBarWithActions(actions: const [PointsIndicator()]),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SizedBox(height: 4),
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
+      appBar: AppHeaderBarWithActions(),
+      body: _buildBody(),
+    );
+  }
+
+  Widget _buildBody() {
+    return RefreshIndicator(
+      color: AppColors.primary,
+      onRefresh: _refreshLocation,
+      child: _buildList());
+  }
+
+  Widget _buildList() {
+    final regionText =
+        '${_levelLabel('kecamatan')}, ${_levelLabel('kota')}, ${_levelLabel('provinsi')}';
+
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.space9,
+            vertical: AppSpacing.space8,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 4),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.space6,
+                  vertical: AppSpacing.space4,
+                ),
+                decoration: ShapeDecoration(
+                  color: const Color(0xFFDEE8FF),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(9999),
                   ),
-                  decoration: ShapeDecoration(
-                    color: const Color(0xFFDEE8FF),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(9999),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.location_on,
+                      size: 16,
+                      color: Color(0xFF111C2D),
                     ),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(
-                        Icons.location_on,
-                        size: 16,
-                        color: Color(0xFF111C2D),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          regionText,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            color: Color(0xFF111C2D),
-                            fontSize: 12,
-                            fontFamily: 'Plus Jakarta Sans',
-                            fontWeight: FontWeight.w600,
-                            height: 1.33,
-                          ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        regionText,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: Color(0xFF111C2D),
+                          fontSize: 12,
+                          fontFamily: 'Plus Jakarta Sans',
+                          fontWeight: FontWeight.w600,
+                          height: 1.33,
                         ),
                       ),
-                      const SizedBox(width: 8),
-                      GestureDetector(
-                        onTap: _locating ? null : _refreshLocation,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 4,
+                    ),
+                    const SizedBox(width: 8),
+                    GestureDetector(
+                      onTap: _locating ? null : _refreshLocation,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 4,
+                        ),
+                        decoration: ShapeDecoration(
+                          color: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(9999),
                           ),
-                          decoration: ShapeDecoration(
-                            color: Colors.white,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(9999),
+                          shadows: const [
+                            BoxShadow(
+                              color: Color(0x0C000000),
+                              blurRadius: 2,
+                              offset: Offset(0, 1),
+                              spreadRadius: 0,
                             ),
-                            shadows: const [
-                              BoxShadow(
-                                color: Color(0x0C000000),
-                                blurRadius: 2,
-                                offset: Offset(0, 1),
-                                spreadRadius: 0,
-                              ),
-                            ],
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Icon(
-                                Icons.edit_location_alt,
-                                size: 12,
+                          ],
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(
+                              Icons.edit_location_alt,
+                              size: 12,
+                              color: Color(0xFF4648D4),
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              _locating ? 'Memuat...' : 'Ubah',
+                              style: const TextStyle(
                                 color: Color(0xFF4648D4),
+                                fontSize: 12,
+                                fontFamily: 'Plus Jakarta Sans',
+                                fontWeight: FontWeight.w600,
+                                height: 1.33,
                               ),
-                              const SizedBox(width: 4),
-                              Text(
-                                _locating ? 'Memuat...' : 'Ubah',
-                                style: const TextStyle(
-                                  color: Color(0xFF4648D4),
-                                  fontSize: 12,
-                                  fontFamily: 'Plus Jakarta Sans',
-                                  fontWeight: FontWeight.w600,
-                                  height: 1.33,
-                                ),
-                              ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 16),
-                const Text(
-                  'Leaderboard Wilayah',
-                  style: TextStyle(
-                    color: Color(0xFF111C2D),
-                    fontSize: 24,
-                    fontFamily: 'Montserrat',
-                    fontWeight: FontWeight.w700,
-                    height: 1.42,
-                  ),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Leaderboard Wilayah',
+                style: TextStyle(
+                  color: Color(0xFF111C2D),
+                  fontSize: 24,
+                  fontFamily: 'Montserrat',
+                  fontWeight: FontWeight.w700,
+                  height: 1.42,
                 ),
-                const SizedBox(height: 4),
-                const Text(
-                  'Lihat jagoan kuis di sekitarmu dan rebut posisi teratas!',
-                  style: TextStyle(
-                    color: Color(0xFF464554),
-                    fontSize: 14,
-                    fontFamily: 'Plus Jakarta Sans',
-                    fontWeight: FontWeight.w400,
-                    height: 1.71,
-                  ),
+              ),
+              const SizedBox(height: 4),
+              const Text(
+                'Lihat jagoan kuis di sekitarmu dan rebut posisi teratas!',
+                style: TextStyle(
+                  color: Color(0xFF464554),
+                  fontSize: 14,
+                  fontFamily: 'Plus Jakarta Sans',
+                  fontWeight: FontWeight.w400,
+                  height: 1.71,
                 ),
-                const SizedBox(height: 16),
-                StatusFilter<String>(
-                  values: const ['kecamatan', 'kota', 'provinsi'],
-                  selected: _activeLevel,
-                  onChanged: _selectLevel,
-                ),
-              ],
-            ),
+              ),
+              const SizedBox(height: 16),
+              StatusFilter<String>(
+                values: const ['kecamatan', 'kota', 'provinsi'],
+                selected: _activeLevel,
+                onChanged: _selectLevel,
+              ),
+            ],
           ),
-          Expanded(
-            child: PageView(
-              controller: _pageController,
-              onPageChanged: _onPageChanged,
-              children: [
-                _buildLevelPage('kecamatan'),
-                _buildLevelPage('kota'),
-                _buildLevelPage('provinsi'),
-              ],
-            ),
+        ),
+        Expanded(
+          child: PageView(
+            controller: _pageController,
+            onPageChanged: _onPageChanged,
+            children: [
+              _buildLevelPage('kecamatan'),
+              _buildLevelPage('kota'),
+              _buildLevelPage('provinsi'),
+            ],
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
@@ -440,8 +456,6 @@ class _RankingRegionPageState extends State<RankingRegionPage> {
     );
   }
 }
-
-
 
 class _PodiumItem extends StatelessWidget {
   final RegionRankingEntry entry;

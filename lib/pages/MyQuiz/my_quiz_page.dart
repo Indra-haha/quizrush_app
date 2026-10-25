@@ -38,6 +38,7 @@ class _MyQuizPageState extends State<MyQuizPage> {
   String _selectedStatus = 'waiting';
   late QuizIndex _index = widget.index;
   bool _syncing = false;
+  bool _saving = false;
   bool _notFound = false;
   final _searchController = TextEditingController();
   Timer? _notFoundTimer;
@@ -182,12 +183,15 @@ class _MyQuizPageState extends State<MyQuizPage> {
       backgroundColor: AppColors.quizCanvas,
       appBar: AppHeaderBarWithActions(
         title: 'Quiz Saya',
+        titleStyle: CreateQuizTextStyles.headerTitle,
+        backgroundColor: CreateQuizPageStyles.headerBackground,
+        elevation: CreateQuizPageStyles.headerElevation,
+        shadowColor: CreateQuizPageStyles.headerShadowColor,
         leading: IconButton(
           tooltip: 'Kembali',
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () => Navigator.of(context).pop(false),
           icon: const Icon(Icons.arrow_back),
-        ),
-      ),
+        )),
       body: _buildBody(),
       floatingActionButton: AppPillButton(
         label: 'Create Room',

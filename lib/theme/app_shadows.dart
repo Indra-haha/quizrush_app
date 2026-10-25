@@ -8,37 +8,65 @@ class AppShadows {
 
   /// Standard content card.
   static const card = <BoxShadow>[
-    BoxShadow(color: AppColors.shadowBlack10, blurRadius: 8, offset: Offset(0, 2)),
+    BoxShadow(
+      color: AppColors.shadowBlack10,
+      blurRadius: 8,
+      offset: Offset(0, 2),
+    ),
   ];
 
   /// Raised / prominent surface.
   static const raised = <BoxShadow>[
-    BoxShadow(color: AppColors.shadowBlack08, blurRadius: 16, offset: Offset(0, 4)),
+    BoxShadow(
+      color: AppColors.shadowBlack08,
+      blurRadius: 16,
+      offset: Offset(0, 4),
+    ),
   ];
 
   /// Very tight 1px-style lift.
   static const hairlineTight = <BoxShadow>[
-    BoxShadow(color: AppColors.shadowBlack05, blurRadius: 2, offset: Offset(0, 1)),
+    BoxShadow(
+      color: AppColors.shadowBlack05,
+      blurRadius: 2,
+      offset: Offset(0, 1),
+    ),
   ];
 
   /// Soft hairline.
   static const hairline = <BoxShadow>[
-    BoxShadow(color: AppColors.shadowBlack05, blurRadius: 4, offset: Offset(0, 2)),
+    BoxShadow(
+      color: AppColors.shadowBlack05,
+      blurRadius: 4,
+      offset: Offset(0, 2),
+    ),
   ];
 
   /// Subtle shadow for tiles.
   static const subtle = <BoxShadow>[
-    BoxShadow(color: AppColors.shadowBlack06, blurRadius: 4, offset: Offset(0, 2)),
+    BoxShadow(
+      color: AppColors.shadowBlack06,
+      blurRadius: 4,
+      offset: Offset(0, 2),
+    ),
   ];
 
   /// Downward-only offset, no blur (soft edge at the bottom).
   static const softLift = <BoxShadow>[
-    BoxShadow(color: AppColors.shadowBlack06, blurRadius: 0, offset: Offset(0, 8)),
+    BoxShadow(
+      color: AppColors.shadowBlack06,
+      blurRadius: 0,
+      offset: Offset(0, 8),
+    ),
   ];
 
   /// Wide, diffuse lift used on main content blocks.
   static const hairlineWide = <BoxShadow>[
-    BoxShadow(color: AppColors.shadowBlack06, blurRadius: 20, offset: Offset(0, 8)),
+    BoxShadow(
+      color: AppColors.shadowBlack06,
+      blurRadius: 20,
+      offset: Offset(0, 8),
+    ),
   ];
 
   /// Two-layer card shadow (near + far).
@@ -85,7 +113,11 @@ class AppShadows {
 
   /// Brand-tinted glow for hero cards.
   static const brandGlow = <BoxShadow>[
-    BoxShadow(color: AppColors.shadowIndigo08, blurRadius: 24, offset: Offset(0, 10)),
+    BoxShadow(
+      color: AppColors.shadowIndigo08,
+      blurRadius: 24,
+      offset: Offset(0, 10),
+    ),
   ];
 
   /// Kartu permukaan tinggi dengan dua lapis bayangan (desain halaman
@@ -107,7 +139,11 @@ class AppShadows {
 
   /// Floating / overlay surface.
   static const floating = <BoxShadow>[
-    BoxShadow(color: AppColors.shadowBlack20, blurRadius: 16, offset: Offset(0, 6)),
+    BoxShadow(
+      color: AppColors.shadowBlack20,
+      blurRadius: 16,
+      offset: Offset(0, 6),
+    ),
   ];
 
   /// Navigasi bawah: garis tipis tepat di bawah bidang nav.
@@ -122,17 +158,29 @@ class AppShadows {
 
   /// Kartu kuis beranda (desain baru): glow indigo dengan offset bawah.
   static const homeQuizCard = <BoxShadow>[
-    BoxShadow(color: AppColors.shadowIndigo20, blurRadius: 0, offset: Offset(0, 8)),
+    BoxShadow(
+      color: AppColors.shadowIndigo20,
+      blurRadius: 0,
+      offset: Offset(0, 8),
+    ),
   ];
 
   /// Tombol aksi beranda (desain baru).
   static const action = <BoxShadow>[
-    BoxShadow(color: AppColors.shadowIndigo20, blurRadius: 0, offset: Offset(0, 4)),
+    BoxShadow(
+      color: AppColors.shadowIndigo20,
+      blurRadius: 0,
+      offset: Offset(0, 4),
+    ),
   ];
 
   /// Kartu putih halaman auth (desain register baru).
   static const authCard = <BoxShadow>[
-    BoxShadow(color: AppColors.shadowBlack20, blurRadius: 40, offset: Offset(0, 12)),
+    BoxShadow(
+      color: AppColors.shadowBlack20,
+      blurRadius: 40,
+      offset: Offset(0, 12),
+    ),
   ];
 
   /// Inset-feeling highlight.
@@ -160,6 +208,33 @@ class AppShadows {
       color: AppColors.shadowBlack05,
       blurRadius: 12,
       offset: Offset(0, -2),
+    ),
+  ];
+
+  /// Kartu poin halaman Reward (hero & kartu ajakan konversi).
+  static const rewardCard = <BoxShadow>[
+    BoxShadow(
+      color: AppColors.shadowBlack20,
+      blurRadius: 40,
+      offset: Offset(0, 12),
+    ),
+  ];
+
+  /// Kartu riwayat poin halaman Reward.
+  static const rewardHistory = <BoxShadow>[
+    BoxShadow(
+      color: AppColors.shadowBlack20,
+      blurRadius: 2,
+      offset: Offset(0, 1),
+    ),
+  ];
+
+  /// Tombol "Konversi sekarang!" pada kartu poin.
+  static const rewardAction = <BoxShadow>[
+    BoxShadow(
+      color: AppColors.shadowViolet30,
+      blurRadius: 0,
+      offset: Offset(0, 8),
     ),
   ];
 }
