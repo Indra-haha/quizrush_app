@@ -19,6 +19,7 @@ import '../../widgets/app_pill_button.dart';
 import '../../widgets/app_snackbar.dart';
 import '../../widgets/auth_fields.dart';
 import '../login_redirect.dart';
+import 'feedback_page.dart';
 
 /// Halaman profil pengguna sesuai desain kartu profil + pengaturan.
 class ProfilePage extends StatefulWidget {
@@ -241,6 +242,12 @@ class _ProfilePageState extends State<ProfilePage> {
     AppSnackBar.show(context, '$label belum tersedia saat ini.');
   }
 
+  Future<void> _onSettingsPage() async {
+    await Navigator.of(
+      context,
+    ).push<bool>(MaterialPageRoute(builder: (_) => const FeedbackPage()));
+  }
+
   void _sensorSettings(String label) {
     Navigator.of(
       context,
@@ -262,7 +269,7 @@ class _ProfilePageState extends State<ProfilePage> {
       floatingActionButton: AppPillButton(
         label: 'Feedback',
         icon: Icons.feedback_rounded,
-        onPressed: () => {},
+        onPressed: _onSettingsPage,
       ),
       body: _buildBody(context),
     );
@@ -306,7 +313,6 @@ class _ProfilePageState extends State<ProfilePage> {
             biometricEnabled: _biometricEnabled,
             biometricBusy: _biometricBusy,
             onBiometricChanged: _toggleBiometric,
-            onStatsTap: () => _notAvailable('Statistik & riwayat kuis'),
             onAdvancedTap: () => _sensorSettings('Pengaturan Sensor'),
           ),
         ),
@@ -342,9 +348,7 @@ class _ProfileHeroCard extends StatelessWidget {
     return Container(
       width: double.infinity,
       decoration: ProfileTheme.cardDecoration,
-      padding: const EdgeInsets.symmetric(
-        vertical: AppSpacing.space8,
-      ),
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.space8),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -425,7 +429,7 @@ class _StatsCard extends StatelessWidget {
           ),
           _StatTile(
             value: points == null ? '—' : formatPoints(points!),
-            label: 'Saldo Koin',
+            label: 'Koin',
             style: AppTextStyles.profileStatValue,
           ),
         ],
@@ -476,7 +480,6 @@ class _SettingsCard extends StatelessWidget {
   final bool biometricEnabled;
   final bool biometricBusy;
   final ValueChanged<bool> onBiometricChanged;
-  final VoidCallback onStatsTap;
   final VoidCallback onAdvancedTap;
 
   const _SettingsCard({
@@ -485,7 +488,6 @@ class _SettingsCard extends StatelessWidget {
     required this.biometricEnabled,
     required this.biometricBusy,
     required this.onBiometricChanged,
-    required this.onStatsTap,
     required this.onAdvancedTap,
   });
 
@@ -518,18 +520,6 @@ class _SettingsCard extends StatelessWidget {
               enabled: !biometricBusy,
               onChanged: onBiometricChanged,
             ),
-          ),
-          const SizedBox(height: ProfileTheme.gapTiny),
-          _SettingsRow(
-            icon: Icons.query_stats_rounded,
-            title: 'Statistik & Riwayat Kuis',
-            subtitle: 'Pencapaian dan kuis yang diikuti',
-            trailing: const Icon(
-              Icons.chevron_right_rounded,
-              size: ProfileTheme.iconMedium,
-              color: ProfileTheme.chevronColor,
-            ),
-            onTap: onStatsTap,
           ),
           const SizedBox(height: ProfileTheme.gapTiny),
           _SettingsRow(

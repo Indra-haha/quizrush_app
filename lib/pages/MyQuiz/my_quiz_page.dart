@@ -249,7 +249,7 @@ class _MyQuizPageState extends State<MyQuizPage> {
         _padded(
           const EmptyStateView(
             icon: Icons.quiz_outlined,
-            message: 'Belum ada quiz untukmu.',
+            message: 'Kamu belum memiliki quiz.',
           ),
         ),
       );

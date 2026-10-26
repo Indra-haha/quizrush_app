@@ -462,7 +462,7 @@ void main() {
         ),
       );
 
-      expect(find.text('Gagal mengunggah ke Cloudinary'), findsOneWidget);
+      expect(find.text('Gagal mengunggah'), findsOneWidget);
       expect(find.text('Coba lagi'), findsOneWidget);
       await tester.tap(find.text('Coba lagi'));
       expect(retries, 1);

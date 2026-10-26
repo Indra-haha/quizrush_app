@@ -204,7 +204,7 @@ class _ErrorOverlay extends StatelessWidget {
             ),
             const SizedBox(height: AppSpacing.space5),
             Text(
-              'Gagal mengunggah ke Cloudinary',
+              'Gagal mengunggah',
               style: CreateQuizTextStyles.coverStatus,
               textAlign: TextAlign.center,
             ),

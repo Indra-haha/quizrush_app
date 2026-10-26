@@ -9,7 +9,7 @@
 | Header autentikasi | `Authorization: Bearer <token>` |
 | Token login | Diperoleh dari `POST /api/login`, berlaku 24 jam |
 | Token room | Diperoleh dari `POST /api/rooms/verify` (§5.4), berlaku 1 jam, hanya untuk WebSocket `GET /api/rooms` |
-| Koleksi DB | `users`, `quizzes`, `rooms`, `results`, `game_results`, `tokens`, `emojis`, `coins` |
+| Koleksi DB | `users`, `quizzes`, `rooms`, `results`, `game_results`, `tokens`, `emojis`, `points`, `transactions` |
 | Batas body | 1 MiB per request (`413` bila lebih) |
 | Hashing password | SHA-256 (hex lowercase), dilakukan di sisi klien sebelum dikirim |
 | Transport | HTTPS (produksi) melindungi password hash dan token |
@@ -36,6 +36,15 @@ Respons `401` dari `middleware.Auth` memakai envelope bersarang `{ "status": 401
 | `AI_API_KEY` | ✗ | — | API key penyedia model AI (API gaya OpenAI-compatible). Kosong = `POST /api/ai/suggest` merespons 502 (server tetap berjalan) |
 | `AI_BASE_URL` | ✗ | `https://api.openai.com/v1` | Base URL API AI yang mendukung endpoint `/chat/completions` |
 | `AI_MODEL` | ✗ | `gpt-4o-mini` | Nama model AI yang dipakai untuk saran soal |
+| `BASE_SEPOLIA_RPC_URL` | ✗* | — | RPC Base Sepolia; wajib bersama `WALLET_CONTRACT_ADDRESS` + `WALLET_SIGNER_PRIVATE_KEY` agar klaim on-chain aktif |
+| `WALLET_CONTRACT_ADDRESS` | ✗* | — | Alamat kontrak `WalletClaim` yang sudah dideploy |
+| `WALLET_SIGNER_PRIVATE_KEY` | ✗* | — | Private key signer (hex, boleh berawalan `0x`); jangan pernah di-commit |
+| `WALLET_CHAIN_ID` | ✗ | `84532` | Chain ID Base Sepolia |
+| `WALLET_EXPLORER_URL` | ✗ | `https://sepolia.basescan.org` | Base URL explorer untuk field `explorer_url` |
+| `WALLET_RUPIAH_PER_POINT` | ✗ | `10` | Kurs konversi 1 poin ke rupiah |
+| `WALLET_TX_TIMEOUT` | ✗ | `90s` | Batas waktu menunggu receipt transaksi on-chain |
+
+> `*` Klaim on-chain aktif hanya bila `BASE_SEPOLIA_RPC_URL`, `WALLET_CONTRACT_ADDRESS`, dan `WALLET_SIGNER_PRIVATE_KEY` diisi bersamaan. Jika tidak, `POST /api/wallet/claim` membalas `503` dan saldo tidak dipotong.
 
 ---
 
@@ -62,6 +71,8 @@ Respons `401` dari `middleware.Auth` memakai envelope bersarang `{ "status": 401
 | POST | `/api/ai/suggest` | ✓ | Membuat saran soal (AI) dari topik teks |
 | GET | `/api/me/points` | ✓ | Saldo poin user yang login |
 | GET | `/api/me/coins` | ✓ | Riwayat perolehan koin user yang login |
+| GET | `/api/wallet/{user}` | ✓ | Informasi dompet, saldo poin, dan riwayat klaim |
+| POST | `/api/wallet/claim` | ✓ | Klaim poin dan catat ke Base Sepolia |
 | GET | `/api/location` | ✓ | Grouped leaderboard per kecamatan/kota/provinsi dari koordinat GPS (lihat §11) |
 | GET | `/api/emojis` | ✓ | List semua emoji |
 | GET | `/api/emojis/{id}` | ✓ | Melihat satu emoji berdasarkan ID |
@@ -81,6 +92,7 @@ Respons `401` dari `middleware.Auth` memakai envelope bersarang `{ "status": 401
 | 7 | WebSocket & Permainan | §9 |
 | 8 | Poin & Koin | §10 |
 | 9 | Grouped Leaderboard Wilayah (LBS) | §11 |
+| 10 | Dompet & Klaim On-chain | §14–§15 |
 | — | Kode Error Umum | §12 |
 | — | Ringkasan Alur Token | §13 |
 
@@ -3398,6 +3410,148 @@ sequenceDiagram
     UI-->>U: hasil terlihat di layar
 ```
 
+Dokumentasi ini mencakup endpoint backend Golang untuk mengelola dompet digital pengguna, melakukan klaim poin menjadi rupiah/token yang tercatat permanen di blockchain, serta melihat riwayat transaksinya.
+
+## 14. Ambil Informasi Dompet, Saldo, dan Riwayat
+
+Endpoint ini digunakan oleh aplikasi Flutter untuk menampilkan informasi dompet pengguna, total poin saat ini, konversi saldo ke rupiah, serta daftar riwayat transaksi klaim yang pernah dilakukan. Identitas user diambil dari login JWT, bukan dipercaya dari path. Nilai `{user}` wajib sama dengan username (atau ObjectID) user yang login; jika berbeda server membalas `403`. `game_points` berasal dari `users.points`, sedangkan `transactions` adalah mirror MongoDB dari klaim yang sudah tercatat di Base Sepolia.
+
+```
+GET /api/wallet/{user}
+Host: localhost:8080
+Authorization: Bearer <TOKEN>
+Accept: application/json
+```
+
+### Path Parameters
+
+| Nama Parameter | Tipe Data | Deskripsi |
+| ----- | ----- | ----- |
+| `user` | String | Username (atau ObjectID) user yang login. Contoh: `user_123` |
+
+### Contoh Response (200 OK)
+
+```
+{
+  "status": "SUCCESS",
+  "data": {
+    "user_id": "user_123",
+    "wallet_address": "0x71C8a2D...AbC91",
+    "game_points": 1500,
+    "equivalent_rupiah": 15000.0,
+    "transactions": [
+      {
+        "_id": "671bf38a...",
+        "user_id": "user_123",
+        "wallet_address": "0x71C8a2D...AbC91",
+        "points_claimed": 1000,
+        "rupiah_value": 10000.0,
+        "tx_hash": "0x88d9c24e83f...3f1a",
+        "status": "SUCCESS",
+        "created_at": "2026-10-25T11:34:00Z",
+        "explorer_url": "https://sepolia.basescan.org/tx/0x88d9c24e83f...3f1a"
+      }
+    ]
+  }
+}
+
+```
+
+### Contoh Response Error
+
+```
+// user pada path bukan milik token (403)
+{ "error": "user_id tidak sesuai dengan pengguna yang login" }
+
+// gagal membaca riwayat (500)
+{ "message": "Gagal memuat riwayat transaksi" }
+```
+
+### Cara Testing (`cURL`)
+
+```
+curl -X GET http://localhost:8080/api/wallet/user_123 \
+  -H "Authorization: Bearer <TOKEN>" \
+  -H "User-Agent: Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 Mobile Safari/537.36" \
+  -H "Content-Type: application/json"
+
+```
+
+## 15. Klaim Poin ke Blockchain (Withdraw / Settlement)
+
+Endpoint ini digunakan ketika pengguna ingin mencairkan poin game mereka. Backend memotong saldo di MongoDB secara atomik, memanggil `recordClaim` pada kontrak `WalletClaim` di Base Sepolia, menunggu receipt dengan status sukses, lalu menyimpan mirror transaksi di koleksi `transactions`. Base Sepolia adalah testnet: gas dibayar memakai test ETH gratis dari faucet, bukan uang sungguhan. Bila env blockchain belum lengkap, endpoint membalas `503` dan saldo tidak dipotong.
+
+```
+POST /api/wallet/claim
+Host: localhost:8080
+Authorization: Bearer <TOKEN>
+Accept: application/json
+Content-Type: application/json
+```
+
+### Payload Request (JSON)
+
+| Field | Tipe | Wajib | Deskripsi |
+|---|---|---|---|
+| `user_id` | string | ✗ | Opsional demi kompatibilitas; bila diisi wajib sama dengan user login |
+| `points_to_claim` | integer | ✓ | Jumlah poin > 0, maksimal 1.000.000.000 |
+| `rupiah_value` | number | ✗ | Bila diisi harus sama dengan `points_to_claim × WALLET_RUPIAH_PER_POINT` (default 10); bila `0`/kosong dihitung server |
+
+```
+{
+  "user_id": "user_123",
+  "points_to_claim": 1000,
+  "rupiah_value": 10000.0
+}
+
+```
+
+### Contoh Response (200 OK)
+
+```
+{
+  "status": "SUCCESS",
+  "message": "Klaim berhasil dan tercatat permanen di blockchain!",
+  "tx_hash": "0x88d9c24e83f...3f1a",
+  "remaining_points": 500
+}
+
+```
+
+### Contoh Response Error
+
+```
+// poin tidak cukup (400)
+{ "error": "Poin Anda tidak mencukupi untuk diklaim" }
+
+// user_id tidak cocok dengan token (403)
+{ "error": "user_id tidak sesuai dengan pengguna yang login" }
+
+// transaksi on-chain gagal dan saldo sudah dikembalikan (502)
+{ "error": "Gagal mencatat klaim ke blockchain" }
+
+// transaksi sudah terkirim tetapi receipt belum diterima (502);
+// saldo ditahan dan status transaksi tetap PENDING
+{ "error": "Transaksi klaim sedang diproses di blockchain" }
+
+// env blockchain belum diisi (503); saldo tidak dipotong
+{ "error": "Layanan blockchain belum dikonfigurasi" }
+```
+
+### Cara Testing (`cURL`)
+
+```
+curl -X POST http://localhost:8080/api/wallet/claim \
+  -H "Authorization: Bearer <TOKEN>" \
+  -H "User-Agent: Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 Mobile Safari/537.36" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "user_id": "user_123",
+    "points_to_claim": 1000,
+    "rupiah_value": 10000.0
+  }'
+
+```
 **Diagram end-to-end per service:**
 
 | Service | Bagian |
@@ -3411,4 +3565,5 @@ sequenceDiagram
 | WebSocket | §9.3 |
 | Poin & Koin | §10.3 |
 | LBS | §11.2 |
+| Wallet & Klaim | §14–§15 |
 

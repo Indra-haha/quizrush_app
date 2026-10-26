@@ -8,7 +8,7 @@ import 'api_client.dart';
 /// Tahap proses unggah gambar kuis, dilaporkan ke UI sebagai progres.
 enum QuizImageUploadStage {
   requestingSignature('Minta signature ke server…'),
-  uploading('Mengunggah ke Cloudinary…');
+  uploading('Mengunggah');
 
   const QuizImageUploadStage(this.label);
 
