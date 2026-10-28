@@ -102,8 +102,13 @@ class ApiClient {
   /// dari proxy/nginx saat timeout), dipakai pesan berbasis [statusCode] agar
   /// pengguna tidak hanya melihat "Terjadi kesalahan".
   static String message(dynamic data, {int? statusCode}) {
-    if (data is Map && data['message'] is String) {
-      return data['message'] as String;
+    if (data is Map) {
+      if (data['message'] is String && (data['message'] as String).isNotEmpty) {
+        return data['message'] as String;
+      }
+      if (data['error'] is String && (data['error'] as String).isNotEmpty) {
+        return data['error'] as String;
+      }
     }
     if (statusCode != null && statusCode >= 500) {
       return 'Terjadi kesalahan pada server (HTTP $statusCode)';

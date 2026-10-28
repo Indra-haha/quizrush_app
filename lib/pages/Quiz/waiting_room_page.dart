@@ -477,11 +477,8 @@ class _WaitingRoomPageState extends State<WaitingRoomPage> {
         body: SafeArea(
           top: false,
           child: ListView(
-            padding: const EdgeInsets.fromLTRB(
-              AppSpacing.none,
-              AppSpacing.space6,
-              AppSpacing.none,
-              AppSpacing.space12,
+            padding: const EdgeInsets.only(  
+              bottom :AppSpacing.space12,
             ),
             children: [
               _heroCard(),
@@ -560,7 +557,7 @@ class _WaitingRoomPageState extends State<WaitingRoomPage> {
 
     if (players.isEmpty) {
       return Container(
-        padding: const EdgeInsets.symmetric(vertical: AppSpacing.space8),
+        padding: const EdgeInsets.all(AppSpacing.space8),
         decoration: BoxDecoration(
           color: AppColors.textOnPrimary,
           border: Border.all(

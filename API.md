@@ -9,7 +9,7 @@
 | Header autentikasi | `Authorization: Bearer <token>` |
 | Token login | Diperoleh dari `POST /api/login`, berlaku 24 jam |
 | Token room | Diperoleh dari `POST /api/rooms/verify` (§5.4), berlaku 1 jam, hanya untuk WebSocket `GET /api/rooms` |
-| Koleksi DB | `users`, `quizzes`, `rooms`, `results`, `game_results`, `tokens`, `emojis`, `points`, `transactions` |
+| Koleksi DB | `users`, `quizzes`, `rooms`, `results`, `game_results`, `tokens`, `emojis`, `points`; `transactions` (legacy, tidak ditulis) |
 | Batas body | 1 MiB per request (`413` bila lebih) |
 | Hashing password | SHA-256 (hex lowercase), dilakukan di sisi klien sebelum dikirim |
 | Transport | HTTPS (produksi) melindungi password hash dan token |
@@ -37,14 +37,16 @@ Respons `401` dari `middleware.Auth` memakai envelope bersarang `{ "status": 401
 | `AI_BASE_URL` | ✗ | `https://api.openai.com/v1` | Base URL API AI yang mendukung endpoint `/chat/completions` |
 | `AI_MODEL` | ✗ | `gpt-4o-mini` | Nama model AI yang dipakai untuk saran soal |
 | `BASE_SEPOLIA_RPC_URL` | ✗* | — | RPC Base Sepolia; wajib bersama `WALLET_CONTRACT_ADDRESS` + `WALLET_SIGNER_PRIVATE_KEY` agar klaim on-chain aktif |
-| `WALLET_CONTRACT_ADDRESS` | ✗* | — | Alamat kontrak `WalletClaim` yang sudah dideploy |
+| `WALLET_CONTRACT_ADDRESS` | ✗* | — | Alamat kontrak `WalletClaim` address-based yang sudah dideploy |
 | `WALLET_SIGNER_PRIVATE_KEY` | ✗* | — | Private key signer (hex, boleh berawalan `0x`); jangan pernah di-commit |
 | `WALLET_CHAIN_ID` | ✗ | `84532` | Chain ID Base Sepolia |
-| `WALLET_EXPLORER_URL` | ✗ | `https://sepolia.basescan.org` | Base URL explorer untuk field `explorer_url` |
+| `WALLET_EXPLORER_URL` | ✗ | `https://sepolia.basescan.org` | Base URL explorer untuk helper internal; response wallet tidak lagi memuat `explorer_url` |
 | `WALLET_RUPIAH_PER_POINT` | ✗ | `10` | Kurs konversi 1 poin ke rupiah |
 | `WALLET_TX_TIMEOUT` | ✗ | `90s` | Batas waktu menunggu receipt transaksi on-chain |
 
-> `*` Klaim on-chain aktif hanya bila `BASE_SEPOLIA_RPC_URL`, `WALLET_CONTRACT_ADDRESS`, dan `WALLET_SIGNER_PRIVATE_KEY` diisi bersamaan. Jika tidak, `POST /api/wallet/claim` membalas `503` dan saldo tidak dipotong.
+> `*` Klaim on-chain aktif hanya bila `BASE_SEPOLIA_RPC_URL`, `WALLET_CONTRACT_ADDRESS`, dan `WALLET_SIGNER_PRIVATE_KEY` diisi bersamaan. Jika tidak, `POST /api/wallet/claim` membalas `503` dan saldo tidak berubah.
+>
+> Versi `WalletClaim` di repo ini memakai `applyDelta(address userWallet, string user_id, int256 rupiahDelta, uint256 pointsClaimed)` dan `balancesOf(address)`. Event `BalanceChanged` memakai `userWallet` sebagai indexed address. Riwayat juga tersedia lewat `getMyHistory()`/`getLastMyHistory()` yang membaca `msg.sender`. Kontrak lama harus dideploy ulang; `GET /api/wallet/{user}` membaca event dari alamat kontrak aktif dan mendeteksi blok deploy secara otomatis.
 
 ---
 
@@ -70,9 +72,8 @@ Respons `401` dari `middleware.Auth` memakai envelope bersarang `{ "status": 401
 | GET | `/api/results` | ✓ | List semua result |
 | POST | `/api/ai/suggest` | ✓ | Membuat saran soal (AI) dari topik teks |
 | GET | `/api/me/points` | ✓ | Saldo poin user yang login |
-| GET | `/api/me/coins` | ✓ | Riwayat perolehan koin user yang login |
-| GET | `/api/wallet/{user}` | ✓ | Informasi dompet, saldo poin, dan riwayat klaim |
-| POST | `/api/wallet/claim` | ✓ | Klaim poin dan catat ke Base Sepolia |
+| GET | `/api/wallet/{user}` | ✓ | Saldo rupiah on-chain dan riwayat transaksi wallet dari event `BalanceChanged` |
+| POST | `/api/wallet/claim` | ✓ | Tukar poin / kurangi rupiah on-chain; tulis ledger `redeem` setelah transaksi sukses |
 | GET | `/api/location` | ✓ | Grouped leaderboard per kecamatan/kota/provinsi dari koordinat GPS (lihat §11) |
 | GET | `/api/emojis` | ✓ | List semua emoji |
 | GET | `/api/emojis/{id}` | ✓ | Melihat satu emoji berdasarkan ID |
@@ -90,7 +91,7 @@ Respons `401` dari `middleware.Auth` memakai envelope bersarang `{ "status": 401
 | 5 | AI | §7 |
 | 6 | Emoji | §8 |
 | 7 | WebSocket & Permainan | §9 |
-| 8 | Poin & Koin | §10 |
+| 8 | Poin & Rupiah | §10 |
 | 9 | Grouped Leaderboard Wilayah (LBS) | §11 |
 | 10 | Dompet & Klaim On-chain | §14–§15 |
 | — | Kode Error Umum | §12 |
@@ -280,7 +281,7 @@ Content-Type: application/json
 
 > **Device binding:** saat login sukses, `device_id` disimpan pada user. Jika
 > user yang sama login kembali, `device_id` harus sama; bila berbeda, ditolak `403`.
-> `device_id` tidak dikembalikan pada objek `user`. Objek `user` pada `POST /api/login`, `GET /api/session`, dan `POST /api/register` menyertakan `points` (saldo poin akrual dari permainan kuis; lihat §10).
+> `device_id` tidak dikembalikan pada objek `user`. Objek `user` pada `POST /api/login`, `GET /api/session`, dan `POST /api/register` menyertakan `points` dari cache `users.points`. Cache ini tidak lagi diperbarui oleh hadiah game maupun klaim; saldo poin otoritatif dihitung dari ledger `points` lewat `GET /api/me/points` (lihat §10).
 
 ### 3.3 POST /api/logout
 
@@ -2659,7 +2660,8 @@ room lewat WebSocket:
    sementara) dan berhenti selama `next_in_ms` (5000 ms) sebelum soal berikutnya.
 4. Langkah 1–3 diulang sampai soal habis; server menyiarkan `game_end`, menandai room `ended`,
    menyimpan ringkasan hasil tiap peserta ke `game_results`, lalu mengkreditkan **poin**
-    (dan mencatat koin) ke tiap peserta sesuai skor (§10).
+    (dan mencatat poin) ke tiap peserta sesuai skor (§10). Poin hanya disimpan di MongoDB,
+    bukan di blockchain.
 
 Peserta yang baru terhubung saat permainan berjalan otomatis didaftarkan ke papan peringkat
 (ikut dari ronde berikutnya). **Host (pemilik kuis) tidak didaftarkan ke papan peringkat**:
@@ -2921,13 +2923,23 @@ sequenceDiagram
 
 ---
 
-## 10. Poin & Koin
+## 10. Poin & Rupiah
 
-Poin adalah saldo akrual milik user (field `points` pada objek `user`, lihat §3.2–§3.4). Saldo ini
-bertambah otomatis saat sebuah permainan selesai (§9.2): tiap peserta menerima poin sebesar **total
-skor** yang dikumpulkannya. Setiap penambahan juga dicatat sebagai satu baris koin di koleksi `coins`
-dengan **rantai hash SHA-256** (`hash = SHA256(prev_hash + payload)`, terhubung per user) sehingga
-riwayat menjadi ledger yang tidak bisa diubah diam-diam tanpa memutus rantai.
+Poin disimpan sebagai riwayat di koleksi `points`, bukan di blockchain. Saldo poin
+dihitung dengan rumus:
+
+```text
+total = sum(amount where reason = quiz_reward)
+      - sum(amount where reason = redeem)
+```
+
+- `amount` selalu **positif**.
+- `quiz_reward` menambah saldo; hadiah game hanya ditulis ke MongoDB (ledger `points`), tanpa transaksi blockchain.
+- `redeem` mengurangi saldo; baris ini ditulis setelah klaim rupiah berhasil di blockchain.
+- Baris `quiz_reward` dari alur game menyertakan `room_kode` dan `quiz_id`.
+- Baris `redeem` dikirim tanpa `room_kode` atau `quiz_id`.
+- `users.points` adalah cache legacy. Hadiah game dan klaim tidak lagi memperbaruinya; saldo poin otoritatif dihitung dari koleksi `points` (`GET /api/me/points`).
+- Saldo rupiah disimpan di kontrak `WalletClaim` per alamat wallet. `users.rupiah_balance` tidak lagi dipakai sebagai cache oleh endpoint wallet/klaim.
 
 ### 10.1 GET /api/me/points
 
@@ -2935,7 +2947,7 @@ riwayat menjadi ledger yang tidak bisa diubah diam-diam tanpa memutus rantai.
 |---|---|---|
 | GET | `/api/me/points` | ✓ |
 
-Tidak ada request parameter. Mengembalikan saldo poin user yang login.
+Tidak ada request parameter. Mengembalikan total poin user yang login sebagai angka.
 
 **Contoh request:**
 
@@ -2949,8 +2961,9 @@ Authorization: Bearer <TOKEN>
 
 | Status | Deskripsi |
 |---|---|
-| 200 | Saldo poin |
+| 200 | Total poin |
 | 401 | Token tidak valid / sesi berakhir / bukan smartphone |
+| 500 | Gagal membaca riwayat poin |
 
 **Contoh response — `200 OK`**
 
@@ -2961,84 +2974,42 @@ Authorization: Bearer <TOKEN>
 }
 ```
 
-### 10.2 GET /api/me/coins
+> Nilai `points` dihitung ulang dari koleksi `points` pada setiap request. Klien tidak menerima
+> daftar riwayat lewat endpoint ini.
 
-| Metode | Path | Auth |
-|---|---|---|
-| GET | `/api/me/coins` | ✓ |
+### 10.2 Ledger Poin (internal)
 
-Tidak ada request parameter. Mengembalikan riwayat perolehan koin user yang login, diurutkan dari
-yang **terbaru** (`created_at` desc, lalu `_id` desc).
+Koleksi `points` tidak diekspos sebagai endpoint publik. Setiap baris berisi `user_id`, `amount`,
+`reason`, `room_kode`, `quiz_id`, `created_at`, `prev_hash`, dan `hash` yang membentuk rantai
+SHA-256 per user. `reason` yang dipakai saat ini adalah `quiz_reward` dan `redeem`; konstanta
+`refund` disediakan untuk pemakaian mendatang. Penulisan baris untuk user yang sama diserialisasi
+agar `prev_hash` tidak bercabang saat ada dua pencatatan bersamaan.
 
-**Contoh request:**
+Aturan metadata:
 
-```http
-GET /api/me/coins HTTP/1.1
-Host: localhost:8080
-Authorization: Bearer <TOKEN>
-```
+- `quiz_reward`: alur game mengirim `room_kode` dan `quiz_id`; `quiz_id` divalidasi sebagai ObjectID bila diisi.
+- `redeem`: alur klaim mengirim `room_kode` dan `quiz_id` kosong.
+- `amount` selalu positif; `redeem` dikurangkan saat menghitung saldo.
 
-**Response:**
+Hadiah game bersifat idempoten: satu user hanya mendapat satu baris `quiz_reward` per `room_kode`,
+dan tidak ada transaksi blockchain untuk hadiah game. Klaim poin menulis satu baris `redeem` setelah
+transaksi on-chain sukses; `amount` diambil dari `pointsClaimed` pada riwayat terakhir kontrak, dengan
+fallback ke `points_to_claim`. Pengurangan rupiah tanpa penukaran poin tidak menulis baris `points`.
+Jika penulisan ledger gagal, response klaim tetap sukses karena transaksi on-chain sudah final;
+kegagalan hanya dicatat di log server.
 
-| Status | Deskripsi |
-|---|---|
-| 200 | Riwayat koin |
-| 401 | Token tidak valid / sesi berakhir / bukan smartphone |
-| 500 | Gagal membaca riwayat koin |
-
-**Contoh response — `200 OK`**
-
-```json
-{
-  "message": "Riwayat koin",
-  "coins": [
-    {
-      "id": "6700aa11bb22cc33dd44ee55",
-      "amount": 150,
-      "reason": "quiz_reward",
-      "room_kode": "482913",
-      "quiz_id": "6651a0ab0000000000000000",
-      "created_at": "2026-10-05T20:03:00Z",
-      "prev_hash": "9f2c...e1",
-      "hash": "3ab4...7d"
-    }
-  ]
-}
-```
-
-> `reason` bernilai `quiz_reward` untuk hadiah permainan kuis. `prev_hash` dan `hash` adalah rantai
-> SHA-256 untuk verifikasi integritas; baris pertama milik user memakai `prev_hash` string kosong.
-
-**Contoh response — `401 Unauthorized`**
-
-```json
-// Token tidak valid / kedaluwarsa
-{ "status": 401, "error": "Unauthorized", "message": "Missing or expired authorization token" }
-
-// Sesi berakhir
-{ "status": 401, "error": "Unauthorized", "message": "Sesi telah berakhir, silakan login kembali" }
-```
-
-**Contoh response — `500 Internal Server Error`**
-
-```json
-{ "message": "Gagal membaca riwayat koin" }
-```
-
-### 10.3 Alur Token — Poin & Koin
+### 10.3 Alur Token — Poin
 
 | Endpoint | Token yang dikirim | Keterangan |
 |---|---|---|
-| `GET /api/me/points` | Login JWT | Saldo dibaca dari `user.Points` di context |
-| `GET /api/me/coins` | Login JWT | Riwayat difilter dengan `user.ID` dari context |
+| `GET /api/me/points` | Login JWT | Saldo dihitung dari riwayat milik `user.ID` di context |
 
 **Langkah alur token:**
 
-1. Klien memperoleh login JWT dari `POST /api/login` dan mengirimnya sebagai Bearer ke endpoint Poin & Koin.
+1. Klien memperoleh login JWT dari `POST /api/login` dan mengirimnya sebagai Bearer.
 2. `middleware.Auth` memverifikasi signature/exp, menolak `typ="room"`, mengecek `tokens.revoked_at`, memeriksa allowlist smartphone, lalu memuat user ke context.
-3. `GET /api/me/points` membaca `user.Points` langsung dari objek user di context; tidak ada query saldo berdasarkan username dari input klien.
-4. `GET /api/me/coins` memakai `user.ID` dari context untuk mengambil riwayat koin milik user tersebut.
-5. Tidak ada room token pada service ini. Token yang hilang, rusak, kedaluwarsa, dicabut, atau request non-smartphone menghasilkan `401`.
+3. `GET /api/me/points` memakai `user.ID` dari context untuk mengambil riwayat dan menghitung saldo; tidak ada `user_id` dari klien yang dipakai.
+4. Tidak ada room token pada service ini. Token yang hilang, rusak, kedaluwarsa, dicabut, atau request non-smartphone menghasilkan `401`.
 
 ```mermaid
 sequenceDiagram
@@ -3063,51 +3034,29 @@ sequenceDiagram
     API->>MW: Auth(GetMyPoints)
     MW->>MW: VerifyToken + tolak typ=room + IsSmartphone
     MW->>DB: IsTokenRevoked + FindUserByUsername(sub)
-    DB-->>MW: user + points
+    DB-->>MW: user
     MW-->>API: context user
-    API->>API: baca user.Points dari context
+    API->>DB: FindTransactionPointsByUserID(user.ID)
+    DB-->>API: riwayat poin
+    API->>API: PointBalance(riwayat)
     API-->>AC: 200 {message, points}
     AC-->>SVC: points
     SVC-->>STORE: points
     STORE->>STORE: set(points) + notifyListeners()
     STORE-->>UI: angka poin baru
-
-    UI->>SVC: SaldoPage._load() fetchPoints + fetchCoins
-    SVC->>AC: GET /api/me/points
-    AC->>API: Bearer login JWT
-    API->>MW: Auth(GetMyPoints)
-    MW->>DB: FindUserByUsername(sub)
-    DB-->>MW: user + points
-    MW-->>API: context user
-    API-->>AC: 200 {message, points}
-    AC-->>SVC: points
-    SVC->>AC: GET /api/me/coins
-    AC->>API: Bearer login JWT
-    API->>MW: Auth(GetMyCoins)
-    MW->>DB: FindUserByUsername(sub)
-    DB-->>MW: user
-    MW-->>API: context user
-    API->>DB: FindCoinsByUserID(user.ID, sort created_at desc)
-    DB-->>API: daftar koin
-    API->>API: map ke dto.CoinToResponse
-    API-->>AC: 200 {message, coins}
-    AC-->>SVC: coins
-    SVC-->>UI: points + coins
-    UI-->>U: tampilkan saldo, riwayat, dan indikator poin
 ```
 
-> Poin & Koin tidak menerbitkan token baru. Login JWT menentukan user yang saldo/riwayatnya dibaca; tidak ada `user_id` dari klien yang dipakai.
+> Poin tidak menerbitkan token baru. Login JWT menentukan user yang saldonya dihitung; tidak ada `user_id` dari klien yang dipakai.
 
 **Alur end-to-end frontend → output:**
 
 | Tahap | File/state | Nilai yang diisi/dipakai | Request | Output |
 |---|---|---|---|---|
 | Refresh poin | `lib/services/points_store.dart` | `PointsStore.refresh()` | `GET /api/me/points` | `PointsIndicator` dan kartu profil diperbarui |
-| Buka saldo | `lib/pages/Saldo/saldo_page.dart` | `_load()` | `GET /api/me/points` + `GET /api/me/coins` | Saldo poin + daftar koin |
-| Riwayat koin | `lib/pages/points_history_page.dart` | `_load()` | `GET /api/me/coins` | Daftar transaksi koin |
+| Buka saldo | `lib/pages/Saldo/saldo_page.dart` | `_load()` | `GET /api/me/points` + `GET /api/wallet/{user}` | Saldo poin + saldo rupiah |
 | Statistik profil | `lib/services/profile_stats_service.dart` | `fetchPoints(token)` | `GET /api/me/points` | Field `points` pada `ProfileStats` |
 
-> Poin bertambah otomatis saat `game_end` dan dicatat sebagai koin. Frontend tidak pernah mengirim `user_id`; server memakai user dari context hasil verifikasi login JWT.
+> Poin bertambah otomatis saat `game_end` dan dicatat sebagai `quiz_reward` di ledger. `users.points` tidak ikut diperbarui. Frontend tidak pernah mengirim `user_id`; server memakai user dari context hasil verifikasi login JWT.
 
 ---
 
@@ -3410,11 +3359,23 @@ sequenceDiagram
     UI-->>U: hasil terlihat di layar
 ```
 
-Dokumentasi ini mencakup endpoint backend Golang untuk mengelola dompet digital pengguna, melakukan klaim poin menjadi rupiah/token yang tercatat permanen di blockchain, serta melihat riwayat transaksinya.
+Dokumentasi ini mencakup endpoint backend Golang untuk mengelola dompet digital pengguna, melakukan klaim poin menjadi rupiah yang tercatat permanen di blockchain, serta melihat riwayat transaksinya.
 
 ## 14. Ambil Informasi Dompet, Saldo, dan Riwayat
 
-Endpoint ini digunakan oleh aplikasi Flutter untuk menampilkan informasi dompet pengguna, total poin saat ini, konversi saldo ke rupiah, serta daftar riwayat transaksi klaim yang pernah dilakukan. Identitas user diambil dari login JWT, bukan dipercaya dari path. Nilai `{user}` wajib sama dengan username (atau ObjectID) user yang login; jika berbeda server membalas `403`. `game_points` berasal dari `users.points`, sedangkan `transactions` adalah mirror MongoDB dari klaim yang sudah tercatat di Base Sepolia.
+Endpoint ini digunakan oleh aplikasi Flutter untuk menampilkan saldo rupiah dan riwayat transaksi on-chain milik user. Identitas user diambil dari login JWT, bukan dipercaya dari path. Nilai `{user}` wajib sama dengan username (atau ObjectID) user yang login; jika berbeda server membalas `403`.
+
+- `current_balance` adalah saldo rupiah **terkini** dari `balancesOf(address)` on-chain. Jika RPC gagal, endpoint membalas `502`; tidak memakai cache `users.rupiah_balance`.
+- `data` adalah array riwayat transaksi on-chain dari event `BalanceChanged` kontrak `WalletClaim` yang aktif. Hanya transaksi on-chain yang sukses yang muncul.
+- Setiap item berisi `_id`, `user_id`, `points_claimed`, `rupiah_value`, `status`, dan `created_at`.
+- `_id` dibuat sintetis dengan format `<tx_hash>:<log_index>`; `tx_hash` dan `explorer_url` tidak lagi menjadi field terpisah.
+- `rupiah_value` bisa bernilai negatif untuk pengurangan rupiah tanpa penukaran poin.
+- `data` diurutkan dari event terbaru (block/log terbesar) lebih dulu. Belum ada pagination.
+- Endpoint ini tidak mengembalikan `game_points`, `wallet_address`, atau envelope `transactions`. Gunakan `GET /api/me/points` untuk saldo poin. Riwayat audit MongoDB `transactions` tidak lagi ditulis oleh alur klaim.
+
+Server mendeteksi blok deploy kontrak secara otomatis lewat `eth_getCode` (binary search)
+dan memindai event per rentang blok; tidak ada env tambahan untuk blok deploy. Riwayat
+on-chain berasal dari kontrak yang sedang aktif di `WALLET_CONTRACT_ADDRESS`.
 
 ```
 GET /api/wallet/{user}
@@ -3434,37 +3395,57 @@ Accept: application/json
 ```
 {
   "status": "SUCCESS",
-  "data": {
-    "user_id": "user_123",
-    "wallet_address": "0x71C8a2D...AbC91",
-    "game_points": 1500,
-    "equivalent_rupiah": 15000.0,
-    "transactions": [
-      {
-        "_id": "671bf38a...",
-        "user_id": "user_123",
-        "wallet_address": "0x71C8a2D...AbC91",
-        "points_claimed": 1000,
-        "rupiah_value": 10000.0,
-        "tx_hash": "0x88d9c24e83f...3f1a",
-        "status": "SUCCESS",
-        "created_at": "2026-10-25T11:34:00Z",
-        "explorer_url": "https://sepolia.basescan.org/tx/0x88d9c24e83f...3f1a"
-      }
-    ]
-  }
+  "current_balance": 10000,
+  "data": [
+    {
+      "_id": "0x88d9c24e83f...3f1a:12",
+      "user_id": "user_123",
+      "points_claimed": 1000,
+      "rupiah_value": 10000,
+      "status": "SUCCESS",
+      "created_at": "2026-10-25T11:34:00Z"
+    },
+    {
+      "_id": "0x12ab34cd56e...9f0b:3",
+      "user_id": "user_123",
+      "points_claimed": 0,
+      "rupiah_value": -5000,
+      "status": "SUCCESS",
+      "created_at": "2026-10-24T09:10:00Z"
+    }
+  ]
 }
 
 ```
 
+> `rupiah_value` pada riwayat bisa bernilai negatif untuk transaksi pengurangan rupiah
+> (`points_to_claim = 0`). `points_claimed = 0` pada transaksi tersebut. Semua baris
+> `data` adalah transaksi sukses on-chain. Hash transaksi dan log index tersedia di `_id`;
+> klien dapat membentuk URL explorer sendiri bila diperlukan.
+
 ### Contoh Response Error
 
 ```
+// user pada path kosong (400)
+{ "error": "user wajib diisi" }
+
 // user pada path bukan milik token (403)
 { "error": "user_id tidak sesuai dengan pengguna yang login" }
 
-// gagal membaca riwayat (500)
-{ "message": "Gagal memuat riwayat transaksi" }
+// wallet_address user belum diatur (400)
+{ "error": "wallet_address pengguna belum diatur" }
+
+// wallet_address bukan alamat EVM valid (400)
+{ "error": "wallet_address pengguna tidak valid" }
+
+// blockchain belum dikonfigurasi (503)
+{ "error": "Layanan blockchain belum dikonfigurasi" }
+
+// gagal membaca saldo rupiah dari RPC (502)
+{ "error": "Gagal membaca saldo rupiah di blockchain" }
+
+// gagal membaca event riwayat dari RPC (502)
+{ "error": "Gagal memuat riwayat blockchain" }
 ```
 
 ### Cara Testing (`cURL`)
@@ -3477,9 +3458,22 @@ curl -X GET http://localhost:8080/api/wallet/user_123 \
 
 ```
 
-## 15. Klaim Poin ke Blockchain (Withdraw / Settlement)
+## 15. Klaim Poin & Pengurangan Rupiah (Withdraw / Settlement)
 
-Endpoint ini digunakan ketika pengguna ingin mencairkan poin game mereka. Backend memotong saldo di MongoDB secara atomik, memanggil `recordClaim` pada kontrak `WalletClaim` di Base Sepolia, menunggu receipt dengan status sukses, lalu menyimpan mirror transaksi di koleksi `transactions`. Base Sepolia adalah testnet: gas dibayar memakai test ETH gratis dari faucet, bukan uang sungguhan. Bila env blockchain belum lengkap, endpoint membalas `503` dan saldo tidak dipotong.
+Endpoint ini digunakan untuk menukar poin menjadi rupiah atau mengurangi saldo rupiah.
+Backend **tidak** mendebit `users.points` dan **tidak** memvalidasi saldo poin ledger sebelum
+transaksi. Alur yang dijalankan:
+
+1. Validasi kombinasi `points_to_claim`/`rupiah_value` dan `wallet_address` user.
+2. Panggil `applyDelta(address userWallet, user_id, rupiahDelta, pointsClaimed)` pada kontrak
+   `WalletClaim` di Base Sepolia. `pointsClaimed` hanya menjadi metadata event; state on-chain
+   yang berubah adalah saldo rupiah.
+3. Jika transaksi sukses dan `points_to_claim > 0`, server membaca `getLastMyHistory()` lalu
+   menulis satu baris `redeem` ke ledger `points` (hash dirantai ke baris terakhir user yang sama).
+4. Jika penulisan ledger gagal, response tetap `200` karena transaksi on-chain sudah final;
+   kegagalan hanya dicatat di log server.
+
+Bila env blockchain belum lengkap, endpoint membalas `503`.
 
 ```
 POST /api/wallet/claim
@@ -3494,14 +3488,36 @@ Content-Type: application/json
 | Field | Tipe | Wajib | Deskripsi |
 |---|---|---|---|
 | `user_id` | string | ✗ | Opsional demi kompatibilitas; bila diisi wajib sama dengan user login |
-| `points_to_claim` | integer | ✓ | Jumlah poin > 0, maksimal 1.000.000.000 |
-| `rupiah_value` | number | ✗ | Bila diisi harus sama dengan `points_to_claim × WALLET_RUPIAH_PER_POINT` (default 10); bila `0`/kosong dihitung server |
+| `points_to_claim` | integer | ✗ | Default `0`. Nilai `> 0` menukar poin; nilai `0` dipakai untuk pengurangan rupiah. Maksimal `1.000.000.000` |
+| `rupiah_value` | number | ✗ | Saat `points_to_claim > 0`: harus sama dengan `points_to_claim × WALLET_RUPIAH_PER_POINT`; `0`/kosong dihitung server. Saat `points_to_claim = 0`: wajib negatif |
+
+**Aturan kombinasi:**
+
+| `points_to_claim` | `rupiah_value` | Efek |
+|---|---|---|
+| `> 0` | `> 0` (sesuai kurs) | Rupiah on-chain bertambah; ledger `points` menulis `redeem` setelah chain sukses |
+| `0` | `< 0` | Rupiah berkurang, poin tetap; **tidak** menulis ledger `points` |
+| `0` | `≥ 0` | Ditolak `400` |
+| `> 0` | `< 0` | Ditolak `400` |
+
+**Contoh tukar poin:**
 
 ```
 {
   "user_id": "user_123",
   "points_to_claim": 1000,
   "rupiah_value": 10000.0
+}
+
+```
+
+**Contoh pengurangan rupiah tanpa menukar poin:**
+
+```
+{
+  "user_id": "user_123",
+  "points_to_claim": 0,
+  "rupiah_value": -5000.0
 }
 
 ```
@@ -3518,23 +3534,46 @@ Content-Type: application/json
 
 ```
 
+> `remaining_points` berasal dari cache `users.points` yang dimuat middleware, bukan saldo
+> ledger dan tidak diperbarui oleh endpoint ini. Gunakan `GET /api/me/points` untuk saldo poin
+> otoritatif. Pada pengurangan rupiah tanpa penukaran poin, nilainya sama dengan cache sebelumnya.
+
 ### Contoh Response Error
 
 ```
-// poin tidak cukup (400)
-{ "error": "Poin Anda tidak mencukupi untuk diklaim" }
+// points_to_claim negatif atau terlalu besar (400)
+{ "error": "points_to_claim tidak boleh negatif" }
+{ "error": "points_to_claim terlalu besar" }
+
+// saldo rupiah on-chain tidak cukup untuk pengurangan (400)
+{ "error": "Saldo rupiah tidak mencukupi" }
+
+// kombinasi points_to_claim/rupiah_value tidak valid (400)
+{ "error": "rupiah_value harus negatif saat points_to_claim nol" }
+{ "error": "rupiah_value tidak boleh negatif saat menukar poin" }
+{ "error": "rupiah_value tidak sesuai dengan konversi poin" }
+{ "error": "rupiah_value terlalu kecil" }
+{ "error": "rupiah_value terlalu besar" }
+{ "error": "rupiah_value harus lebih dari nol" }
+
+// wallet_address user belum diatur / bukan alamat EVM valid (400)
+{ "error": "wallet_address pengguna belum diatur" }
+{ "error": "wallet_address pengguna tidak valid" }
 
 // user_id tidak cocok dengan token (403)
 { "error": "user_id tidak sesuai dengan pengguna yang login" }
 
-// transaksi on-chain gagal dan saldo sudah dikembalikan (502)
+// transaksi on-chain gagal (502); tidak ada poin lokal yang didebit/dikembalikan
 { "error": "Gagal mencatat klaim ke blockchain" }
 
+// gagal membaca saldo rupiah on-chain sebelum pengurangan (502)
+{ "error": "Gagal memeriksa saldo rupiah di blockchain" }
+
 // transaksi sudah terkirim tetapi receipt belum diterima (502);
-// saldo ditahan dan status transaksi tetap PENDING
+// status PENDING/FAILED tidak lagi disimpan di MongoDB
 { "error": "Transaksi klaim sedang diproses di blockchain" }
 
-// env blockchain belum diisi (503); saldo tidak dipotong
+// env blockchain belum diisi (503)
 { "error": "Layanan blockchain belum dikonfigurasi" }
 ```
 
@@ -3552,6 +3591,21 @@ curl -X POST http://localhost:8080/api/wallet/claim \
   }'
 
 ```
+
+**Pengurangan rupiah:**
+
+```
+curl -X POST http://localhost:8080/api/wallet/claim \
+  -H "Authorization: Bearer <TOKEN>" \
+  -H "User-Agent: Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 Mobile Safari/537.36" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "user_id": "user_123",
+    "points_to_claim": 0,
+    "rupiah_value": -5000.0
+  }'
+
+```
 **Diagram end-to-end per service:**
 
 | Service | Bagian |
@@ -3563,7 +3617,7 @@ curl -X POST http://localhost:8080/api/wallet/claim \
 | AI | §7.2 |
 | Emoji | §8.4 |
 | WebSocket | §9.3 |
-| Poin & Koin | §10.3 |
+| Poin & Rupiah | §10.3 |
 | LBS | §11.2 |
 | Wallet & Klaim | §14–§15 |
 

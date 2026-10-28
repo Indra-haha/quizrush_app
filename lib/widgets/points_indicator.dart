@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../helpers/format.dart';
-import '../pages/points_history_page.dart';
+import '../pages/Reward/reward_page.dart';
 import '../services/points_store.dart';
 import '../theme/app_theme.dart';
 
@@ -43,7 +43,7 @@ class _PointsIndicatorState extends State<PointsIndicator> {
   void _openHistory() {
     Navigator.of(
       context,
-    ).push(MaterialPageRoute(builder: (_) => const PointsHistoryPage()));
+    ).push(MaterialPageRoute(builder: (_) => const RewardPage()));
   }
 
   @override
