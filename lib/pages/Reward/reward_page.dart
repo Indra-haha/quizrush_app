@@ -2,13 +2,15 @@ import 'package:flutter/material.dart';
 
 import '../../helpers/format.dart';
 import '../../models/points.dart';
+import '../../models/wallet.dart';
 import '../../services/api/api_client.dart';
+import '../../services/api/auth_service.dart';
 import '../../services/api/points_service.dart';
+import '../../services/api/wallet_service.dart';
 import '../../services/points_store.dart';
 import '../../services/session_service.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/app_header_bar_with_actions.dart';
-import '../../widgets/app_snackbar.dart';
 import '../../widgets/status_filter.dart';
 
 /// Halaman tab "Reward" dengan dua bagian yang bisa digeser: Poin dan Saldo.
@@ -17,10 +19,18 @@ class RewardPage extends StatefulWidget {
   /// bukan saat dibuat di dalam `IndexedStack`.
   final bool isActive;
 
-  /// Service yang dapat di-inject pada pengujian.
+  /// Service poin yang dapat di-inject pada pengujian.
   final PointsService? service;
 
-  const RewardPage({super.key, this.isActive = true, this.service});
+  /// Service dompet on-chain yang dapat di-inject pada pengujian.
+  final WalletService? walletService;
+
+  const RewardPage({
+    super.key,
+    this.isActive = true,
+    this.service,
+    this.walletService,
+  });
 
   @override
   State<RewardPage> createState() => _RewardPageState();
@@ -31,35 +41,28 @@ class _RewardPageState extends State<RewardPage> {
   static const int _koinToRupiah = 10;
   static const List<String> _historyFilters = ['Semua', 'Hadiah', 'Tarik'];
 
-  static const Map<String, ({String symbol, double rate})> _currencies = {
-    'IDR': (symbol: 'Rp', rate: 1),
-    'USD': (symbol: r'US$', rate: 16000),
-    'MYR': (symbol: 'RM', rate: 3400),
-    'SGD': (symbol: r'S$', rate: 12000),
-  };
-
   final PageController _pageController = PageController();
-  final TextEditingController _amountController = TextEditingController(
-    text: '10000',
-  );
 
   late String _selectedTab = _tabs.first;
-  String _currency = 'IDR';
-  String _historyFilter = 'Semua';
 
   PointsService get _service => widget.service ?? PointsService.instance;
+  WalletService get _walletService =>
+      widget.walletService ?? WalletService.instance;
 
   int? _points;
   List<CoinEntry> _coins = const [];
+  List<WalletHistoryItem> _walletHistory = const [];
+  String? _walletError;
+  String _username = '';
   bool _loading = true;
   String? _error;
   bool _opened = false;
+  bool _isActionInProgress = false;
 
   @override
   void initState() {
     super.initState();
     _points = PointsStore.instance.points;
-    _amountController.addListener(_onAmountChanged);
     if (widget.isActive) _onOpened();
   }
 
@@ -71,14 +74,9 @@ class _RewardPageState extends State<RewardPage> {
 
   @override
   void dispose() {
-    _amountController.removeListener(_onAmountChanged);
-    _amountController.dispose();
+    _pointConversionController.dispose();
     _pageController.dispose();
     super.dispose();
-  }
-
-  void _onAmountChanged() {
-    if (mounted) setState(() {});
   }
 
   void _onOpened() {
@@ -91,6 +89,7 @@ class _RewardPageState extends State<RewardPage> {
     setState(() {
       _loading = true;
       _error = null;
+      _walletError = null;
     });
 
     final token = await SessionService.instance.getToken();
@@ -103,53 +102,67 @@ class _RewardPageState extends State<RewardPage> {
       return;
     }
 
+    var userMap = await SessionService.instance.getUser();
+    var username = (userMap?['username'] as String?)?.trim() ?? '';
+    if (username.isEmpty) {
+      try {
+        final freshUser = await AuthService.instance.checkSession(token);
+        username = (freshUser['username'] as String?)?.trim() ?? '';
+        if (username.isNotEmpty) {
+          await SessionService.instance.saveSession(token, freshUser);
+        }
+      } catch (_) {}
+    }
+    _username = username;
+
     try {
-      final points = await _service.fetchPoints(token: token);
-      final coins = await _service.fetchCoins(token: token);
+      int points = _points ?? 0;
+      try {
+        points = await _service.fetchPoints(token: token);
+      } catch (_) {}
+
+  
       if (!mounted) return;
       PointsStore.instance.set(points);
+
+      int saldo = _saldoRupiah;
+      List<WalletHistoryItem> walletHistory = _walletHistory;
+      String? walletError;
+
+      if (username.isNotEmpty) {
+        try {
+          final wallet = await _walletService.fetchWallet(
+            token: token,
+            user: username,
+          );
+          saldo = wallet.currentBalance;
+          walletHistory = wallet.data;
+        } on ApiException catch (e) {
+          if (e.statusCode < 500) {
+            walletError = e.message;
+          }
+        } catch (_) {}
+      }
+
+      if (!mounted) return;
       setState(() {
         _points = points;
-        _coins = coins;
+        _saldoRupiah = saldo;
+        _walletHistory = walletHistory;
+        _walletError = walletError;
         _loading = false;
       });
     } on ApiException catch (e) {
       if (!mounted) return;
       setState(() {
         _loading = false;
-        _error = e.message;
+        _error = e.statusCode >= 500 ? null : e.message;
       });
     } catch (_) {
       if (!mounted) return;
       setState(() {
         _loading = false;
-        _error = 'Tidak bisa memuat saldo.';
       });
-    }
-  }
-
-  int get _amount {
-    final digits = _amountController.text.replaceAll(RegExp(r'[^0-9]'), '');
-    if (digits.isEmpty) return 0;
-    return int.tryParse(digits) ?? 0;
-  }
-
-  String get _conversionLabel {
-    final currency = _currencies[_currency] ?? _currencies['IDR']!;
-    final idr = _amount * _koinToRupiah;
-    if (_currency == 'IDR') return formatRupiah(idr);
-    final value = idr / currency.rate;
-    return '${currency.symbol} ${value.toStringAsFixed(2)}';
-  }
-
-  List<CoinEntry> get _filteredCoins {
-    switch (_historyFilter) {
-      case 'Hadiah':
-        return _coins.where((c) => c.reason == 'quiz_reward').toList();
-      case 'Tarik':
-        return _coins.where((c) => c.amount < 0).toList();
-      default:
-        return _coins;
     }
   }
 
@@ -171,14 +184,6 @@ class _RewardPageState extends State<RewardPage> {
     final tab = _tabs[index];
     if (tab == _selectedTab) return;
     setState(() => _selectedTab = tab);
-  }
-
-  void _notAvailable(String label) {
-    AppSnackBar.show(context, '$label belum tersedia saat ini.');
-  }
-
-  void _setAmount(int value) {
-    _amountController.text = '$value';
   }
 
   @override
@@ -226,8 +231,6 @@ class _RewardPageState extends State<RewardPage> {
   // Hasil konversi poin menjadi rupiah.
   int _conversionResultRupiah = 0;
 
-  bool _isConverting = false;
-
   int get _conversionPoints =>
       int.tryParse(_pointConversionController.text.trim()) ?? 0;
 
@@ -254,7 +257,7 @@ class _RewardPageState extends State<RewardPage> {
   // ============================================================
 
   Widget _buildRewardTab({required bool isPointTab}) {
-    if (_loading && _points == null && _coins.isEmpty) {
+    if (_loading && _points == null && _coins.isEmpty && _walletHistory.isEmpty) {
       return const Center(child: CircularProgressIndicator());
     }
 
@@ -278,6 +281,9 @@ class _RewardPageState extends State<RewardPage> {
           if (isPointTab) ...[
             const SizedBox(height: RewardTheme.sectionGap),
             _buildPointHistory(),
+          ] else ...[
+            const SizedBox(height: RewardTheme.sectionGap),
+            _buildWalletHistory(),
           ],
         ],
       ),
@@ -472,7 +478,7 @@ class _RewardPageState extends State<RewardPage> {
             SizedBox(
               width: double.infinity,
               child: FilledButton(
-                onPressed: _isConverting ? null : _calculateConversion,
+                onPressed: _isActionInProgress ? null : _calculateConversion,
                 child: const Text('Konversi'),
               ),
             ),
@@ -596,6 +602,80 @@ class _RewardPageState extends State<RewardPage> {
     setState(() {
       _conversionResultRupiah = _conversionRupiah;
     });
+
+  }
+
+  void _confirmClaimPoints(int points) {
+    final rupiah = points * _koinToRupiah;
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Klaim Poin ke Saldo'),
+        content: Text(
+          'Tukarkan ${formatPoints(points)} PTS menjadi ${formatRupiah(rupiah)} ke saldo dompet Anda?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Batal'),
+          ),
+          FilledButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              _executeClaimPoints(points);
+            },
+            child: const Text('Klaim Sekarang'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _executeClaimPoints(int points) async {
+    if (_isActionInProgress) return;
+
+    final token = await SessionService.instance.getToken();
+    if (token == null || token.isEmpty) {
+      _showRewardMessage('Sesi tidak ditemukan. Silakan masuk kembali.');
+      return;
+    }
+
+    setState(() => _isActionInProgress = true);
+    final rupiah = (points * _koinToRupiah).toDouble();
+
+    try {
+      final res = await _walletService.claim(
+        token: token,
+        userId: _username.isNotEmpty ? _username : null,
+        pointsToClaim: points,
+        rupiahValue: rupiah,
+      );
+
+      if (!mounted) return;
+      _showRewardMessage(
+        res.message.isNotEmpty
+            ? res.message
+            : 'Klaim ${formatPoints(points)} PTS berhasil!',
+      );
+
+      _pointConversionController.clear();
+      setState(() {
+        _conversionResultRupiah = 0;
+      });
+
+      await _load();
+      await PointsStore.instance.refresh();
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      _showRewardMessage(e.message);
+    } catch (_) {
+      if (!mounted) return;
+      _showRewardMessage('Gagal memproses klaim poin.');
+    } finally {
+      if (mounted) {
+        setState(() => _isActionInProgress = false);
+      }
+    }
   }
 
   // ============================================================
@@ -615,9 +695,90 @@ class _RewardPageState extends State<RewardPage> {
   // ============================================================
 
   void _onWithdrawPressed() {
-    // Ganti dengan navigasi ke halaman penarikan saldo
-    // atau dialog penarikan yang sudah tersedia di aplikasi.
-    _showRewardMessage('Hubungkan ke halaman penarikan saldo.');
+    if (_isActionInProgress) return;
+
+    if (_saldoRupiah <= 0) {
+      if (_conversionPoints > 0) {
+        _confirmClaimPoints(_conversionPoints);
+        return;
+      }
+      _showRewardMessage(
+        'Saldo rupiah Anda saat ini Rp 0. Silakan konversi poin terlebih dahulu.',
+      );
+      return;
+    }
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Tarik Saldo'),
+        content: Text(
+          'Yakin ingin menarik seluruh saldo ${formatRupiah(_saldoRupiah)}?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Batal'),
+          ),
+          FilledButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              _executeWithdraw(_saldoRupiah);
+            },
+            child: const Text('Ya'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _executeWithdraw(int amount) async {
+    if (amount <= 0) {
+      _showRewardMessage('Nominal penarikan harus lebih dari Rp 0.');
+      return;
+    }
+
+    if (amount > _saldoRupiah) {
+      _showRewardMessage('Saldo rupiah tidak mencukupi.');
+      return;
+    }
+
+    final token = await SessionService.instance.getToken();
+    if (token == null || token.isEmpty) {
+      _showRewardMessage('Sesi tidak ditemukan. Silakan masuk kembali.');
+      return;
+    }
+
+    setState(() => _isActionInProgress = true);
+
+    try {
+      final res = await _walletService.claim(
+        token: token,
+        userId: _username.isNotEmpty ? _username : null,
+        pointsToClaim: 0,
+        rupiahValue: -amount.toDouble(),
+      );
+
+      if (!mounted) return;
+      _showRewardMessage(
+        res.message.isNotEmpty
+            ? res.message
+            : 'Penarikan saldo sebesar ${formatRupiah(amount)} berhasil diproses.',
+      );
+
+      await _load();
+      await PointsStore.instance.refresh();
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      _showRewardMessage(e.message);
+    } catch (_) {
+      if (!mounted) return;
+      _showRewardMessage('Gagal memproses penarikan saldo.');
+    } finally {
+      if (mounted) {
+        setState(() => _isActionInProgress = false);
+      }
+    }
   }
 
   // ============================================================
@@ -703,6 +864,147 @@ class _RewardPageState extends State<RewardPage> {
               children: [
                 Text(
                   coin.reasonLabel,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: RewardTextStyles.historyItemTitle,
+                ),
+
+                const SizedBox(height: AppSpacing.space1),
+
+                Text(
+                  meta,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: RewardTextStyles.historyItemMeta,
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(width: AppSpacing.space3),
+
+          Text(amount, style: RewardTextStyles.historyAmount),
+        ],
+      ),
+    );
+  }
+
+  // ============================================================
+  // RIWAYAT SALDO RUPIAH
+  // ============================================================
+
+  Widget _buildWalletHistory() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text('Riwayat Transaksi Saldo', style: RewardTextStyles.historyTitle),
+
+        const SizedBox(height: RewardTheme.historyTitleGap),
+
+        if (_walletError != null && _walletHistory.isEmpty)
+          Container(
+            padding: RewardTheme.historyCardPadding,
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: RewardTheme.historyCardRadius,
+              boxShadow: RewardTheme.historyCardShadow,
+            ),
+            child: Text(
+              _walletError!,
+              textAlign: TextAlign.center,
+              style: RewardTextStyles.historyEmpty,
+            ),
+          )
+        else if (_walletHistory.isEmpty)
+          Container(
+            padding: RewardTheme.historyCardPadding,
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: RewardTheme.historyCardRadius,
+              boxShadow: RewardTheme.historyCardShadow,
+            ),
+            child: Text(
+              'Belum ada riwayat transaksi saldo.',
+              textAlign: TextAlign.center,
+              style: RewardTextStyles.historyEmpty,
+            ),
+          )
+        else
+          for (var i = 0; i < _walletHistory.length; i++) ...[
+            if (i > 0) const SizedBox(height: RewardTheme.historyItemGap),
+
+            _buildWalletHistoryCard(_walletHistory[i]),
+          ],
+      ],
+    );
+  }
+
+  // ============================================================
+  // ITEM RIWAYAT SALDO RUPIAH
+  // ============================================================
+
+  Widget _buildWalletHistoryCard(WalletHistoryItem item) {
+    final bool isWithdraw = item.isWithdrawal;
+    final String time = relativeTime(item.createdAt);
+
+    final String title = isWithdraw
+        ? 'Tarik Saldo Rupiah'
+        : (item.pointsClaimed > 0
+            ? 'Klaim Poin (${formatPoints(item.pointsClaimed)} Pts)'
+            : 'Penambahan Saldo');
+
+    final String amount = isWithdraw
+        ? '-${formatRupiah(item.rupiahValue.abs().round())}'
+        : '+${formatRupiah(item.rupiahValue.round())}';
+
+    final Color iconBg = isWithdraw
+        ? RewardTheme.historyIconBackground(-1)
+        : RewardTheme.historyIconBackground(1);
+
+    final Color iconColor = isWithdraw
+        ? RewardTheme.historyIconColor(-1)
+        : RewardTheme.historyIconColor(1);
+
+    final IconData iconData = isWithdraw
+        ? Icons.arrow_outward_rounded
+        : Icons.arrow_downward_rounded;
+
+    final String meta = item.id.isNotEmpty
+        ? '$time • ${item.id.length > 18 ? "${item.id.substring(0, 18)}..." : item.id}'
+        : time;
+
+    return Container(
+      width: double.infinity,
+      padding: RewardTheme.historyCardPadding,
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: RewardTheme.historyCardRadius,
+        boxShadow: RewardTheme.historyCardShadow,
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: RewardTheme.iconCircleSize,
+            height: RewardTheme.iconCircleSize,
+            decoration: BoxDecoration(
+              color: iconBg,
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              iconData,
+              size: RewardTheme.iconSize,
+              color: iconColor,
+            ),
+          ),
+
+          const SizedBox(width: RewardTheme.contentGap),
+
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: RewardTextStyles.historyItemTitle,
