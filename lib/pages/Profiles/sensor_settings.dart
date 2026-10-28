@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import '../../services/profile_settings_service.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/app_header_bar_with_actions.dart';
-import '../../widgets/points_indicator.dart';
 import '../../widgets/quiz_question_editor.dart';
 import '../../widgets/compass_calibration_modal.dart';
 
@@ -25,7 +24,6 @@ class SensorSettingsPage extends StatelessWidget {
           icon: const Icon(Icons.arrow_back),
           color: AppColors.primary,
         ),
-        actions: const [PointsIndicator()],
       ),
       body: _buildbody(),
     );

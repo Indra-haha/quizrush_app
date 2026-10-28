@@ -514,7 +514,7 @@ class _RewardPageState extends State<RewardPage> {
                   if (isPointTab) {
                     _selectTab('Saldo');
                   } else {
-                    _onWithdrawPressed();
+                    _confirmClaimPoints(_conversionPoints);
                   }
                 },
                 child: Padding(
@@ -703,97 +703,6 @@ class _RewardPageState extends State<RewardPage> {
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: Text(message)));
-  }
-
-  // ============================================================
-  // TOMBOL TARIK SALDO
-  // ============================================================
-
-  void _onWithdrawPressed() {
-    if (_isActionInProgress) return;
-
-    if (_saldoRupiah <= 0) {
-      if (_conversionPoints > 0) {
-        _confirmClaimPoints(_conversionPoints);
-        return;
-      }
-      _showRewardMessage(
-        'Saldo rupiah Anda saat ini Rp 0. Silakan konversi poin terlebih dahulu.',
-      );
-      return;
-    }
-
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Tarik Saldo'),
-        content: Text(
-          'Yakin ingin menarik seluruh saldo ${formatRupiah(_saldoRupiah)}?',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Batal'),
-          ),
-          FilledButton(
-            onPressed: () {
-              Navigator.pop(ctx);
-              _executeWithdraw(_saldoRupiah);
-            },
-            child: const Text('Ya'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Future<void> _executeWithdraw(int amount) async {
-    if (amount <= 0) {
-      _showRewardMessage('Nominal penarikan harus lebih dari Rp 0.');
-      return;
-    }
-
-    if (amount > _saldoRupiah) {
-      _showRewardMessage('Saldo rupiah tidak mencukupi.');
-      return;
-    }
-
-    final token = await SessionService.instance.getToken();
-    if (token == null || token.isEmpty) {
-      _showRewardMessage('Sesi tidak ditemukan. Silakan masuk kembali.');
-      return;
-    }
-
-    setState(() => _isActionInProgress = true);
-
-    try {
-      final res = await _walletService.claim(
-        token: token,
-        userId: _username.isNotEmpty ? _username : null,
-        pointsToClaim: 0,
-        rupiahValue: -amount.toDouble(),
-      );
-
-      if (!mounted) return;
-      _showRewardMessage(
-        res.message.isNotEmpty
-            ? res.message
-            : 'Penarikan saldo sebesar ${formatRupiah(amount)} berhasil diproses.',
-      );
-
-      await _load();
-      await PointsStore.instance.refresh();
-    } on ApiException catch (e) {
-      if (!mounted) return;
-      _showRewardMessage(e.message);
-    } catch (_) {
-      if (!mounted) return;
-      _showRewardMessage('Gagal memproses penarikan saldo.');
-    } finally {
-      if (mounted) {
-        setState(() => _isActionInProgress = false);
-      }
-    }
   }
 
   // ============================================================
