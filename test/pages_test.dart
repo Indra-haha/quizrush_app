@@ -99,9 +99,22 @@ void main() {
         await tester.tap(find.text('Konversi sekarang!'));
         await tester.pumpAndSettle();
 
-        expect(find.text('TOTAL RUPIAH'), findsOneWidget);
+        expect(find.text('IDR'), findsWidgets);
         expect(find.text('Rp 50.000'), findsOneWidget);
         expect(find.text('Konversi Poin ke Rupiah'), findsOneWidget);
+
+        // Pilih USD dari dropdown mata uang
+        final dropdownFinder = find.byType(DropdownButton<String>);
+        expect(dropdownFinder, findsOneWidget);
+        await tester.tap(dropdownFinder);
+        await tester.pumpAndSettle();
+
+        final usdFinder = find.text('USD').last;
+        await tester.tap(usdFinder);
+        await tester.pumpAndSettle();
+
+        expect(find.text(r'$ 3,07'), findsOneWidget);
+        expect(find.text('USD'), findsWidgets);
 
         await tester.drag(find.byType(ListView).last, const Offset(0, -400));
         await tester.pumpAndSettle();
