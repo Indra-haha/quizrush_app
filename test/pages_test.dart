@@ -8,6 +8,7 @@ import 'package:quizrush/pages/Reward/reward_page.dart';
 import 'package:quizrush/services/api/api_client.dart';
 import 'package:quizrush/services/api/points_service.dart';
 import 'package:quizrush/services/api/wallet_service.dart';
+import 'package:quizrush/widgets/status_filter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 Widget _wrap(Widget child) {
@@ -129,5 +130,35 @@ void main() {
         expect(find.text('TOTAL POIN QUIZRUSH'), findsOneWidget);
       },
     );
+  });
+
+  group('StatusFilter', () {
+    testWidgets('renders items inside container and allows tap', (
+      WidgetTester tester,
+    ) async {
+      String selected = 'kecamatan';
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: StatusFilter<String>(
+              values: const ['kecamatan', 'kota', 'provinsi'],
+              selected: selected,
+              onChanged: (val) => selected = val,
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Kecamatan'), findsOneWidget);
+      expect(find.text('Kota/Kab'), findsOneWidget);
+      expect(find.text('Provinsi'), findsOneWidget);
+
+      final containerSize = tester.getSize(find.byType(Container).first);
+      expect(containerSize.width, lessThan(800.0));
+
+      await tester.tap(find.text('Kota/Kab'));
+      expect(selected, 'kota');
+    });
   });
 }

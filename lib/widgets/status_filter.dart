@@ -80,7 +80,14 @@ class StatusFilter<T> extends StatelessWidget {
       ],
     );
 
-    Widget content = Container(
+    final Widget tabContent = scrollable
+        ? SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: row,
+          )
+        : row;
+
+    final Widget content = Container(
       padding: const EdgeInsets.all(2),
       decoration: ShapeDecoration(
         color: pillBackground,
@@ -89,15 +96,8 @@ class StatusFilter<T> extends StatelessWidget {
           borderRadius: BorderRadius.circular(9999),
         ),
       ),
-      child: row,
+      child: tabContent,
     );
-
-    if (scrollable) {
-      content = SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: content,
-      );
-    }
 
     return Padding(
       padding: padding,
