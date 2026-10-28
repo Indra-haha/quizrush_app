@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../theme/app_colors.dart';
+import '../../theme/app_spacing.dart';
 import '../../widgets/app_header_bar_with_actions.dart';
 import '../../widgets/points_indicator.dart';
 
@@ -14,21 +15,19 @@ class FeedbackPage extends StatelessWidget {
       appBar: AppHeaderBarWithActions(
         actions: const [PointsIndicator(style: PointsIndicatorStyle.home)],
       ),
-      body: _buildBody(),
-    );
-  }
-
-  Widget _buildBody() {
-    return RefreshIndicator(
-        color: AppColors.primary,
-        onRefresh: () => Future.delayed(const Duration(seconds: 1)),
-        child: _buildList(),
+      body: _buildList(),
     );
   }
 
   Widget _buildList() {
     return ListView(
-      padding: const EdgeInsets.all(16),
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.only(
+        top: AppSpacing.space8,
+        left: AppSpacing.space9,
+        right: AppSpacing.space9,
+        bottom: AppSpacing.fabClearance,
+      ),
       children: [
         const Text(
           'Feedback',
@@ -49,5 +48,4 @@ class FeedbackPage extends StatelessWidget {
       ],
     );
   }
-
 }
