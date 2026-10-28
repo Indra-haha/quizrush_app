@@ -38,7 +38,6 @@ class _MyQuizPageState extends State<MyQuizPage> {
   String _selectedStatus = 'waiting';
   late QuizIndex _index = widget.index;
   bool _syncing = false;
-  bool _saving = false;
   bool _notFound = false;
   final _searchController = TextEditingController();
   Timer? _notFoundTimer;

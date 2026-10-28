@@ -30,15 +30,14 @@ void main() {
           baseUrl: 'https://test.local',
           client: MockClient((request) async {
             if (request.url.path == '/api/me/points') {
-              return http.Response(jsonEncode({'points': 28450}), 200);
-            }
-            if (request.url.path == '/api/me/coins') {
               return http.Response(
                 jsonEncode({
-                  'coins': [
+                  'message': 'Saldo poin',
+                  'points': 28450,
+                  'history': [
                     {
                       'id': '1',
-                      'amount': 100,
+                      'amount': '+100',
                       'reason': 'quiz_reward',
                       'created_at': DateTime.now().toIso8601String(),
                       'room_kode': 'ABC123',
@@ -48,10 +47,12 @@ void main() {
                 200,
               );
             }
-            if (request.url.path == '/api/wallet/user_test') {
+            if (request.url.path == '/api/me/wallet' ||
+                request.url.path == '/api/wallet/user_test') {
               return http.Response(
                 jsonEncode({
                   'status': 'SUCCESS',
+                  'message': 'Riwayat wallet on-chain',
                   'current_balance': 50000,
                   'data': [
                     {

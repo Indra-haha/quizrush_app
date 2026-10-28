@@ -183,67 +183,7 @@ void main() {
       );
     });
 
-    test('fetchWallet mengambil data saldo dan riwayat', () async {
-      late String? sentAuth;
 
-      final service = WalletService.withApi(
-        _api((request) async {
-          expect(request.url.path, '/api/wallet/user_123');
-          sentAuth = request.headers['Authorization'];
-          return _json(
-            jsonEncode({
-              'status': 'SUCCESS',
-              'current_balance': 50000,
-              'data': [
-                {
-                  '_id': 'tx_99',
-                  'user_id': 'user_123',
-                  'points_claimed': 2000,
-                  'rupiah_value': 20000,
-                  'status': 'SUCCESS',
-                  'created_at': '2026-10-26T12:00:00Z',
-                },
-              ],
-            }),
-            200,
-          );
-        }),
-      );
-
-      final wallet = await service.fetchWallet(
-        token: 'test_token',
-        user: 'user_123',
-      );
-
-      expect(sentAuth, 'Bearer test_token');
-      expect(wallet.status, 'SUCCESS');
-      expect(wallet.currentBalance, 50000);
-      expect(wallet.data.length, 1);
-      expect(wallet.data.first.pointsClaimed, 2000);
-      expect(wallet.data.first.rupiahValue, 20000.0);
-    });
-
-    test('fetchWallet gagal melempar ApiException', () async {
-      final service = WalletService.withApi(
-        _api((request) async {
-          return _json(
-            jsonEncode({'error': 'Layanan blockchain belum dikonfigurasi'}),
-            503,
-          );
-        }),
-      );
-
-      expect(
-        () => service.fetchWallet(token: 'token', user: 'user_123'),
-        throwsA(
-          isA<ApiException>().having(
-            (e) => e.message,
-            'message',
-            'Layanan blockchain belum dikonfigurasi',
-          ),
-        ),
-      );
-    });
   });
 }
 

@@ -238,10 +238,6 @@ class _ProfilePageState extends State<ProfilePage> {
     LoginRedirect.go(context);
   }
 
-  void _notAvailable(String label) {
-    AppSnackBar.show(context, '$label belum tersedia saat ini.');
-  }
-
   Future<void> _onSettingsPage() async {
     await Navigator.of(
       context,

@@ -8,6 +8,8 @@ class WalletHistoryItem {
   final double rupiahValue;
   final String status;
   final String createdAt;
+  final String txHash;
+  final String explorerUrl;
 
   const WalletHistoryItem({
     required this.id,
@@ -16,16 +18,20 @@ class WalletHistoryItem {
     required this.rupiahValue,
     required this.status,
     required this.createdAt,
+    this.txHash = '',
+    this.explorerUrl = '',
   });
 
   factory WalletHistoryItem.fromJson(Map<String, dynamic> json) {
     return WalletHistoryItem(
-      id: jsonString(json['_id']),
+      id: jsonString(json['_id'] ?? json['id']),
       userId: jsonString(json['user_id']),
       pointsClaimed: jsonInt(json['points_claimed']),
       rupiahValue: jsonDouble(json['rupiah_value']),
       status: jsonString(json['status'], 'SUCCESS'),
       createdAt: jsonString(json['created_at']),
+      txHash: jsonString(json['tx_hash']),
+      explorerUrl: jsonString(json['explorer_url']),
     );
   }
 
@@ -36,9 +42,11 @@ class WalletHistoryItem {
   bool get isClaim => pointsClaimed > 0 || rupiahValue > 0;
 }
 
-/// Respons dari GET /api/wallet/{user}.
+/// Respons dari GET /api/wallet/{user} maupun GET /api/me/wallet.
 class WalletResponse {
   final String status;
+  final String message;
+  final String walletAddress;
   final int currentBalance;
   final List<WalletHistoryItem> data;
 
@@ -46,11 +54,15 @@ class WalletResponse {
     required this.status,
     required this.currentBalance,
     required this.data,
+    this.message = '',
+    this.walletAddress = '',
   });
 
   factory WalletResponse.fromJson(Map<String, dynamic> json) {
     return WalletResponse(
       status: jsonString(json['status'], 'SUCCESS'),
+      message: jsonString(json['message']),
+      walletAddress: jsonString(json['wallet_address']),
       currentBalance: jsonInt(json['current_balance']),
       data: jsonMapList(json['data']).map(WalletHistoryItem.fromJson).toList(),
     );

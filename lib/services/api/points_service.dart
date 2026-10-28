@@ -13,15 +13,23 @@ class PointsService {
 
   final ApiClient _api;
 
-  Future<int> fetchPoints({required String token}) async {
+  /// Ambil total poin dan riwayat dari GET /api/me/points.
+  Future<PointsResponse> fetchPointsDetail({required String token}) async {
     final response = await _api.get('/api/me/points', token: token);
     final data = ApiClient.decode(response);
     if (response.statusCode != 200) {
       throw ApiException(
-        ApiClient.message(data),
+        ApiClient.message(data, statusCode: response.statusCode),
         statusCode: response.statusCode,
       );
     }
-    return jsonInt(jsonMap(data)['points']);
+    return PointsResponse.fromJson(jsonMap(data));
+  }
+
+  /// Kompatibel dengan pemanggil lama; mengembalikan total poin saja.
+  Future<int> fetchPoints({required String token}) async {
+    final detail = await fetchPointsDetail(token: token);
+    return detail.points;
   }
 }
+

@@ -9,7 +9,6 @@ import '../../theme/app_colors.dart' show AppColors;
 import '../../theme/app_spacing.dart';
 import '../../widgets/app_header_bar_with_actions.dart';
 import '../../widgets/app_snackbar.dart';
-import '../../widgets/points_indicator.dart';
 import '../../widgets/status_filter.dart';
 
 class RankingRegionPage extends StatefulWidget {

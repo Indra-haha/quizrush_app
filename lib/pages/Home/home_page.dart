@@ -12,7 +12,6 @@ import '../../widgets/cache_info_bar.dart';
 import '../../widgets/empty_state_view.dart';
 import '../../widgets/error_state_view.dart';
 import '../../widgets/home_stat_card.dart';
-import '../../widgets/points_indicator.dart';
 import '../../widgets/quiz_card.dart';
 import '../../widgets/section_header.dart';
 import '../MyQuiz/create_quiz_page.dart';

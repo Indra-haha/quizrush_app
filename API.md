@@ -9,12 +9,12 @@
 | Header autentikasi | `Authorization: Bearer <token>` |
 | Token login | Diperoleh dari `POST /api/login`, berlaku 24 jam |
 | Token room | Diperoleh dari `POST /api/rooms/verify` (§5.4), berlaku 1 jam, hanya untuk WebSocket `GET /api/rooms` |
-| Koleksi DB | `users`, `quizzes`, `rooms`, `results`, `game_results`, `tokens`, `emojis`, `points`; `transactions` (legacy, tidak ditulis) |
+| Koleksi DB | `users`, `quizzes`, `rooms`, `results`, `game_results`, `tokens`, `emojis`, `points`, `feedback`; `transactions` (legacy, tidak ditulis) |
 | Batas body | 1 MiB per request (`413` bila lebih) |
 | Hashing password | SHA-256 (hex lowercase), dilakukan di sisi klien sebelum dikirim |
 | Transport | HTTPS (produksi) melindungi password hash dan token |
 
-Semua endpoint wajib menyertakan header `Authorization` **kecuali** `POST /api/register` dan `POST /api/login`. Endpoint WebSocket `GET /api/rooms?token=<JWT room>` (§9) mewajibkan header `Authorization` (token login) **dan** JWT ber-scope room pada query `token`.
+Semua endpoint wajib menyertakan header `Authorization` **kecuali** `POST /api/register`, `POST /api/login`, dan `POST /api/feedback`. Endpoint WebSocket `GET /api/rooms?token=<JWT room>` (§9) mewajibkan header `Authorization` (token login) **dan** JWT ber-scope room pada query `token`.
 
 Semua endpoint yang dilindungi `middleware.Auth` (dan `POST /api/login`) menerapkan **allowlist perangkat**: request wajib berasal dari smartphone, dicek dari header `User-Agent`. Request dari selain smartphone ditolak `401`.
 
@@ -46,7 +46,7 @@ Respons `401` dari `middleware.Auth` memakai envelope bersarang `{ "status": 401
 
 > `*` Klaim on-chain aktif hanya bila `BASE_SEPOLIA_RPC_URL`, `WALLET_CONTRACT_ADDRESS`, dan `WALLET_SIGNER_PRIVATE_KEY` diisi bersamaan. Jika tidak, `POST /api/wallet/claim` membalas `503` dan saldo tidak berubah.
 >
-> Versi `WalletClaim` di repo ini memakai `applyDelta(address userWallet, string user_id, int256 rupiahDelta, uint256 pointsClaimed)` dan `balancesOf(address)`. Event `BalanceChanged` memakai `userWallet` sebagai indexed address. Riwayat juga tersedia lewat `getMyHistory()`/`getLastMyHistory()` yang membaca `msg.sender`. Kontrak lama harus dideploy ulang; `GET /api/wallet/{user}` membaca event dari alamat kontrak aktif dan mendeteksi blok deploy secara otomatis.
+> Versi `WalletClaim` di repo ini memakai `applyDelta(address userWallet, string user_id, int256 rupiahDelta, uint256 pointsClaimed)` dan `balancesOf(address)`. Event `BalanceChanged` memakai `userWallet` sebagai indexed address. Riwayat juga tersedia lewat `getMyHistory()`/`getLastMyHistory()` yang membaca `msg.sender`. Kontrak lama harus dideploy ulang.
 
 ---
 
@@ -72,12 +72,14 @@ Respons `401` dari `middleware.Auth` memakai envelope bersarang `{ "status": 401
 | GET | `/api/results` | ✓ | List semua result |
 | POST | `/api/ai/suggest` | ✓ | Membuat saran soal (AI) dari topik teks |
 | GET | `/api/me/points` | ✓ | Saldo poin user yang login |
-| GET | `/api/wallet/{user}` | ✓ | Saldo rupiah on-chain dan riwayat transaksi wallet dari event `BalanceChanged` |
+| GET | `/api/me/wallet` | ✓ | Saldo rupiah on-chain dan riwayat wallet user yang login (identitas dari token) |
 | POST | `/api/wallet/claim` | ✓ | Tukar poin / kurangi rupiah on-chain; tulis ledger `redeem` setelah transaksi sukses |
+| POST | `/api/wallet/out` | ✓ | Mengurangi saldo rupiah user (outflow) |
 | GET | `/api/location` | ✓ | Grouped leaderboard per kecamatan/kota/provinsi dari koordinat GPS (lihat §11) |
 | GET | `/api/emojis` | ✓ | List semua emoji |
 | GET | `/api/emojis/{id}` | ✓ | Melihat satu emoji berdasarkan ID |
 | POST | `/api/emojis` | ✓ | Membuat emoji baru |
+| POST | `/api/feedback` | ✗ | Mengirim feedback (saran & kesan) |
 | GET | `/api/rooms?token=<JWT room>` | ✓ | Koneksi WebSocket room (header login + JWT room) |
 
 ### 2.1 Daftar Fitur
@@ -94,6 +96,7 @@ Respons `401` dari `middleware.Auth` memakai envelope bersarang `{ "status": 401
 | 8 | Poin & Rupiah | §10 |
 | 9 | Grouped Leaderboard Wilayah (LBS) | §11 |
 | 10 | Dompet & Klaim On-chain | §14–§15 |
+| 11 | Feedback | §16 |
 | — | Kode Error Umum | §12 |
 | — | Ringkasan Alur Token | §13 |
 
@@ -2947,7 +2950,7 @@ total = sum(amount where reason = quiz_reward)
 |---|---|---|
 | GET | `/api/me/points` | ✓ |
 
-Tidak ada request parameter. Mengembalikan total poin user yang login sebagai angka.
+Tidak ada request parameter. Mengembalikan total poin user yang login beserta seluruh riwayat poinnya.
 
 **Contoh request:**
 
@@ -2961,21 +2964,36 @@ Authorization: Bearer <TOKEN>
 
 | Status | Deskripsi |
 |---|---|
-| 200 | Total poin |
+| 200 | Total poin dan riwayat |
 | 401 | Token tidak valid / sesi berakhir / bukan smartphone |
 | 500 | Gagal membaca riwayat poin |
 
-**Contoh response — `200 OK`**
+**Contoh response - `200 OK`**
 
 ```json
 {
   "message": "Saldo poin",
-  "points": 120
+  "points": 120,
+  "history": [
+    {
+      "id": "671234abcd1234abcd1234ab",
+      "amount": "+50",
+      "reason": "quiz_reward",
+      "room_kode": "AB12XY",
+      "quiz_id": "671111abcd1234abcd1234ab",
+      "created_at": "2026-10-28T10:30:00Z"
+    },
+    {
+      "id": "671234abcd1234abcd1234ac",
+      "amount": "-30",
+      "reason": "redeem",
+      "created_at": "2026-10-28T09:15:00Z"
+    }
+  ]
 }
 ```
 
-> Nilai `points` dihitung ulang dari koleksi `points` pada setiap request. Klien tidak menerima
-> daftar riwayat lewat endpoint ini.
+> Nilai `points` dihitung ulang dari koleksi `points` pada setiap request. `amount` pada `history` diberi tanda `+` untuk `quiz_reward` dan `-` untuk `redeem`. Urutan `history` berdasarkan `created_at` terbaru.
 
 ### 10.2 Ledger Poin (internal)
 
@@ -3053,7 +3071,7 @@ sequenceDiagram
 | Tahap | File/state | Nilai yang diisi/dipakai | Request | Output |
 |---|---|---|---|---|
 | Refresh poin | `lib/services/points_store.dart` | `PointsStore.refresh()` | `GET /api/me/points` | `PointsIndicator` dan kartu profil diperbarui |
-| Buka saldo | `lib/pages/Saldo/saldo_page.dart` | `_load()` | `GET /api/me/points` + `GET /api/wallet/{user}` | Saldo poin + saldo rupiah |
+| Buka saldo | `lib/pages/Saldo/saldo_page.dart` | `_load()` | `GET /api/me/points` + `GET /api/me/wallet` | Saldo poin + saldo rupiah |
 | Statistik profil | `lib/services/profile_stats_service.dart` | `fetchPoints(token)` | `GET /api/me/points` | Field `points` pada `ProfileStats` |
 
 > Poin bertambah otomatis saat `game_end` dan dicatat sebagai `quiz_reward` di ledger. `users.points` tidak ikut diperbarui. Frontend tidak pernah mengirim `user_id`; server memakai user dari context hasil verifikasi login JWT.
@@ -3377,28 +3395,79 @@ Server mendeteksi blok deploy kontrak secara otomatis lewat `eth_getCode` (binar
 dan memindai event per rentang blok; tidak ada env tambahan untuk blok deploy. Riwayat
 on-chain berasal dari kontrak yang sedang aktif di `WALLET_CONTRACT_ADDRESS`.
 
-```
-GET /api/wallet/{user}
+### 14.1 GET /api/me/wallet
+
+| Metode | Path | Auth |
+|---|---|---|
+| GET | `/api/me/wallet` | ✓ |
+
+Endpoint ini digunakan untuk menampilkan saldo rupiah dan riwayat transaksi on-chain milik user yang login.
+Identitas user diambil dari login JWT, tanpa path parameter. Cocok untuk halaman saldo milik sendiri.
+Tidak ada request parameter maupun body.
+
+Skema respons mengikuti `dto.WalletMeResponse` (`dto/wallet.go`) yang dihasilkan handler
+`GetMyWallet` (`handlers/wallet.go`) dan didaftarkan pada `routes.go:43`
+(`GET /api/me/wallet`). Handler memakai `blockchain.BalanceHistory()` / `getMyHistory()`
+sesuai implementasi, lalu membungkus error dengan envelope `{ status, error, message }`.
+
+- Bila user belum punya `wallet_address`, server membuat alamat EVM acak dan menyimpannya ke DB
+  (auto-assign) sebelum membaca saldo.
+- `current_balance` adalah saldo rupiah terkini dari `balancesOf(address)` on-chain. Bila RPC
+  gagal untuk sementara, server memakai `users.rupiah_balance` (atau `0`) dan tetap membalas
+  `200`; bila hasil on-chain `0` dan cache `users.rupiah_balance > 0`, cache dipakai sebagai
+  fallback.
+- `data` berasal dari `getMyHistory()` kontrak `WalletClaim` (dibaca dengan `msg.sender` = wallet
+  user), diurutkan dari transaksi terbaru. Bila riwayat gagal dibaca, `data` dikembalikan sebagai
+  array kosong dan endpoint tetap `200`.
+- Karena sumbernya `getMyHistory()`, `_id` dibuat sintetis dengan format
+  `onchain:<index>:<unix_timestamp>`; `tx_hash` dan `explorer_url` tidak dikembalikan.
+- `rupiah_value` bisa bernilai negatif untuk pengurangan rupiah tanpa penukaran poin.
+
+**Payload Request:**
+
+| Bagian | Isi | Wajib | Deskripsi |
+|---|---|---|---|
+| Path parameter | — | — | Tidak ada path parameter |
+| Query parameter | — | — | Tidak ada query parameter |
+| Body | — | — | Tidak ada request body |
+| Header | `Authorization: Bearer <TOKEN>` | ✅ | Login JWT dari `POST /api/login` |
+
+**Field Response:**
+
+| Field | Tipe | Deskripsi |
+|---|---|---|
+| `status` | string | Selalu `SUCCESS` pada respons `200` |
+| `message` | string | Pesan `Riwayat wallet on-chain` |
+| `wallet_address` | string | Alamat wallet EVM user (di-auto-assign bila belum ada) |
+| `current_balance` | integer | Saldo rupiah terkini on-chain |
+| `data` | array | Daftar riwayat transaksi, terbaru lebih dulu |
+| `data[]._id` | string | ID sintetis `onchain:<index>:<unix_timestamp>` |
+| `data[].user_id` | string | ID user pemilik transaksi |
+| `data[].points_claimed` | integer | Jumlah poin yang ditukar pada transaksi tersebut (`0` bila hanya pengurangan rupiah) |
+| `data[].rupiah_value` | number | Perubahan rupiah; negatif untuk pengurangan saldo |
+| `data[].status` | string | Status transaksi, selalu `SUCCESS` |
+| `data[].created_at` | string (RFC 3339) | Waktu transaksi on-chain |
+
+**Contoh request:**
+
+```http
+GET /api/me/wallet HTTP/1.1
 Host: localhost:8080
 Authorization: Bearer <TOKEN>
 Accept: application/json
 ```
 
-### Path Parameters
+**Contoh response — `200 OK`**
 
-| Nama Parameter | Tipe Data | Deskripsi |
-| ----- | ----- | ----- |
-| `user` | String | Username (atau ObjectID) user yang login. Contoh: `user_123` |
-
-### Contoh Response (200 OK)
-
-```
+```json
 {
   "status": "SUCCESS",
+  "message": "Riwayat wallet on-chain",
+  "wallet_address": "0x88d9c24e83f...3f1a",
   "current_balance": 10000,
   "data": [
     {
-      "_id": "0x88d9c24e83f...3f1a:12",
+      "_id": "onchain:0:1792154580",
       "user_id": "user_123",
       "points_claimed": 1000,
       "rupiah_value": 10000,
@@ -3406,7 +3475,7 @@ Accept: application/json
       "created_at": "2026-10-25T11:34:00Z"
     },
     {
-      "_id": "0x12ab34cd56e...9f0b:3",
+      "_id": "onchain:1:1792066480",
       "user_id": "user_123",
       "points_claimed": 0,
       "rupiah_value": -5000,
@@ -3415,46 +3484,50 @@ Accept: application/json
     }
   ]
 }
-
 ```
 
-> `rupiah_value` pada riwayat bisa bernilai negatif untuk transaksi pengurangan rupiah
-> (`points_to_claim = 0`). `points_claimed = 0` pada transaksi tersebut. Semua baris
-> `data` adalah transaksi sukses on-chain. Hash transaksi dan log index tersedia di `_id`;
-> klien dapat membentuk URL explorer sendiri bila diperlukan.
+**Response:**
 
-### Contoh Response Error
+| Status | Deskripsi |
+|---|---|
+| 200 | Saldo dan riwayat wallet berhasil dimuat (wallet address di-auto-assign bila belum ada) |
+| 400 | `wallet_address` pengguna bukan alamat EVM valid |
+| 401 | Token tidak valid / sesi berakhir / bukan smartphone |
+| 500 | Gagal menyiapkan wallet address pengguna |
+| 503 | Layanan blockchain belum dikonfigurasi |
 
-```
-// user pada path kosong (400)
-{ "error": "user wajib diisi" }
+**Contoh response — `400 Bad Request`**
 
-// user pada path bukan milik token (403)
-{ "error": "user_id tidak sesuai dengan pengguna yang login" }
-
-// wallet_address user belum diatur (400)
-{ "error": "wallet_address pengguna belum diatur" }
-
-// wallet_address bukan alamat EVM valid (400)
-{ "error": "wallet_address pengguna tidak valid" }
-
-// blockchain belum dikonfigurasi (503)
-{ "error": "Layanan blockchain belum dikonfigurasi" }
-
-// gagal membaca saldo rupiah dari RPC (502)
-{ "error": "Gagal membaca saldo rupiah di blockchain" }
-
-// gagal membaca event riwayat dari RPC (502)
-{ "error": "Gagal memuat riwayat blockchain" }
+```json
+{ "status": 400, "error": "wallet_address pengguna tidak valid", "message": "wallet_address pengguna tidak valid" }
 ```
 
-### Cara Testing (`cURL`)
+**Contoh response — `401 Unauthorized`**
+
+```json
+// Token tidak valid / kedaluwarsa / sesi berakhir / bukan smartphone
+{ "status": 401, "error": "Unauthorized", "message": "Missing or expired authorization token" }
+```
+
+**Contoh response — `500 Internal Server Error`**
+
+```json
+{ "status": 500, "error": "Gagal menyiapkan wallet address pengguna", "message": "Gagal menyiapkan wallet address pengguna" }
+```
+
+**Contoh response — `503 Service Unavailable`**
+
+```json
+{ "status": 503, "error": "Layanan blockchain belum dikonfigurasi", "message": "Layanan blockchain belum dikonfigurasi" }
+```
+
+**Cara Testing (`cURL`):**
 
 ```
-curl -X GET http://localhost:8080/api/wallet/user_123 \
+curl -X GET http://localhost:8080/api/me/wallet \
   -H "Authorization: Bearer <TOKEN>" \
   -H "User-Agent: Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 Mobile Safari/537.36" \
-  -H "Content-Type: application/json"
+  -H "Accept: application/json"
 
 ```
 
@@ -3606,6 +3679,130 @@ curl -X POST http://localhost:8080/api/wallet/claim \
   }'
 
 ```
+## 16. Feedback
+
+Endpoint publik untuk mengirim saran dan kesan. Tidak memerlukan login JWT maupun allowlist
+perangkat, dan data disimpan di koleksi `feedback`.
+
+### 16.1 POST /api/feedback
+
+| Metode | Path | Auth |
+|---|---|---|
+| POST | `/api/feedback` | ✗ |
+
+**Payload Request (JSON):**
+
+| No | Field | Tipe | Wajib | Deskripsi |
+|---|---|---|---|---|
+| 1 | `username` | string | ✅ | Username pengirim; spasi di awal/akhir dipangkas |
+| 2 | `saran` | string | ✅ | Saran pengguna; spasi di awal/akhir dipangkas |
+| 3 | `kesan` | string | ✅ | Kesan pengguna; spasi di awal/akhir dipangkas |
+
+Nilai yang hanya berisi spasi dianggap kosong dan ditolak `400`. Tidak ada `Authorization`
+yang diperlukan.
+
+**Contoh request:**
+
+```http
+POST /api/feedback HTTP/1.1
+Host: localhost:8080
+Content-Type: application/json
+
+{
+  "username": "124240200",
+  "saran": "Tambahkan mode latihan soal per bab.",
+  "kesan": "Aplikasinya seru dan mudah dipakai."
+}
+```
+
+**Field Response:**
+
+| Field | Tipe | Deskripsi |
+|---|---|---|
+| `message` | string | Pesan `Feedback berhasil dikirim` |
+| `feedback.id` | string | ObjectID dokumen feedback |
+| `feedback.username` | string | Username yang dikirim |
+| `feedback.saran` | string | Saran yang dikirim |
+| `feedback.kesan` | string | Kesan yang dikirim |
+| `feedback.created_at` | string (RFC 3339) | Waktu penyimpanan feedback |
+
+**Response:**
+
+| Status | Deskripsi |
+|---|---|
+| 201 | Feedback berhasil disimpan |
+| 400 | `username`, `saran`, atau `kesan` kosong |
+| 400 | Body JSON tidak valid (`Request tidak valid`) |
+| 413 | Body terlalu besar (> 1 MiB) |
+| 415 | Content-Type bukan JSON |
+| 500 | Gagal membuat ID feedback / Gagal menyimpan feedback |
+
+**Contoh response — `201 Created`**
+
+```json
+{
+  "message": "Feedback berhasil dikirim",
+  "feedback": {
+    "id": "671f2f7a9c3e4b0012a4d5e6",
+    "username": "124240200",
+    "saran": "Tambahkan mode latihan soal per bab.",
+    "kesan": "Aplikasinya seru dan mudah dipakai.",
+    "created_at": "2026-10-28T10:15:00+07:00"
+  }
+}
+```
+
+**Contoh response — `400 Bad Request`**
+
+```json
+// username kosong
+{ "message": "username wajib diisi" }
+
+// saran kosong
+{ "message": "saran wajib diisi" }
+
+// kesan kosong
+{ "message": "kesan wajib diisi" }
+
+// body bukan JSON valid
+{ "message": "Request tidak valid" }
+```
+
+**Contoh response — `413 Payload Too Large`**
+
+```json
+{ "message": "Body request terlalu besar (maksimal 1 MiB)" }
+```
+
+**Contoh response — `415 Unsupported Media Type`**
+
+```json
+{ "message": "Content-Type harus application/json" }
+```
+
+**Contoh response — `500 Internal Server Error`**
+
+```json
+// gagal membuat ObjectID
+{ "message": "Gagal membuat ID feedback" }
+
+// gagal menyimpan ke database
+{ "message": "Gagal menyimpan feedback" }
+```
+
+**Cara Testing (`cURL`):**
+
+```
+curl -X POST http://localhost:8080/api/feedback \
+  -H "Content-Type: application/json" \
+  -d '{
+    "username": "124240200",
+    "saran": "Tambahkan mode latihan soal per bab.",
+    "kesan": "Aplikasinya seru dan mudah dipakai."
+  }'
+
+```
+
 **Diagram end-to-end per service:**
 
 | Service | Bagian |
@@ -3620,4 +3817,5 @@ curl -X POST http://localhost:8080/api/wallet/claim \
 | Poin & Rupiah | §10.3 |
 | LBS | §11.2 |
 | Wallet & Klaim | §14–§15 |
+| Feedback | §16 |
 

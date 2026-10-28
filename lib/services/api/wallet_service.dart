@@ -12,10 +12,6 @@ class WalletService {
   static final WalletService instance = WalletService._(ApiClient.instance);
 
   final ApiClient _api;
-
-  /// Kirim request ke `POST /api/wallet/claim` untuk:
-  /// - Menukar poin menjadi rupiah (`pointsToClaim > 0`, `rupiahValue` opsional/positif)
-  /// - Mengurangi saldo rupiah / tarik saldo (`pointsToClaim == 0`, `rupiahValue < 0`)
   ///
   /// Response: [WalletClaimResult] yang memuat status, pesan, tx_hash, dan remaining_points.
   Future<WalletClaimResult> claim({
@@ -27,7 +23,7 @@ class WalletService {
     final body = <String, dynamic>{
       if (userId != null && userId.isNotEmpty) 'user_id': userId,
       'points_to_claim': pointsToClaim,
-      'rupiah_value': ?rupiahValue,
+      'rupiah_value': rupiahValue,
     };
 
     final response = await _api.post(
@@ -47,15 +43,11 @@ class WalletService {
     return WalletClaimResult.fromJson(jsonMap(data));
   }
 
-  /// Ambil saldo rupiah on-chain dan riwayat transaksi dari `GET /api/wallet/{user}`.
-  ///
-  /// [user] dapat berupa username atau ObjectID pengguna yang sedang login.
-  Future<WalletResponse> fetchWallet({
-    required String token,
-    required String user,
-  }) async {
+  /// Ambil saldo rupiah on-chain dan riwayat transaksi dari GET /api/me/wallet.
+  /// Identitas diambil dari token (tanpa perlu mengirim user di path).
+  Future<WalletResponse> fetchMyWallet({required String token}) async {
     final response = await _api.get(
-      '/api/wallet/${Uri.encodeComponent(user)}',
+      '/api/me/wallet',
       token: token,
     );
 
@@ -69,4 +61,14 @@ class WalletService {
 
     return WalletResponse.fromJson(jsonMap(data));
   }
+
+  /// Kompatibilitas dengan pemanggil lama yang mempassing `user`.
+  Future<WalletResponse> fetchWallet({
+    required String token,
+    String? user,
+  }) async {
+    return fetchMyWallet(token: token);
+  }
+
 }
+

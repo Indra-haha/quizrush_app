@@ -56,8 +56,6 @@ class _CreateQuizPageState extends State<CreateQuizPage> {
   bool _saving = false;
   bool _pickingImage = false;
 
-  List<String> _kategoriOptions = const [Quizes.defaultKategori];
-  String? _selectedKategori;
 
   /// URL aset gambar hasil unggah Cloudinary (secure_url);
   /// dikirim sebagai `path` saat save.
@@ -90,15 +88,6 @@ class _CreateQuizPageState extends State<CreateQuizPage> {
   Future<void> _loadKategoriOptions() async {
     final token = await SessionService.instance.getToken();
     if (token == null) return;
-    try {
-      final options = await QuizService.instance.fetchKategoriOptions(
-        token: token,
-      );
-      if (!mounted || options.isEmpty) return;
-      setState(() => _kategoriOptions = options);
-    } catch (_) {
-      // Dropdown tetap memakai fallback "Umum".
-    }
   }
 
   Future<void> _pickImage() async {

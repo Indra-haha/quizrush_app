@@ -8,6 +8,7 @@ import '../../services/api/auth_service.dart';
 import '../../services/api/points_service.dart';
 import '../../services/api/wallet_service.dart';
 import '../../services/points_store.dart';
+import '../../services/reward_cache_service.dart';
 import '../../services/session_service.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/app_header_bar_with_actions.dart';
@@ -39,7 +40,6 @@ class RewardPage extends StatefulWidget {
 class _RewardPageState extends State<RewardPage> {
   static const List<String> _tabs = ['Poin (Pts)', 'Saldo'];
   static const int _koinToRupiah = 10;
-  static const List<String> _historyFilters = ['Semua', 'Hadiah', 'Tarik'];
 
   final PageController _pageController = PageController();
 
@@ -86,11 +86,24 @@ class _RewardPageState extends State<RewardPage> {
   }
 
   Future<void> _load() async {
-    setState(() {
-      _loading = true;
-      _error = null;
-      _walletError = null;
-    });
+    // 1. Tampilkan data dari cache lokal terlebih dahulu jika ada
+    final cachedPoints = await RewardCacheService.instance.readPointsDetail();
+    final cachedWallet = await RewardCacheService.instance.readWallet();
+    if (mounted) {
+      setState(() {
+        if (cachedPoints != null) {
+          _points = cachedPoints.points;
+          _coins = cachedPoints.history;
+        }
+        if (cachedWallet != null) {
+          _saldoRupiah = cachedWallet.currentBalance;
+          _walletHistory = cachedWallet.data;
+        }
+        _loading = _points == null;
+        _error = null;
+        _walletError = null;
+      });
+    }
 
     final token = await SessionService.instance.getToken();
     if (!mounted) return;
@@ -116,37 +129,39 @@ class _RewardPageState extends State<RewardPage> {
     _username = username;
 
     try {
+      // 2. Fetch saldo poin terkini & riwayat poin dari /api/me/points
       int points = _points ?? 0;
+      List<CoinEntry> coins = _coins;
       try {
-        points = await _service.fetchPoints(token: token);
+        final pointsDetail = await _service.fetchPointsDetail(token: token);
+        points = pointsDetail.points;
+        coins = pointsDetail.history;
+        PointsStore.instance.setDetail(pointsDetail);
+        // Simpan ke cache lokal
+        await RewardCacheService.instance.savePointsDetail(pointsDetail);
       } catch (_) {}
 
-  
-      if (!mounted) return;
-      PointsStore.instance.set(points);
-
+      // 3. Fetch saldo rupiah terkini & riwayat transaksi wallet dari /api/me/wallet
       int saldo = _saldoRupiah;
       List<WalletHistoryItem> walletHistory = _walletHistory;
       String? walletError;
 
-      if (username.isNotEmpty) {
-        try {
-          final wallet = await _walletService.fetchWallet(
-            token: token,
-            user: username,
-          );
-          saldo = wallet.currentBalance;
-          walletHistory = wallet.data;
-        } on ApiException catch (e) {
-          if (e.statusCode < 500) {
-            walletError = e.message;
-          }
-        } catch (_) {}
-      }
+      try {
+        final wallet = await _walletService.fetchMyWallet(token: token);
+        saldo = wallet.currentBalance;
+        walletHistory = wallet.data;
+        // Simpan ke cache lokal
+        await RewardCacheService.instance.saveWallet(wallet);
+      } on ApiException catch (e) {
+        if (e.statusCode < 500) {
+          walletError = e.message;
+        }
+      } catch (_) {}
 
       if (!mounted) return;
       setState(() {
         _points = points;
+        _coins = coins;
         _saldoRupiah = saldo;
         _walletHistory = walletHistory;
         _walletError = walletError;
