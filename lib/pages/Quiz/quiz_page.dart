@@ -33,7 +33,7 @@ class QuizPage extends StatefulWidget {
 }
 
 class _QuizPageState extends State<QuizPage> {
-  static const _statuses = ['open', 'in-Game', 'ended'];
+  static const _statuses = ['Open', 'In-Game', 'Ended'];
 
   QuizIndex? _index;
   bool _syncing = false;

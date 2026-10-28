@@ -14,6 +14,7 @@ import '../../services/session_service.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/app_header_bar_with_actions.dart';
 import '../../widgets/status_filter.dart';
+import '../../widgets/app_snackbar.dart';
 
 /// Halaman tab "Reward" dengan dua bagian yang bisa digeser: Poin dan Saldo.
 class RewardPage extends StatefulWidget {
@@ -418,7 +419,7 @@ class _RewardPageState extends State<RewardPage> {
                 children: [
                   Flexible(
                     child: Text(
-                      value,
+                      formatMoney(convertedSaldo, _selectedCurrency),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: RewardTextStyles.heroValue,
@@ -691,7 +692,7 @@ class _RewardPageState extends State<RewardPage> {
 
     setState(() => _isActionInProgress = true);
     final rupiah = (points * _koinToRupiah).toDouble();
-
+    
     try {
       final res = await _walletService.claim(
         token: token,
@@ -912,8 +913,8 @@ class _RewardPageState extends State<RewardPage> {
             : 'Penambahan Saldo');
 
     final String amount = isWithdraw
-        ? '-${formatRupiah(item.rupiahValue.abs().round())}'
-        : '+${formatRupiah(item.rupiahValue.round())}';
+        ? '+${formatRupiah(item.rupiahValue.abs().round())}'
+        : '-${formatRupiah(item.rupiahValue.round())}';
 
     final Color iconBg = isWithdraw
         ? RewardTheme.historyIconBackground(-1)
