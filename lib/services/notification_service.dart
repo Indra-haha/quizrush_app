@@ -25,8 +25,10 @@ class NotificationService implements RoomNotificationGateway {
 
   static const int _roomReminderId = 41001;
   static const int _roomLeaveId = 41002;
+  static const int _tiltNotificationId = 41003;
   static const String _channelId = 'quizrush_room_reminder';
   static const String _leaveChannelId = 'quizrush_room_leave';
+  static const String _tiltChannelId = 'quizrush_tilt_selection';
   static const String _actionOpenRoom = 'open_room';
   static const String _categoryId = 'quizrush_room_reminder_category';
   static const String _leaveCategoryId = 'quizrush_room_leave_category';
@@ -261,6 +263,41 @@ class NotificationService implements RoomNotificationGateway {
       );
     } catch (_) {
       // Gagal menampilkan notifikasi tidak boleh mengganggu navigasi aplikasi.
+    }
+  }
+
+  Future<void> showTiltNotification({
+    required String title,
+    required String body,
+  }) async {
+    if (!_supported) return;
+    await initialize();
+
+    const details = NotificationDetails(
+      android: AndroidNotificationDetails(
+        _tiltChannelId,
+        'Sensor Gyroscope',
+        channelDescription:
+            'Notifikasi pemilihan opsi jawaban dengan sensor kemiringan/gyroscope.',
+        importance: Importance.high,
+        priority: Priority.high,
+      ),
+      iOS: DarwinNotificationDetails(
+        presentAlert: true,
+        presentBanner: true,
+        presentSound: true,
+      ),
+    );
+
+    try {
+      await _plugin.show(
+        id: _tiltNotificationId,
+        title: title,
+        body: body,
+        notificationDetails: details,
+      );
+    } catch (_) {
+      // Gagal menampilkan notifikasi tidak boleh mengganggu alur aplikasi.
     }
   }
 

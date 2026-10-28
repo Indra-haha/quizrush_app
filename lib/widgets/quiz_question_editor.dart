@@ -11,6 +11,7 @@ class QuizAnswerField extends StatelessWidget {
   final int? correctIdx;
   final ValueChanged<int> onCorrectChanged;
   final String hintText;
+  final bool readOnly;
 
   const QuizAnswerField({
     super.key,
@@ -19,6 +20,7 @@ class QuizAnswerField extends StatelessWidget {
     required this.correctIdx,
     required this.onCorrectChanged,
     this.hintText = 'Tulis jawaban...',
+    this.readOnly = false,
   });
 
   @override
@@ -29,7 +31,7 @@ class QuizAnswerField extends StatelessWidget {
         .answerShapes[optionIndex % CreateQuizQuestionStyles.answerShapes.length];
     final selected = correctIdx == optionIndex;
 
-    return Container(
+    final body = Container(
       width: double.infinity,
       padding: CreateQuizQuestionStyles.answerPadding,
       color: color,
@@ -40,6 +42,9 @@ class QuizAnswerField extends StatelessWidget {
           Expanded(
             child: TextField(
               controller: controller,
+              readOnly: readOnly,
+              canRequestFocus: !readOnly,
+              enableInteractiveSelection: !readOnly,
               maxLines: null,
               style: CreateQuizTextStyles.answerInput,
               decoration: InputDecoration(
@@ -73,6 +78,16 @@ class QuizAnswerField extends StatelessWidget {
         ],
       ),
     );
+
+    if (readOnly) {
+      return GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () => onCorrectChanged(optionIndex),
+        child: body,
+      );
+    }
+
+    return body;
   }
 }
 

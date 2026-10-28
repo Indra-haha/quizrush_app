@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../helpers/format.dart';
+import '../../helpers/moneychanger.dart';
 import '../../models/points.dart';
 import '../../models/wallet.dart';
 import '../../services/api/api_client.dart';
@@ -58,6 +59,7 @@ class _RewardPageState extends State<RewardPage> {
   String? _error;
   bool _opened = false;
   bool _isActionInProgress = false;
+  String _selectedCurrency = 'IDR';
 
   @override
   void initState() {
@@ -337,11 +339,15 @@ class _RewardPageState extends State<RewardPage> {
 
     final String title = isPointTab ? 'TOTAL POIN QUIZRUSH' : 'TOTAL RUPIAH';
 
+    final double convertedSaldo = isPointTab
+        ? 0.0
+        : convertMoney(saldo.toDouble(), 'IDR', _selectedCurrency);
+
     final String value = isPointTab
         ? formatPoints(points)
-        : formatRupiah(saldo);
+        : formatMoney(convertedSaldo, _selectedCurrency);
 
-    final String unit = isPointTab ? 'PTS' : 'IDR';
+    final String unit = isPointTab ? 'PTS' : _selectedCurrency;
 
     final String equivalent = isPointTab
         ? 'Setara: ${formatRupiah((points * _koinToRupiah).round())}'
@@ -374,7 +380,35 @@ class _RewardPageState extends State<RewardPage> {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(title, style: RewardTextStyles.heroLabel),
+              if (isPointTab)
+                Text(title, style: RewardTextStyles.heroLabel)
+              else
+                DropdownButtonHideUnderline(
+                  child: DropdownButton<String>(
+                    value: _selectedCurrency,
+                    dropdownColor: AppColors.primaryDark,
+                    borderRadius: BorderRadius.circular(12),
+                    icon: const Icon(
+                      Icons.keyboard_arrow_down_rounded,
+                      color: AppColors.textOnPrimary,
+                      size: 20,
+                    ),
+                    isDense: true,
+                    style: RewardTextStyles.heroLabel,
+                    items: supportedCurrencies.map((code) {
+                      return DropdownMenuItem<String>(
+                        value: code,
+                        child: Text(code, style: RewardTextStyles.heroLabel),
+                      );
+                    }).toList(),
+                    onChanged: (newCurrency) {
+                      if (newCurrency == null) return;
+                      setState(() {
+                        _selectedCurrency = newCurrency;
+                      });
+                    },
+                  ),
+                ),
 
               const SizedBox(height: AppSpacing.space6),
 
