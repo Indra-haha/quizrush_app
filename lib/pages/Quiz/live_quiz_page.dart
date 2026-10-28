@@ -9,7 +9,6 @@ import '../../models/live_game.dart';
 import '../../models/room.dart';
 import '../../services/live_game_controller.dart';
 import '../../services/api/room_socket.dart';
-import '../../services/notification_service.dart';
 import '../../services/profile_settings_service.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/quiz_option_theme.dart';
@@ -71,10 +70,8 @@ class _LiveQuizPageState extends State<LiveQuizPage> {
 
   double _currentAccX = 0.0;
   double _currentAccY = 0.0;
-  double _currentAccZ = 0.0;
   double _currentGyroX = 0.0;
   double _currentGyroY = 0.0;
-  double _currentGyroZ = 0.0;
 
   StreamSubscription<GyroscopeEvent>? _gyroSub;
   StreamSubscription<AccelerometerEvent>? _accelSub;
@@ -133,7 +130,6 @@ class _LiveQuizPageState extends State<LiveQuizPage> {
 
           _currentAccX = event.x;
           _currentAccY = event.y;
-          _currentAccZ = event.z;
 
           // Jika belum memiliki baseline tersimpan, kalibrasi dari 5 sampel awal
           if (!_hasBaseline) {
@@ -179,7 +175,6 @@ class _LiveQuizPageState extends State<LiveQuizPage> {
 
           _currentGyroX = event.x;
           _currentGyroY = event.y;
-          _currentGyroZ = event.z;
 
           if (_hasBaseline) {
             _evaluateGyroAnswer();
@@ -315,10 +310,6 @@ class _LiveQuizPageState extends State<LiveQuizPage> {
     HapticFeedback.mediumImpact();
 
     final letter = String.fromCharCode(65 + index % optionThemes.length);
-    final optionText = (_controller.question != null &&
-            index < _controller.question!.options.length)
-        ? _controller.question!.options[index]
-        : '';
 
     
 

@@ -77,14 +77,18 @@ class LocationService {
 
   /// Alur lengkap GPS → kirim. `null` bila izin ditolak atau lokasi tak tersedia.
   Future<LocationResult?> locate({required String token}) async {
-    final position = await _positionProvider();
-    if (position == null) return null;
-    return submit(
-      token: token,
-      latitude: position.latitude,
-      longitude: position.longitude,
-      accuracy: position.accuracy,
-    );
+    try {
+      final position = await _positionProvider();
+      if (position == null) return null;
+      return await submit(
+        token: token,
+        latitude: position.latitude,
+        longitude: position.longitude,
+        accuracy: position.accuracy,
+      );
+    } catch (_) {
+      return null;
+    }
   }
 
   /// Hasil lokasi terakhir dari cache (tanpa GPS maupun server). Mendukung
@@ -162,10 +166,14 @@ class LocationService {
     try {
       final access = await ensurePermission();
       if (access != LocationAccess.granted) return null;
+      try {
+        final last = await Geolocator.getLastKnownPosition();
+        if (last != null) return last;
+      } catch (_) {}
       return await Geolocator.getCurrentPosition(
         locationSettings: const LocationSettings(
           accuracy: LocationAccuracy.low,
-          timeLimit: Duration(seconds: 10),
+          timeLimit: Duration(seconds: 4),
         ),
       );
     } catch (_) {
