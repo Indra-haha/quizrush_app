@@ -192,10 +192,11 @@ class _SettingsState extends State<Settings> {
     _isNeutral = true;
 
     // Menangkap orientasi gravitasi & tilt statis awal
-    _accelSub =
-        accelerometerEventStream(
-          samplingPeriod: SensorInterval.uiInterval,
-        ).listen((event) {
+    try {
+      _accelSub = accelerometerEventStream(
+        samplingPeriod: SensorInterval.uiInterval,
+      ).listen(
+        (event) {
           if (!_gyroscopeEnabled || !mounted) return;
 
           _currentAccX = event.x;
@@ -254,21 +255,41 @@ class _SettingsState extends State<Settings> {
           }
 
           _evaluateMotionAndTilt();
-        });
+        },
+        onError: (_) {
+          _accelSub?.cancel();
+          _accelSub = null;
+        },
+        cancelOnError: true,
+      );
+    } catch (_) {
+      _accelSub = null;
+    }
 
     // Menangkap pergerakan dinamis & goyangan melalui gyroscope
-    _gyroSub = gyroscopeEventStream(samplingPeriod: SensorInterval.uiInterval)
-        .listen((event) {
-          if (!_gyroscopeEnabled || !mounted) return;
+    try {
+      _gyroSub = gyroscopeEventStream(samplingPeriod: SensorInterval.uiInterval)
+          .listen(
+            (event) {
+              if (!_gyroscopeEnabled || !mounted) return;
 
-          _currentGyroX = event.x;
-          _currentGyroY = event.y;
-          _currentGyroZ = event.z;
+              _currentGyroX = event.x;
+              _currentGyroY = event.y;
+              _currentGyroZ = event.z;
 
-          if (_hasBaseline) {
-            _evaluateMotionAndTilt();
-          }
-        });
+              if (_hasBaseline) {
+                _evaluateMotionAndTilt();
+              }
+            },
+            onError: (_) {
+              _gyroSub?.cancel();
+              _gyroSub = null;
+            },
+            cancelOnError: true,
+          );
+    } catch (_) {
+      _gyroSub = null;
+    }
   }
 
   void _stopGyroscopeDetection() {
@@ -281,20 +302,32 @@ class _SettingsState extends State<Settings> {
 
   void _startShakeDetection() {
     _shakeSub?.cancel();
-    _shakeSub = userAccelerometerEventStream().listen((event) {
-      if (!_accelerometerEnabled || !mounted) return;
-      final magnitude = math.sqrt(
-        event.x * event.x + event.y * event.y + event.z * event.z,
+    try {
+      _shakeSub = userAccelerometerEventStream().listen(
+        (event) {
+          if (!_accelerometerEnabled || !mounted) return;
+          final magnitude = math.sqrt(
+            event.x * event.x + event.y * event.y + event.z * event.z,
+          );
+          if (magnitude < 12.0) return;
+          final now = DateTime.now();
+          if (now.difference(_lastShakeTime) <
+              const Duration(milliseconds: 1500)) {
+            return;
+          }
+          _lastShakeTime = now;
+          HapticFeedback.lightImpact();
+          ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        },
+        onError: (_) {
+          _shakeSub?.cancel();
+          _shakeSub = null;
+        },
+        cancelOnError: true,
       );
-      if (magnitude < 12.0) return;
-      final now = DateTime.now();
-      if (now.difference(_lastShakeTime) < const Duration(milliseconds: 1500)) {
-        return;
-      }
-      _lastShakeTime = now;
-      HapticFeedback.lightImpact();
-      ScaffoldMessenger.of(context).hideCurrentSnackBar();
-    });
+    } catch (_) {
+      _shakeSub = null;
+    }
   }
 
   void _evaluateMotionAndTilt() {

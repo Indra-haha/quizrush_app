@@ -124,54 +124,76 @@ class _LiveQuizPageState extends State<LiveQuizPage> {
     _gyroSub?.cancel();
     _accelSub?.cancel();
 
-    _accelSub = accelerometerEventStream(
-      samplingPeriod: SensorInterval.uiInterval,
-    ).listen((event) {
-      if (!_gyroAnswerEnabled || widget.isHost || !mounted) return;
+    try {
+      _accelSub = accelerometerEventStream(
+        samplingPeriod: SensorInterval.uiInterval,
+      ).listen(
+        (event) {
+          if (!_gyroAnswerEnabled || widget.isHost || !mounted) return;
 
-      _currentAccX = event.x;
-      _currentAccY = event.y;
-      _currentAccZ = event.z;
+          _currentAccX = event.x;
+          _currentAccY = event.y;
+          _currentAccZ = event.z;
 
-      // Jika belum memiliki baseline tersimpan, kalibrasi dari 5 sampel awal
-      if (!_hasBaseline) {
-        _sumAccX += event.x;
-        _sumAccY += event.y;
-        _sumAccZ += event.z;
-        _calibrationSamples++;
+          // Jika belum memiliki baseline tersimpan, kalibrasi dari 5 sampel awal
+          if (!_hasBaseline) {
+            _sumAccX += event.x;
+            _sumAccY += event.y;
+            _sumAccZ += event.z;
+            _calibrationSamples++;
 
-        if (_calibrationSamples >= 5) {
-          _baseAccX = _sumAccX / _calibrationSamples;
-          _baseAccY = _sumAccY / _calibrationSamples;
-          _baseAccZ = _sumAccZ / _calibrationSamples;
-          setState(() {
-            _hasBaseline = true;
-          });
-          unawaited(ProfileSettingsService.instance.setGyroBaseline(
-            x: _baseAccX,
-            y: _baseAccY,
-            z: _baseAccZ,
-          ));
-        }
-        return;
-      }
+            if (_calibrationSamples >= 5) {
+              _baseAccX = _sumAccX / _calibrationSamples;
+              _baseAccY = _sumAccY / _calibrationSamples;
+              _baseAccZ = _sumAccZ / _calibrationSamples;
+              setState(() {
+                _hasBaseline = true;
+              });
+              unawaited(ProfileSettingsService.instance.setGyroBaseline(
+                x: _baseAccX,
+                y: _baseAccY,
+                z: _baseAccZ,
+              ));
+            }
+            return;
+          }
 
-      _evaluateGyroAnswer();
-    });
+          _evaluateGyroAnswer();
+        },
+        onError: (_) {
+          _accelSub?.cancel();
+          _accelSub = null;
+        },
+        cancelOnError: true,
+      );
+    } catch (_) {
+      _accelSub = null;
+    }
 
-    _gyroSub = gyroscopeEventStream(
-      samplingPeriod: SensorInterval.uiInterval,
-    ).listen((event) {
-      if (!_gyroAnswerEnabled || widget.isHost || !mounted) return;
+    try {
+      _gyroSub = gyroscopeEventStream(
+        samplingPeriod: SensorInterval.uiInterval,
+      ).listen(
+        (event) {
+          if (!_gyroAnswerEnabled || widget.isHost || !mounted) return;
 
-      _currentGyroX = event.x;
-      _currentGyroY = event.y;
-      _currentGyroZ = event.z;
+          _currentGyroX = event.x;
+          _currentGyroY = event.y;
+          _currentGyroZ = event.z;
 
-      if (_hasBaseline) {
-        _evaluateGyroAnswer();
-      }
-    });
+          if (_hasBaseline) {
+            _evaluateGyroAnswer();
+          }
+        },
+        onError: (_) {
+          _gyroSub?.cancel();
+          _gyroSub = null;
+        },
+        cancelOnError: true,
+      );
+    } catch (_) {
+      _gyroSub = null;
+    }
   }
 
   void _recalibratePosition() {

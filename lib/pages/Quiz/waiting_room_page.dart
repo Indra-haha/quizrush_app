@@ -131,26 +131,39 @@ class _WaitingRoomPageState extends State<WaitingRoomPage> {
   }
 
   Future<void> _loadSensorSettings() async {
-    final enabled = await ProfileSettingsService.instance
-        .accelerometerEnabled();
-    if (!mounted || !enabled) return;
-    _accelerometerEnabled = true;
-    _startShakeDetection();
+    try {
+      final enabled = await ProfileSettingsService.instance
+          .accelerometerEnabled();
+      if (!mounted || !enabled) return;
+      _accelerometerEnabled = true;
+      _startShakeDetection();
+    } catch (_) {}
   }
 
   void _startShakeDetection() {
     _accelerometerSub?.cancel();
-    _accelerometerSub = userAccelerometerEventStream().listen((event) {
-      if (!_accelerometerEnabled || !mounted) return;
-      final magnitude = sqrt(
-        event.x * event.x + event.y * event.y + event.z * event.z,
+    try {
+      _accelerometerSub = userAccelerometerEventStream().listen(
+        (event) {
+          if (!_accelerometerEnabled || !mounted) return;
+          final magnitude = sqrt(
+            event.x * event.x + event.y * event.y + event.z * event.z,
+          );
+          if (magnitude < _shakeThreshold) return;
+          final now = DateTime.now();
+          if (now.difference(_lastShakeAt) < _shakeCooldown) return;
+          _lastShakeAt = now;
+          _sendAutoCheer();
+        },
+        onError: (_) {
+          _accelerometerSub?.cancel();
+          _accelerometerSub = null;
+        },
+        cancelOnError: true,
       );
-      if (magnitude < _shakeThreshold) return;
-      final now = DateTime.now();
-      if (now.difference(_lastShakeAt) < _shakeCooldown) return;
-      _lastShakeAt = now;
-      _sendAutoCheer();
-    });
+    } catch (_) {
+      _accelerometerSub = null;
+    }
   }
 
   void _sendAutoCheer() {
