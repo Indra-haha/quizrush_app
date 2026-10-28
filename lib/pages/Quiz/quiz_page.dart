@@ -33,7 +33,20 @@ class QuizPage extends StatefulWidget {
 }
 
 class _QuizPageState extends State<QuizPage> {
-  static const _statuses = ['Open', 'In-Game', 'Ended'];
+  static const _statuses = ['open', 'in-Game', 'ended'];
+  String formatLabel(String text) {
+    if (text.isEmpty) return '';
+
+    // 1. Ganti '-' dan '_' dengan spasi, lalu hilangkan spasi berlebih
+    final cleaned = text.replaceAll(RegExp(r'[-_]+'), ' ');
+
+    // 2. Ubah setiap kata menjadi kapital di huruf pertama
+    return cleaned
+        .split(' ')
+        .where((word) => word.isNotEmpty) // Abaikan spasi kosong
+        .map((word) => word[0].toUpperCase() + word.substring(1).toLowerCase())
+        .join(' ');
+  }
 
   QuizIndex? _index;
   bool _syncing = false;
@@ -275,7 +288,10 @@ class _QuizPageState extends State<QuizPage> {
     return Column(
       children: [
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.space9, vertical: AppSpacing.space8),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.space9,
+            vertical: AppSpacing.space8,
+          ),
           child: QuizSearchField(
             controller: _searchController,
             onChanged: _onSearchChanged,
@@ -295,6 +311,7 @@ class _QuizPageState extends State<QuizPage> {
           child: StatusFilter<String>(
             values: _statuses,
             selected: _selectedStatus,
+            labelBuilder: formatLabel,
             onChanged: _selectStatus,
           ),
         ),

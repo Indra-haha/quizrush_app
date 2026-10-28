@@ -27,7 +27,6 @@ class QuizResultsList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-
     if (error != null) {
       return ErrorStateView(message: error!);
     }
@@ -36,8 +35,23 @@ class QuizResultsList extends StatelessWidget {
     if (pinProgress != null) return EmptyStateView.searching(pinProgress!);
 
     if (quizzes.isEmpty) {
-      if (query.isEmpty) return const EmptyStateView.empty();
-      return EmptyStateView.noResult(query);
+      if (query.isEmpty) {
+        return ListView(
+          padding: const EdgeInsets.only(
+            top: AppSpacing.space4,
+            bottom: AppSpacing.scrollClearance,
+          ),
+          children: [EmptyStateView.empty()],
+        );
+      } else {
+        return ListView(
+          padding: const EdgeInsets.only(
+            top: AppSpacing.space4,
+            bottom: AppSpacing.scrollClearance,
+          ),
+          children: [EmptyStateView.noResult(query)],
+        );
+      }
     }
 
     return ListView(

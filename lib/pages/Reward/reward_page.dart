@@ -419,7 +419,7 @@ class _RewardPageState extends State<RewardPage> {
                 children: [
                   Flexible(
                     child: Text(
-                      formatMoney(convertedSaldo, _selectedCurrency),
+                      value,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: RewardTextStyles.heroValue,
@@ -635,17 +635,17 @@ class _RewardPageState extends State<RewardPage> {
     final int points = _conversionPoints;
 
     if (points <= 0) {
-      _showRewardMessage('Masukkan jumlah poin yang valid.');
+      _showRewardError('Masukkan jumlah poin yang valid.');
       return;
     }
 
     if (points > (_points ?? 0)) {
-      _showRewardMessage('Poin kamu tidak mencukupi.');
+      _showRewardError('Poin kamu tidak mencukupi.');
       return;
     }
 
     if (_koinToRupiah <= 0) {
-      _showRewardMessage('Nilai konversi belum tersedia.');
+      _showRewardError('Nilai konversi belum tersedia.');
       return;
     }
 
@@ -686,7 +686,7 @@ class _RewardPageState extends State<RewardPage> {
 
     final token = await SessionService.instance.getToken();
     if (token == null || token.isEmpty) {
-      _showRewardMessage('Sesi tidak ditemukan. Silakan masuk kembali.');
+      _showRewardError('Sesi tidak ditemukan. Silakan masuk kembali.');
       return;
     }
 
@@ -702,7 +702,7 @@ class _RewardPageState extends State<RewardPage> {
       );
 
       if (!mounted) return;
-      _showRewardMessage(
+      _showRewardSuccess(
         res.message.isNotEmpty
             ? res.message
             : 'Klaim ${formatPoints(points)} PTS berhasil!',
@@ -717,10 +717,10 @@ class _RewardPageState extends State<RewardPage> {
       await PointsStore.instance.refresh();
     } on ApiException catch (e) {
       if (!mounted) return;
-      _showRewardMessage(e.message);
+      _showRewardError(e.message);
     } catch (_) {
       if (!mounted) return;
-      _showRewardMessage('Gagal memproses klaim poin.');
+      _showRewardError('Gagal memproses klaim poin.');
     } finally {
       if (mounted) {
         setState(() => _isActionInProgress = false);
@@ -732,12 +732,14 @@ class _RewardPageState extends State<RewardPage> {
   // NOTIFIKASI
   // ============================================================
 
-  void _showRewardMessage(String message) {
+  void _showRewardSuccess(String message) {
     if (!mounted) return;
+    AppSnackBar.success(context, message);
+  }
 
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(message)));
+  void _showRewardError(String message) {
+    if (!mounted) return;
+    AppSnackBar.error(context, message);
   }
 
   // ============================================================
@@ -913,8 +915,8 @@ class _RewardPageState extends State<RewardPage> {
             : 'Penambahan Saldo');
 
     final String amount = isWithdraw
-        ? '+${formatRupiah(item.rupiahValue.abs().round())}'
-        : '-${formatRupiah(item.rupiahValue.round())}';
+        ? '-${formatRupiah(item.rupiahValue.abs().round())}'
+        : '+${formatRupiah(item.rupiahValue.round())}';
 
     final Color iconBg = isWithdraw
         ? RewardTheme.historyIconBackground(-1)
