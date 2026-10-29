@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../../models/region_location.dart';
 import '../../models/region_ranking.dart';
@@ -7,7 +6,6 @@ import '../../services/api/api_client.dart';
 import '../../services/api/location_service.dart';
 import '../../services/session_service.dart';
 import '../../theme/app_theme.dart';
-import '../../theme/reward_theme.dart';
 import '../../widgets/app_header_bar_with_actions.dart';
 import '../../widgets/app_snackbar.dart';
 import '../../widgets/status_filter.dart';
@@ -117,113 +115,98 @@ class _RankingRegionPageState extends State<RankingRegionPage> {
       context: context,
       backgroundColor: Colors.transparent,
       builder: (context) => Material(
-        color: Colors.white,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        color: AppColors.pureSurface,
+        borderRadius: AppRadius.sheet,
         child: Padding(
           padding: const EdgeInsets.symmetric(
             horizontal: AppSpacing.space8,
             vertical: AppSpacing.space6,
           ),
           child: SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: AppColors.primaryBorder,
-                    borderRadius: BorderRadius.circular(2),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: AppSizes.sheetHandleWidth,
+                    height: AppSizes.sheetHandleHeight,
+                    decoration: const BoxDecoration(
+                      color: AppColors.primaryBorder,
+                      borderRadius: AppRadius.pill,
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(height: AppSpacing.space4),
-              Text(
-                'Pengaturan Lokasi Wilayah',
-                style: GoogleFonts.montserrat(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.textPrimary,
+                const SizedBox(height: AppSpacing.space4),
+                Text(
+                  'Pengaturan Lokasi Wilayah',
+                  style: AppTextStyles.heading3,
                 ),
-              ),
-              const SizedBox(height: AppSpacing.space1),
-              Text(
-                'Wilayah saat ini: ${_levelLabel('kecamatan')}, ${_levelLabel('kota')}, ${_levelLabel('provinsi')}',
-                style: GoogleFonts.plusJakartaSans(
-                  fontSize: 12,
-                  color: AppColors.textSecondary,
+                const SizedBox(height: AppSpacing.space1),
+                Text(
+                  'Wilayah saat ini: ${_levelLabel('kecamatan')}, ${_levelLabel('kota')}, ${_levelLabel('provinsi')}',
+                  style: AppTextStyles.bodySmall,
                 ),
-              ),
-              const SizedBox(height: AppSpacing.space6),
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: Container(
-                  padding: const EdgeInsets.all(AppSpacing.space2),
-                  decoration: const BoxDecoration(
-                    color: AppColors.surfaceSoft,
-                    shape: BoxShape.circle,
+                const SizedBox(height: AppSpacing.space6),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: Container(
+                    padding: const EdgeInsets.all(AppSpacing.space2),
+                    decoration: const BoxDecoration(
+                      color: AppColors.surfaceSoft,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.my_location_rounded,
+                      color: AppColors.primary,
+                      size: AppIconSize.md,
+                    ),
                   ),
-                  child: const Icon(
-                    Icons.my_location_rounded,
-                    color: AppColors.primary,
-                    size: AppIconSize.md,
+                  title: Text(
+                    'Perbarui Lokasi',
+                    style: AppTextStyles.bodyMedium.copyWith(
+                      fontWeight: AppFontWeight.semibold,
+                    ),
                   ),
+                  subtitle: Text(
+                    'Ambil ulang posisi GPS terkini perangkat',
+                    style: AppTextStyles.bodySmall,
+                  ),
+                  onTap: () => Navigator.of(context).pop('refresh'),
                 ),
-                title: Text(
-                  'Perbarui Lokasi',
-                  style: GoogleFonts.plusJakartaSans(
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary,
+                const Divider(height: AppSpacing.space4),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: Container(
+                    padding: const EdgeInsets.all(AppSpacing.space2),
+                    decoration: const BoxDecoration(
+                      color: AppColors.errorSoft,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.location_off_rounded,
+                      color: AppColors.error,
+                      size: AppIconSize.md,
+                    ),
                   ),
+                  title: Text(
+                    'Matikan Lokasi',
+                    style: AppTextStyles.labelStrongError.copyWith(
+                      fontWeight: AppFontWeight.semibold,
+                    ),
+                  ),
+                  subtitle: Text(
+                    'Nonaktifkan fitur lokasi sampai diaktifkan kembali',
+                    style: AppTextStyles.bodySmall,
+                  ),
+                  onTap: () => Navigator.of(context).pop('disable'),
                 ),
-                subtitle: Text(
-                  'Ambil ulang posisi GPS terkini perangkat',
-                  style: GoogleFonts.plusJakartaSans(
-                    fontSize: 12,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-                onTap: () => Navigator.of(context).pop('refresh'),
-              ),
-              const Divider(height: AppSpacing.space4),
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: Container(
-                  padding: const EdgeInsets.all(AppSpacing.space2),
-                  decoration: const BoxDecoration(
-                    color: AppColors.errorSoft,
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.location_off_rounded,
-                    color: AppColors.error,
-                    size: AppIconSize.md,
-                  ),
-                ),
-                title: Text(
-                  'Matikan Lokasi',
-                  style: GoogleFonts.plusJakartaSans(
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.error,
-                  ),
-                ),
-                subtitle: Text(
-                  'Nonaktifkan fitur lokasi sampai diaktifkan kembali',
-                  style: GoogleFonts.plusJakartaSans(
-                    fontSize: 12,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-                onTap: () => Navigator.of(context).pop('disable'),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
-    ),
-  );
+    );
 
     if (!mounted) return;
     if (action == 'refresh') {
@@ -399,7 +382,7 @@ class _RankingRegionPageState extends State<RankingRegionPage> {
                   horizontal: AppSpacing.space6,
                   vertical: AppSpacing.space4,
                 ),
-                decoration: ShapeDecoration(
+                decoration: const ShapeDecoration(
                   color: AppColors.surfaceSoft,
                   shape: RoundedRectangleBorder(
                     borderRadius: AppRadius.pill,
@@ -419,13 +402,10 @@ class _RankingRegionPageState extends State<RankingRegionPage> {
                       child: Text(
                         regionText,
                         overflow: TextOverflow.ellipsis,
-                        style: GoogleFonts.plusJakartaSans(
+                        style: AppTextStyles.bodyMeta.copyWith(
                           color: hasLocation
                               ? AppColors.textPrimary
                               : AppColors.textMuted,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          height: 1.33,
                         ),
                       ),
                     ),
@@ -441,7 +421,7 @@ class _RankingRegionPageState extends State<RankingRegionPage> {
                           horizontal: AppSpacing.space3,
                           vertical: AppSpacing.space1,
                         ),
-                        decoration: ShapeDecoration(
+                        decoration: const ShapeDecoration(
                           color: AppColors.pureSurface,
                           shape: RoundedRectangleBorder(
                             borderRadius: AppRadius.pill,
@@ -463,11 +443,8 @@ class _RankingRegionPageState extends State<RankingRegionPage> {
                               _locating
                                   ? 'Memuat...'
                                   : (hasLocation ? 'Ubah' : 'Aktifkan'),
-                              style: GoogleFonts.plusJakartaSans(
+                              style: AppTextStyles.bodyMeta.copyWith(
                                 color: AppColors.primary,
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                                height: 1.33,
                               ),
                             ),
                           ],
@@ -480,20 +457,13 @@ class _RankingRegionPageState extends State<RankingRegionPage> {
               const SizedBox(height: AppSpacing.space4),
               Text(
                 'Leaderboard Wilayah',
-                style: GoogleFonts.montserrat(
-                  color: AppColors.textPrimary,
-                  fontSize: 24,
-                  fontWeight: FontWeight.w700,
-                  height: 1.42,
-                ),
+                style: AppTextStyles.rankingTitle,
               ),
               const SizedBox(height: AppSpacing.space1),
               Text(
                 'Lihat jagoan kuis di sekitarmu dan rebut posisi teratas!',
-                style: GoogleFonts.plusJakartaSans(
+                style: AppTextStyles.body.copyWith(
                   color: AppColors.textSecondary,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w400,
                   height: 1.71,
                 ),
               ),
@@ -539,6 +509,7 @@ class _RankingRegionPageState extends State<RankingRegionPage> {
       key: PageStorageKey<String>('ranking-list-$level'),
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.space8),
       children: [
+        const SizedBox(height: AppSpacing.space3),
         if (!hasData)
           _EmptyHint(
             isLocationDisabled: _location == null,
@@ -547,16 +518,11 @@ class _RankingRegionPageState extends State<RankingRegionPage> {
         else ...[
           Text(
             'Top ${podium.length} $label',
-            style: GoogleFonts.montserrat(
-              color: AppColors.brandIndigo,
-              fontSize: 24,
-              fontWeight: FontWeight.w700,
-              height: 1.33,
-            ),
+            style: AppTextStyles.rankingTopHeading,
           ),
-          const SizedBox(height: 60),
+          const SizedBox(height: AppSpacing.podiumTopGap),
           SizedBox(
-            height: 320,
+            height: AppSizes.podiumRowHeight,
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
@@ -578,20 +544,12 @@ class _RankingRegionPageState extends State<RankingRegionPage> {
                   listEntries.length == 7 || entries.length >= 10
                       ? 'Peringkat 4 – 10'
                       : 'Peringkat 4 – ${3 + listEntries.length}',
-                  style: GoogleFonts.montserrat(
-                    color: AppColors.textPrimary,
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
-                    height: 1.50,
-                  ),
+                  style: AppTextStyles.rankingSectionHeading,
                 ),
                 Text(
                   listLabel,
-                  style: GoogleFonts.plusJakartaSans(
+                  style: AppTextStyles.labelStrongSmall.copyWith(
                     color: AppColors.brandIndigo,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                    height: 1.33,
                   ),
                 ),
               ],
@@ -602,7 +560,7 @@ class _RankingRegionPageState extends State<RankingRegionPage> {
               _RankListItem(entry: listEntries[i]),
             ],
           ],
-          const SizedBox(height: 80),
+          const SizedBox(height: AppSpacing.bottomListClearance),
         ],
       ],
     );
@@ -618,28 +576,32 @@ class _PodiumItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isFirst = rank == 1;
-    final avatarSize = isFirst ? 96.0 : 64.0;
-    final badgeSize = isFirst ? 40.0 : 32.0;
+    final avatarSize = isFirst
+        ? AppSizes.podiumFirstAvatar
+        : AppSizes.podiumOtherAvatar;
+    final badgeSize = isFirst
+        ? AppSizes.podiumFirstBadge
+        : AppSizes.podiumOtherBadge;
     final podiumHeight = isFirst
-        ? 136.0
+        ? AppSizes.podiumFirstHeight
         : rank == 2
-        ? 104.0
-        : 72.0;
+        ? AppSizes.podiumSecondHeight
+        : AppSizes.podiumThirdHeight;
     final podiumColor = isFirst
         ? AppColors.primary
         : rank == 2
         ? AppColors.quizCoverSurface
         : AppColors.heroPeach;
     final ringColor = isFirst
-        ? const Color(0xFFFACC15)
+        ? AppColors.goldRing
         : rank == 2
-        ? AppColors.primaryBorder
-        : AppColors.answerYellow;
+        ? AppColors.silverRing
+        : AppColors.bronzeRing;
     final badgeGradient = isFirst
-        ? const [Color(0xFFFFD700), Color(0xFFFFA500)]
+        ? AppGradients.medalGold
         : rank == 2
-        ? const [Color(0xFFC0C0C0), Color(0xFF808080)]
-        : const [Color(0xFFCD7F32), Color(0xFF825100)];
+        ? AppGradients.medalSilver
+        : AppGradients.medalBronze;
 
     return Column(
       mainAxisAlignment: MainAxisAlignment.end,
@@ -653,7 +615,10 @@ class _PodiumItem extends StatelessWidget {
               padding: const EdgeInsets.all(AppSpacing.space1),
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                border: Border.all(color: ringColor, width: AppBorderWidth.heavy),
+                border: Border.all(
+                  color: ringColor,
+                  width: AppBorderWidth.heavy,
+                ),
                 boxShadow: AppShadows.softCard,
               ),
               child: Container(
@@ -664,10 +629,10 @@ class _PodiumItem extends StatelessWidget {
                 child: Center(
                   child: Text(
                     entry.initials,
-                    style: GoogleFonts.plusJakartaSans(
+                    style: AppTextStyles.labelStrong.copyWith(
                       color: AppColors.primary,
-                      fontSize: isFirst ? 28 : 18,
-                      fontWeight: FontWeight.w700,
+                      fontSize: isFirst ? 28 : AppFontSize.title,
+                      fontWeight: AppFontWeight.bold,
                     ),
                   ),
                 ),
@@ -680,17 +645,17 @@ class _PodiumItem extends StatelessWidget {
                 width: badgeSize,
                 height: badgeSize,
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(colors: badgeGradient),
+                  gradient: badgeGradient,
                   shape: BoxShape.circle,
                   boxShadow: AppShadows.layeredCard,
                 ),
                 child: Center(
                   child: Text(
                     '$rank',
-                    style: GoogleFonts.plusJakartaSans(
+                    style: AppTextStyles.labelStrong.copyWith(
                       color: AppColors.textOnPrimary,
-                      fontSize: isFirst ? 24 : 14,
-                      fontWeight: FontWeight.w700,
+                      fontSize: isFirst ? AppFontSize.display : AppFontSize.bodyLarge,
+                      fontWeight: AppFontWeight.bold,
                     ),
                   ),
                 ),
@@ -700,26 +665,25 @@ class _PodiumItem extends StatelessWidget {
         ),
         const SizedBox(height: AppSpacing.space3),
         SizedBox(
-          width: 90,
+          width: AppSizes.podiumNameWidth,
           child: Text(
             entry.name,
             textAlign: TextAlign.center,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: GoogleFonts.montserrat(
-              color: AppColors.textPrimary,
-              fontSize: isFirst ? 24 : 14,
-              fontWeight: FontWeight.w700,
+            style: AppTextStyles.display2.copyWith(
+              fontSize: isFirst ? AppFontSize.display : AppFontSize.bodyLarge,
+              fontWeight: AppFontWeight.bold,
               height: 1.33,
             ),
           ),
         ),
         Text(
           entry.pointsLabel.replaceAll(' Pts', ''),
-          style: GoogleFonts.plusJakartaSans(
+          style: AppTextStyles.labelStrong.copyWith(
             color: AppColors.primary,
-            fontSize: isFirst ? 18 : 12,
-            fontWeight: FontWeight.w700,
+            fontSize: isFirst ? AppFontSize.title : AppFontSize.small,
+            fontWeight: AppFontWeight.bold,
           ),
         ),
         const SizedBox(height: AppSpacing.space2),
@@ -728,10 +692,7 @@ class _PodiumItem extends StatelessWidget {
           height: podiumHeight,
           decoration: BoxDecoration(
             color: podiumColor,
-            borderRadius: const BorderRadius.only(
-              topLeft: Radius.circular(32),
-              topRight: Radius.circular(32),
-            ),
+            borderRadius: AppRadius.podiumTop,
             boxShadow: isFirst ? AppShadows.softCard : null,
           ),
         ),
@@ -760,7 +721,10 @@ class _RankListItem extends StatelessWidget {
         borderRadius: RewardTheme.historyCardRadius,
         boxShadow: RewardTheme.historyCardShadow,
         border: isMe
-            ? Border.all(color: AppColors.primaryBorder, width: 1.5)
+            ? Border.all(
+                color: AppColors.primaryBorder,
+                width: AppBorderWidth.thin,
+              )
             : null,
       ),
       child: Row(
@@ -780,12 +744,12 @@ class _RankListItem extends StatelessWidget {
                 child: Center(
                   child: Text(
                     entry.initials,
-                    style: GoogleFonts.plusJakartaSans(
+                    style: AppTextStyles.labelStrong.copyWith(
                       color: isMe
                           ? AppColors.primary
                           : RewardTheme.historyIconColor(1),
-                      fontSize: 14,
-                      fontWeight: FontWeight.w700,
+                      fontSize: AppFontSize.bodyLarge,
+                      fontWeight: AppFontWeight.bold,
                     ),
                   ),
                 ),
@@ -794,7 +758,10 @@ class _RankListItem extends StatelessWidget {
                 right: -4,
                 bottom: -4,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 5,
+                    vertical: 1,
+                  ),
                   decoration: BoxDecoration(
                     color: isMe ? AppColors.primary : AppColors.rewardAmountInk,
                     borderRadius: AppRadius.pill,
@@ -802,11 +769,7 @@ class _RankListItem extends StatelessWidget {
                   ),
                   child: Text(
                     '#${entry.rank}',
-                    style: GoogleFonts.montserrat(
-                      color: Colors.white,
-                      fontSize: 9,
-                      fontWeight: FontWeight.w700,
-                    ),
+                    style: AppTextStyles.rankingBadge,
                   ),
                 ),
               ),
@@ -866,7 +829,7 @@ class _EmptyHint extends StatelessWidget {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(AppSpacing.space8),
-      decoration: ShapeDecoration(
+      decoration: const ShapeDecoration(
         color: AppColors.pureSurface,
         shape: RoundedRectangleBorder(borderRadius: AppRadius.lg),
         shadows: AppShadows.navBar,
@@ -885,11 +848,7 @@ class _EmptyHint extends StatelessWidget {
             isLocationDisabled
                 ? 'Lokasi Belum Diaktifkan'
                 : 'Belum ada data peringkat wilayah.',
-            style: GoogleFonts.plusJakartaSans(
-              color: AppColors.textPrimary,
-              fontSize: 14,
-              fontWeight: FontWeight.w700,
-            ),
+            style: AppTextStyles.labelStrong,
           ),
           const SizedBox(height: AppSpacing.space1),
           Text(
@@ -897,10 +856,9 @@ class _EmptyHint extends StatelessWidget {
                 ? 'Aktifkan lokasi perangkat untuk melihat peringkat pemain di sekitarmu. Sekali aktif, akan berlaku hingga kamu matikan sendiri.'
                 : 'Belum ada pemain yang terdaftar pada wilayah ini.',
             textAlign: TextAlign.center,
-            style: GoogleFonts.plusJakartaSans(
+            style: AppTextStyles.bodySmall.copyWith(
               color: AppColors.textMuted,
-              fontSize: 12,
-              fontWeight: FontWeight.w400,
+              fontWeight: AppFontWeight.regular,
             ),
           ),
           if (isLocationDisabled && onEnable != null) ...[
@@ -911,16 +869,18 @@ class _EmptyHint extends StatelessWidget {
               label: const Text('Aktifkan Lokasi'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: AppRadius.pill),
-                elevation: 0,
+                foregroundColor: AppColors.pureSurface,
+                shape: const RoundedRectangleBorder(
+                  borderRadius: AppRadius.pill,
+                ),
+                elevation: AppElevation.none,
                 padding: const EdgeInsets.symmetric(
                   horizontal: AppSpacing.space6,
                   vertical: AppSpacing.space3,
                 ),
-                textStyle: GoogleFonts.plusJakartaSans(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
+                textStyle: AppTextStyles.labelStrongSmall.copyWith(
+                  color: AppColors.pureSurface,
+                  fontWeight: AppFontWeight.bold,
                 ),
               ),
             ),

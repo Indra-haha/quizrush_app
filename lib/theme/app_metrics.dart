@@ -47,6 +47,15 @@ class AppRadius {
   static const xxl = BorderRadius.all(Radius.circular(32));
   static const pill = BorderRadius.all(Radius.circular(999));
 
+  /// Sudut atas podium leaderboard.
+  static const podiumTop = BorderRadius.only(
+    topLeft: Radius.circular(32),
+    topRight: Radius.circular(32),
+  );
+
+  /// Sheet modal: sudut atas membulat.
+  static const sheet = BorderRadius.vertical(top: Radius.circular(24));
+
   /// Kartu riwayat poin pada halaman Reward.
   static const rewardHistory = BorderRadius.all(Radius.circular(48));
 
@@ -127,4 +136,19 @@ class AppSizes {
   static const profileToggleWidth = 56.0;
   static const profileToggleHeight = 32.0;
   static const profileToggleKnob = 24.0;
+
+  /// Handle indikator pada modal sheet.
+  static const sheetHandleWidth = 40.0;
+  static const sheetHandleHeight = 4.0;
+
+  /// Ukuran podium leaderboard.
+  static const podiumFirstAvatar = 96.0;
+  static const podiumOtherAvatar = 64.0;
+  static const podiumFirstBadge = 40.0;
+  static const podiumOtherBadge = 32.0;
+  static const podiumFirstHeight = 136.0;
+  static const podiumSecondHeight = 104.0;
+  static const podiumThirdHeight = 72.0;
+  static const podiumRowHeight = 320.0;
+  static const podiumNameWidth = 90.0;
 }

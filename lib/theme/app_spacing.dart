@@ -28,6 +28,8 @@ class AppSpacing {
   static const fabClearance = 96.0;
   static const scrollClearance = 112.0;
   static const scrollClearanceLarge = 160.0;
+  static const bottomListClearance = 80.0;
+  static const podiumTopGap = 60.0;
 
   // --- semantic aliases ---
   static const xxs = space2;

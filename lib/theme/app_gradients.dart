@@ -54,4 +54,25 @@ class AppGradients {
     end: Alignment(0.5, 1.0),
     colors: [AppColors.primary, AppColors.gradientEnd],
   );
+
+  /// Gradien medali emas (peringkat 1).
+  static const medalGold = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [AppColors.medalGoldStart, AppColors.medalGoldEnd],
+  );
+
+  /// Gradien medali perak (peringkat 2).
+  static const medalSilver = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [AppColors.medalSilverStart, AppColors.medalSilverEnd],
+  );
+
+  /// Gradien medali perunggu (peringkat 3).
+  static const medalBronze = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [AppColors.medalBronzeStart, AppColors.medalBronzeEnd],
+  );
 }

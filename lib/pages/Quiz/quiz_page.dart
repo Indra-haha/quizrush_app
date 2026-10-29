@@ -292,9 +292,9 @@ class _QuizPageState extends State<QuizPage> {
       children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(
-            AppSpacing.space9,
             AppSpacing.space8,
-            AppSpacing.space9,
+            AppSpacing.space8,
+            AppSpacing.space8,
             AppSpacing.space2,
           ),
           child: QuizSearchField(

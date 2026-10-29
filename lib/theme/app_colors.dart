@@ -91,6 +91,17 @@ class AppColors {
   static const endedTint = Color(0xFFE0E0FF);
   static const endedInk = Color(0xFF444557);
 
+  // Medali & Ranking
+  static const goldRing = Color(0xFFFACC15);
+  static const silverRing = primaryBorder;
+  static const bronzeRing = answerYellow;
+  static const medalGoldStart = Color(0xFFFFD700);
+  static const medalGoldEnd = Color(0xFFFFA500);
+  static const medalSilverStart = Color(0xFFC0C0C0);
+  static const medalSilverEnd = Color(0xFF808080);
+  static const medalBronzeStart = Color(0xFFCD7F32);
+  static const medalBronzeEnd = Color(0xFF825100);
+
   // Text
   static const textPrimary = Color(0xFF111C2D);
   static const textSecondary = Color(0xFF464554);

@@ -504,4 +504,35 @@ class AppTextStyles {
     fontWeight: FontWeight.w400,
     height: 1.33,
   );
+
+  /// Judul section/halaman peringkat (Leaderboard Wilayah).
+  static final rankingTitle = GoogleFonts.montserrat(
+    color: AppColors.textPrimary,
+    fontSize: 24,
+    fontWeight: FontWeight.w700,
+    height: 1.42,
+  );
+
+  /// Top 3 podium heading.
+  static final rankingTopHeading = GoogleFonts.montserrat(
+    color: AppColors.brandIndigo,
+    fontSize: 24,
+    fontWeight: FontWeight.w700,
+    height: 1.33,
+  );
+
+  /// Judul bagian list peringkat (Peringkat 4 - 10).
+  static final rankingSectionHeading = GoogleFonts.montserrat(
+    color: AppColors.textPrimary,
+    fontSize: 18,
+    fontWeight: FontWeight.w700,
+    height: 1.5,
+  );
+
+  /// Label badge peringkat (#4, #5, dst).
+  static final rankingBadge = GoogleFonts.montserrat(
+    color: AppColors.textOnPrimary,
+    fontSize: 9,
+    fontWeight: FontWeight.w700,
+  );
 }
