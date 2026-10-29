@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 
 import '../../helpers/pin.dart';
 import '../../helpers/room_launcher.dart';
@@ -81,7 +82,15 @@ class _QuizPageState extends State<QuizPage> {
   }
 
   void _onActiveRoomChanged() {
-    if (mounted) setState(() {});
+    if (!mounted) return;
+    // Avoid calling setState during the build phase.
+    if (WidgetsBinding.instance?.schedulerPhase != SchedulerPhase.idle) {
+      WidgetsBinding.instance?.addPostFrameCallback((_) {
+        if (mounted) setState(() {});
+      });
+    } else {
+      setState(() {});
+    }
   }
 
   /// Daftar quiz dibaca dari cache lokal; server hanya dihubungi kalau cache

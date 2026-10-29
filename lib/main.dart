@@ -27,7 +27,7 @@ class QuizApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Aplikasi Quiz',
+      title: 'Quiz',
       debugShowCheckedModeBanner: false,
       navigatorKey: AppNavigator.key,
       scaffoldMessengerKey: AppNavigator.messengerKey,
