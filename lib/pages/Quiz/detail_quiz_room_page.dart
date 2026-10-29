@@ -6,7 +6,6 @@ import '../../services/active_room_service.dart';
 import '../../services/api/api_client.dart';
 import '../../services/session_service.dart';
 import '../../theme/app_theme.dart';
-import '../../widgets/app_header_bar.dart';
 import '../../widgets/app_header_bar_with_actions.dart';
 import '../../widgets/app_snackbar.dart';
 import '../../widgets/empty_state_view.dart';

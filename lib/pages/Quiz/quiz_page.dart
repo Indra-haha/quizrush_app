@@ -1,8 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/scheduler.dart';
-
 import '../../helpers/pin.dart';
 import '../../helpers/room_launcher.dart';
 import '../../models/quiz.dart';

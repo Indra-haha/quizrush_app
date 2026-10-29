@@ -382,21 +382,6 @@ class _WaitingRoomPageState extends State<WaitingRoomPage> {
     return from;
   }
 
-  void _sendCheer(String emoji, Offset position) {
-    HapticFeedback.lightImpact();
-
-    // Optimistic echo: server tidak membalikkan `broadcast` ke pengirim, jadi
-    // tampilkan reaksi sendiri secara lokal agar terasa instan (termasuk host).
-    ReactionOverlay.show(context, emoji, x: position.dx);
-
-    final socket = _socket;
-    if (socket == null || _status != RoomSocketStatus.connected) {
-      AppSnackBar.show(context, 'Menunggu koneksi ke room...');
-      return;
-    }
-    socket.sendReaction(emoji);
-  }
-
   Future<void> _copyPin() async {
     final kode = widget.room.kode;
     if (kode.isEmpty) return;

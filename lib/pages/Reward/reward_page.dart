@@ -275,7 +275,10 @@ class _RewardPageState extends State<RewardPage> {
   // ============================================================
 
   Widget _buildRewardTab({required bool isPointTab}) {
-    if (_loading && _points == null && _coins.isEmpty && _walletHistory.isEmpty) {
+    if (_loading &&
+        _points == null &&
+        _coins.isEmpty &&
+        _walletHistory.isEmpty) {
       return const Center(child: CircularProgressIndicator());
     }
 
@@ -342,7 +345,7 @@ class _RewardPageState extends State<RewardPage> {
 
     final String value = isPointTab
         ? formatPoints(points)
-        : formatMoney(saldo.toDouble(), 'IDR', convertTo: _selectedCurrency);
+        : formatMoney(saldo.toDouble(), 'IDR', _selectedCurrency);
 
     final String unit = isPointTab ? 'PTS' : _selectedCurrency;
 
@@ -375,43 +378,13 @@ class _RewardPageState extends State<RewardPage> {
           ),
 
           Column(
-            crossAxisAlignment: CrossAxisAlignment.e,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              if (isPointTab)
-                Text(title, style: RewardTextStyles.heroLabel)
-              else
-                Text(title, style: RewardTextStyles.heroLabel),
-                DropdownButtonHideUnderline(
-                  child: DropdownButton<String>(
-                    value: _selectedCurrency,
-                    dropdownColor: AppColors.primaryDark,
-                    borderRadius: BorderRadius.circular(12),
-                    icon: const Icon(
-                      Icons.keyboard_arrow_down_rounded,
-                      color: AppColors.textOnPrimary,
-                      size: 20,
-                    ),
-                    isDense: true,
-                    style: RewardTextStyles.heroLabel,
-                    items: supportedCurrencies.map((code) {
-                      return DropdownMenuItem<String>(
-                        value: code,
-                        child: Text(code, style: RewardTextStyles.heroLabel),
-                      );
-                    }).toList(),
-                    onChanged: (newCurrency) {
-                      if (newCurrency == null) return;
-                      setState(() {
-                        _selectedCurrency = newCurrency;
-                      });
-                    },
-                  ),
-                ),
-
+              Text(title, style: RewardTextStyles.heroLabel),
               const SizedBox(height: AppSpacing.space6),
-
               Row(
-                crossAxisAlignment: CrossAxisAlignment.baseline,
+                mainAxisAlignment: !isPointTab ? MainAxisAlignment.spaceBetween : MainAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.center,
                 textBaseline: TextBaseline.alphabetic,
                 children: [
                   Flexible(
@@ -422,10 +395,39 @@ class _RewardPageState extends State<RewardPage> {
                       style: RewardTextStyles.heroValue,
                     ),
                   ),
-
                   const SizedBox(width: AppSpacing.space4),
-
-                  Text(unit, style: RewardTextStyles.heroUnit),
+                  if (isPointTab)
+                    Text(unit, style: RewardTextStyles.heroUnit)
+                  else
+                    DropdownButtonHideUnderline(
+                      child: DropdownButton<String>(
+                        value: _selectedCurrency,
+                        dropdownColor: AppColors.primaryDark,
+                        borderRadius: BorderRadius.circular(12),
+                        icon: const Icon(
+                          Icons.keyboard_arrow_down_rounded,
+                          color: AppColors.textOnPrimary,
+                          size: 20,
+                        ),
+                        isDense: true,
+                        style: RewardTextStyles.heroLabel,
+                        items: supportedCurrencies.map((code) {
+                          return DropdownMenuItem<String>(
+                            value: code,
+                            child: Text(
+                              code,
+                              style: RewardTextStyles.heroLabel,
+                            ),
+                          );
+                        }).toList(),
+                        onChanged: (newCurrency) {
+                          if (newCurrency == null) return;
+                          setState(() {
+                            _selectedCurrency = newCurrency;
+                          });
+                        },
+                      ),
+                    ),
                 ],
               ),
 
@@ -649,7 +651,6 @@ class _RewardPageState extends State<RewardPage> {
     setState(() {
       _conversionResultRupiah = _conversionRupiah;
     });
-
   }
 
   void _confirmClaimPoints(int points) {
@@ -689,7 +690,7 @@ class _RewardPageState extends State<RewardPage> {
 
     setState(() => _isActionInProgress = true);
     final rupiah = (points * _koinToRupiah).toDouble();
-    
+
     try {
       final res = await _walletService.claim(
         token: token,
@@ -908,8 +909,8 @@ class _RewardPageState extends State<RewardPage> {
     final String title = isWithdraw
         ? 'Tarik Saldo Rupiah'
         : (item.pointsClaimed > 0
-            ? 'Klaim Poin (${formatPoints(item.pointsClaimed)} Pts)'
-            : 'Penambahan Saldo');
+              ? 'Klaim Poin (${formatPoints(item.pointsClaimed)} Pts)'
+              : 'Penambahan Saldo');
 
     final String amount = isWithdraw
         ? '-${formatRupiah(item.rupiahValue.abs().round())}'
@@ -944,15 +945,8 @@ class _RewardPageState extends State<RewardPage> {
           Container(
             width: RewardTheme.iconCircleSize,
             height: RewardTheme.iconCircleSize,
-            decoration: BoxDecoration(
-              color: iconBg,
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              iconData,
-              size: RewardTheme.iconSize,
-              color: iconColor,
-            ),
+            decoration: BoxDecoration(color: iconBg, shape: BoxShape.circle),
+            child: Icon(iconData, size: RewardTheme.iconSize, color: iconColor),
           ),
 
           const SizedBox(width: RewardTheme.contentGap),
