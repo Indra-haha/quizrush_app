@@ -291,16 +291,17 @@ class _QuizPageState extends State<QuizPage> {
     return Column(
       children: [
         Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.space9,
-            vertical: AppSpacing.space8,
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.space9,
+            AppSpacing.space4,
+            AppSpacing.space9,
+            AppSpacing.space2,
           ),
           child: QuizSearchField(
             controller: _searchController,
             onChanged: _onSearchChanged,
           ),
         ),
-        const SizedBox(height: AppSpacing.space4),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: AppSpacing.space9),
           child: CacheInfoBar(
@@ -310,7 +311,12 @@ class _QuizPageState extends State<QuizPage> {
         ),
         const SizedBox(height: AppSpacing.space4),
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.space9),
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.space9,
+            AppSpacing.space4,
+            AppSpacing.space9,
+            AppSpacing.none,
+          ),
           child: StatusFilter<String>(
             values: _statuses,
             selected: _selectedStatus,
