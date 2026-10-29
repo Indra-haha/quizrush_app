@@ -7,7 +7,7 @@
 ///
 /// ```dart
 /// convertMoney(162500, 'IDR', 'USD'); // 10.0
-/// formatMoney(10, 'USD');             // '$ 10,00'
+/// formatMoney(10, 'USD');             // '\$ 10,00'
 /// ```
 library;
 
@@ -93,29 +93,44 @@ double convertMoney(double value, String from, String to) {
 /// formatMoney(284500, 'IDR'); // 'Rp 284.500'
 /// formatMoney(18.5, 'USD');   // '\$ 18,50'
 /// ```
-String formatMoney(double value, String currency) {
+String formatMoney(double value, String currency, {String? convertTo, bool async = false}) {
+  // If a target currency is provided, convert the amount first.
+  if (convertTo != null) {
+    final fromNorm = _normalize(currency);
+    final toNorm = _normalize(convertTo);
+    final converted = convertMoney(value, fromNorm, toNorm);
+    final decimals = _decimals[toNorm] ?? 2;
+    final negative = converted < 0;
+    final fixed = converted.abs().toStringAsFixed(decimals);
+    final parts = fixed.split('.');
+    final digits = parts[0];
+    final buffer = StringBuffer();
+    for (var i = 0; i < digits.length; i++) {
+      if (i > 0 && (digits.length - i) % 3 == 0) buffer.write('.');
+      buffer.write(digits[i]);
+    }
+    final grouped = parts.length > 1 && decimals > 0 ? '$buffer,${parts[1]}' : buffer.toString();
+    final symbol = _symbols[toNorm] ?? toNorm;
+    return '${negative ? '-' : ''}$symbol $grouped';
+  }
+
+  // Original behavior: format without conversion.
   final normalized = _normalize(currency);
   final rate = _ratesToIdr[normalized];
   if (rate == null) {
     throw ArgumentError.value(currency, 'currency', 'Mata uang tidak didukung');
   }
-
   final decimals = _decimals[normalized] ?? 2;
   final negative = value < 0;
   final fixed = value.abs().toStringAsFixed(decimals);
   final parts = fixed.split('.');
   final digits = parts[0];
-
   final buffer = StringBuffer();
   for (var i = 0; i < digits.length; i++) {
     if (i > 0 && (digits.length - i) % 3 == 0) buffer.write('.');
     buffer.write(digits[i]);
   }
-
-  final grouped = parts.length > 1 && decimals > 0
-      ? '$buffer,${parts[1]}'
-      : buffer.toString();
-
+  final grouped = parts.length > 1 && decimals > 0 ? '$buffer,${parts[1]}' : buffer.toString();
   final symbol = _symbols[normalized] ?? normalized;
   return '${negative ? '-' : ''}$symbol $grouped';
 }

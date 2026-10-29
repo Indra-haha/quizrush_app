@@ -340,13 +340,9 @@ class _RewardPageState extends State<RewardPage> {
 
     final String title = isPointTab ? 'TOTAL POIN QUIZRUSH' : 'TOTAL RUPIAH';
 
-    final double convertedSaldo = isPointTab
-        ? 0.0
-        : convertMoney(saldo.toDouble(), 'IDR', _selectedCurrency);
-
     final String value = isPointTab
         ? formatPoints(points)
-        : formatMoney(convertedSaldo, _selectedCurrency);
+        : formatMoney(saldo.toDouble(), 'IDR', convertTo: _selectedCurrency);
 
     final String unit = isPointTab ? 'PTS' : _selectedCurrency;
 
