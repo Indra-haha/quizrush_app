@@ -6,6 +6,7 @@ import '../helpers/format.dart';
 import '../models/live_game.dart';
 import '../theme/app_theme.dart';
 import 'app_pill.dart';
+import 'quiz_countdown_dial.dart';
 
 /// Papan jeda antar soal: ringkasan hasil satu ronde, kartu peringkat diri
 /// sendiri, dan daftar Top 5 peserta, lengkap dengan hitung mundur menuju soal
@@ -84,8 +85,13 @@ class _LeaderboardPauseViewState extends State<LeaderboardPauseView> {
           _topHeader(),
           const SizedBox(height: AppSpacing.space8),
           _headline(),
-          const SizedBox(height: AppSpacing.space6),
-          _countdownPill(),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: AppSpacing.space6),
+            child: Center(
+              child: QuizCountdownDial(seconds: _secondsLeft),
+            ),
+          ),
+          _countdownLabel(),
           const SizedBox(height: AppSpacing.space8),
           if (!widget.isHost) ...[
             _selfCard(),
@@ -141,19 +147,19 @@ class _LeaderboardPauseViewState extends State<LeaderboardPauseView> {
     );
   }
 
-  Widget _countdownPill() {
+  Widget _countdownLabel() {
     final label = _isLast
         ? 'Menyiapkan hasil akhir...'
-        : '$_secondsLeft dtk menuju soal ${widget.round + 2}';
+        : 'Menuju Soal ${widget.round + 2}';
     return Center(
       child: AppPill(
         text: label,
         icon: Icons.timer_outlined,
-        background: AppColors.primary,
-        foreground: AppColors.textOnPrimary,
+        background: AppColors.primarySoft,
+        foreground: AppColors.primaryDark,
         padding: const EdgeInsets.symmetric(
           horizontal: AppSpacing.space6,
-          vertical: AppSpacing.space4,
+          vertical: AppSpacing.space3,
         ),
       ),
     );
