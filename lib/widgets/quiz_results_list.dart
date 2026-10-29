@@ -35,23 +35,16 @@ class QuizResultsList extends StatelessWidget {
     if (pinProgress != null) return EmptyStateView.searching(pinProgress!);
 
     if (quizzes.isEmpty) {
-      if (query.isEmpty) {
-        return ListView(
-          padding: const EdgeInsets.only(
-            top: AppSpacing.space4,
-            bottom: AppSpacing.scrollClearance,
-          ),
-          children: [EmptyStateView.empty()],
-        );
-      } else {
-        return ListView(
-          padding: const EdgeInsets.only(
-            top: AppSpacing.space4,
-            bottom: AppSpacing.scrollClearance,
-          ),
-          children: [EmptyStateView.noResult(query)],
-        );
-      }
+      final emptyWidget = query.isEmpty
+          ? const EmptyStateView.empty()
+          : EmptyStateView.noResult(query);
+      return Padding(
+        padding: const EdgeInsets.only(
+          top: AppSpacing.space4,
+          bottom: AppSpacing.scrollClearance,
+        ),
+        child: emptyWidget,
+      );
     }
 
     return ListView(

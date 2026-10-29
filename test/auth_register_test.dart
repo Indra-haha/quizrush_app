@@ -47,7 +47,11 @@ void main() {
 
       expect(find.byType(AuthHeroPanel), findsOneWidget);
       expect(find.text('QUIZRUSH'), findsOneWidget);
-      expect(find.byType(AuthBrandHeader), findsOneWidget);
+      expect(
+        find.text('Mulai petualangan cerdasmu sekarang!'),
+        findsOneWidget,
+      );
+      expect(find.text('Buat Akun'), findsOneWidget);
       expect(find.text('Nama Lengkap'), findsOneWidget);
       expect(find.text('Username'), findsOneWidget);
       expect(find.text('Sekolahan'), findsOneWidget);

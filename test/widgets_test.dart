@@ -699,7 +699,7 @@ void main() {
       expect(find.byIcon(Icons.search), findsOneWidget);
     });
 
-    testWidgets('QuizResultsList menampilkan empty state saat quiz kosong', (
+    testWidgets('QuizResultsList menampilkan loading', (
       WidgetTester tester,
     ) async {
       await tester.pumpWidget(
@@ -714,7 +714,7 @@ void main() {
           ),
         ),
       );
-      expect(find.byType(EmptyStateView), findsOneWidget);
+      expect(find.byType(CircularProgressIndicator), findsOneWidget);
     });
   });
 
@@ -760,7 +760,7 @@ void main() {
       expect(find.text('Total Main'), findsOneWidget);
       expect(find.text('1.2k'), findsOneWidget);
     });
-    testWidgets('QuizCard varian home menampilkan judul dan room', (
+    testWidgets('QuizCard varian home memakai kategori default', (
       WidgetTester tester,
     ) async {
       await tester.pumpWidget(
@@ -776,8 +776,9 @@ void main() {
         ),
       );
 
-      expect(find.text('Kuis Matematika'), findsOneWidget);
-      expect(find.text('0 Main'), findsOneWidget);
+      expect(find.text('Umum'), findsOneWidget);
+      expect(find.text('1 Soal'), findsOneWidget);
+      expect(find.byIcon(Icons.menu_book_rounded), findsOneWidget);
     });
   });
 

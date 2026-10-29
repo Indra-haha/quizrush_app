@@ -85,17 +85,16 @@ class _DetailQuizRoomPageState extends State<DetailQuizRoomPage> {
       if (e.statusCode == 401) {
         await SessionService.instance.clear();
         ActiveRoomService.instance.clear();
-        if (!context.mounted) return;
+        if (!mounted) return;
         LoginRedirect.go(context);
         return;
       }
-      if (!context.mounted) return;
       AppSnackBar.error(
         context,
         e.message.isNotEmpty ? e.message : 'Gagal masuk ke room.',
       );
     } catch (_) {
-      if (!context.mounted) return;
+      if (!mounted) return;
       AppSnackBar.error(context, 'Tidak bisa terhubung ke server. Coba lagi.');
     } finally {
       if (mounted) setState(() => _joining = false);

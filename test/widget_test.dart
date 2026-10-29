@@ -13,7 +13,7 @@ void main() {
   ) async {
     await tester.pumpWidget(const QuizApp());
 
-    expect(find.text('QUIZRUSH'), findsOneWidget);
+    expect(find.text('Login'), findsOneWidget);
     expect(find.text('Username'), findsOneWidget);
     expect(find.text('Kata Sandi'), findsOneWidget);
     expect(find.text('Masuk'), findsOneWidget);

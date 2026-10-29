@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:sensors_plus/sensors_plus.dart';
 
+import '../../services/notification_service.dart';
 import '../../services/profile_settings_service.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/app_header_bar_with_actions.dart';
@@ -80,9 +81,11 @@ class _SettingsState extends State<Settings> {
   // Pembacaan sensor terkini
   double _currentAccX = 0.0;
   double _currentAccY = 0.0;
+  double _currentAccZ = 0.0;
 
   double _currentGyroX = 0.0;
   double _currentGyroY = 0.0;
+  double _currentGyroZ = 0.0;
 
   // State debounce & netral
   bool _isNeutral = true;
@@ -198,6 +201,7 @@ class _SettingsState extends State<Settings> {
 
           _currentAccX = event.x;
           _currentAccY = event.y;
+          _currentAccZ = event.z;
 
           // 5 sampel awal dijadikan posisi awal (baseline)
           if (!_hasBaseline) {
@@ -271,6 +275,7 @@ class _SettingsState extends State<Settings> {
 
               _currentGyroX = event.x;
               _currentGyroY = event.y;
+              _currentGyroZ = event.z;
 
               if (_hasBaseline) {
                 _evaluateMotionAndTilt();
@@ -421,8 +426,19 @@ class _SettingsState extends State<Settings> {
       _selectedTilt = index;
     });
 
+    final answerText = (index >= 0 && index < _tiltControllers.length)
+        ? _tiltControllers[index].text.trim()
+        : 'Opsi ${index + 1}';
+    final displayText = answerText.isNotEmpty
+        ? answerText
+        : 'Opsi ${index + 1}';
+
     // Haptic feedback
     HapticFeedback.mediumImpact();
+
+    // Notifikasi visual in-app (floating SnackBar)
+    final color = CreateQuizQuestionStyles
+        .answerColors[index % CreateQuizQuestionStyles.answerColors.length];
   }
 
   String _getDirectionName(int index) {
