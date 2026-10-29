@@ -7,6 +7,7 @@ import '../../services/api/api_client.dart';
 import '../../services/session_service.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/app_header_bar.dart';
+import '../../widgets/app_header_bar_with_actions.dart';
 import '../../widgets/app_snackbar.dart';
 import '../../widgets/empty_state_view.dart';
 import '../../widgets/quiz_detail_hero.dart';
@@ -31,14 +32,17 @@ class _DetailQuizRoomPageState extends State<DetailQuizRoomPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.surface,
-      appBar: AppHeaderBar(
+      appBar: AppHeaderBarWithActions(
         title: 'Detail Quiz',
+        titleStyle: CreateQuizTextStyles.headerTitle,
+        backgroundColor: CreateQuizPageStyles.headerBackground,
+        elevation: CreateQuizPageStyles.headerElevation,
+        shadowColor: CreateQuizPageStyles.headerShadowColor,
         leading: IconButton(
           tooltip: 'Kembali',
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () => Navigator.of(context).pop(false),
           icon: const Icon(Icons.arrow_back),
-        ),
-      ),
+        )),
       body: _buildBody(context),
     );
   }

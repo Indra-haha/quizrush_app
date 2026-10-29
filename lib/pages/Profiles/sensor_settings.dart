@@ -5,7 +5,9 @@ import 'package:flutter/services.dart';
 
 import '../../helpers/gyro_tilt_service.dart';
 import '../../helpers/shake_service.dart';
+import '../../services/api/location_service.dart';
 import '../../services/profile_settings_service.dart';
+import '../../services/session_service.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/app_header_bar_with_actions.dart';
 import '../../widgets/quiz_question_editor.dart';
@@ -47,6 +49,8 @@ class Settings extends StatefulWidget {
 class _SettingsState extends State<Settings> {
   bool _accelerometerEnabled = true;
   bool _gyroscopeEnabled = true;
+  bool _locationEnabled = false;
+  bool _locationBusy = false;
   int _selectedTilt = 1;
 
   final List<TextEditingController> _tiltControllers = List.generate(
@@ -75,11 +79,13 @@ class _SettingsState extends State<Settings> {
     final service = ProfileSettingsService.instance;
     final acc = await service.accelerometerEnabled();
     final gyro = await service.gyroscopeEnabled();
+    final loc = await LocationService.instance.isEnabled();
     await _gyroService.init();
     if (!mounted) return;
     setState(() {
       _accelerometerEnabled = acc;
       _gyroscopeEnabled = gyro;
+      _locationEnabled = loc;
     });
 
     if (acc) {
@@ -108,6 +114,83 @@ class _SettingsState extends State<Settings> {
       _startGyroscopeDetection(notifyOnReady: true);
     } else {
       _stopGyroscopeDetection();
+    }
+  }
+
+  Future<void> _toggleLocation(bool value) async {
+    if (!value) {
+      setState(() => _locationEnabled = false);
+      await LocationService.instance.setEnabled(false);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Lokasi wilayah dinonaktifkan.'),
+          backgroundColor: AppColors.primary,
+          behavior: SnackBarBehavior.floating,
+          duration: const Duration(milliseconds: 1500),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+        ),
+      );
+      return;
+    }
+
+    setState(() => _locationBusy = true);
+    try {
+      final access = await LocationService.ensurePermission();
+      if (!mounted) return;
+      if (access != LocationAccess.granted) {
+        if (access == LocationAccess.serviceDisabled) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text(
+                'GPS tidak aktif. Aktifkan layanan lokasi perangkat.',
+              ),
+              backgroundColor: AppColors.error,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+          );
+        } else if (access == LocationAccess.deniedForever) {
+          LocationService.openSettings();
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text('Izin lokasi ditolak.'),
+              backgroundColor: AppColors.error,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+          );
+        }
+        return;
+      }
+
+      final token = await SessionService.instance.getToken();
+      if (token != null && token.isNotEmpty) {
+        await LocationService.instance.locate(token: token);
+      }
+      await LocationService.instance.setEnabled(true);
+      if (!mounted) return;
+      setState(() => _locationEnabled = true);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Lokasi wilayah berhasil diaktifkan!'),
+          backgroundColor: AppColors.primary,
+          behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 2),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _locationBusy = false);
     }
   }
 
@@ -335,6 +418,12 @@ class _SettingsState extends State<Settings> {
                 tiltControllers: _tiltControllers,
                 onRecalibrate: _recalibrateInitialPosition,
                 isCalibrated: _gyroService.hasBaseline,
+              ),
+              const SizedBox(height: AppSpacing.space8),
+              _LocationCard(
+                enabled: _locationEnabled,
+                busy: _locationBusy,
+                onChanged: _toggleLocation,
               ),
             ],
           ),
@@ -636,6 +725,61 @@ class _GyroscopeCard extends StatelessWidget {
                     ],
                   ),
                 ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _LocationCard extends StatelessWidget {
+  final bool enabled;
+  final bool busy;
+  final ValueChanged<bool> onChanged;
+
+  const _LocationCard({
+    required this.enabled,
+    required this.busy,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      decoration: ProfileTheme.cardDecoration,
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.space8),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Expanded(
+                  child: Text(
+                    'Aktifkan\nLokasi (GPS)',
+                    style: AppTextStyles.heading6.copyWith(
+                      color: AppColors.textPrimary,
+                      height: 1.25,
+                    ),
+                  ),
+                ),
+                _SensorToggle(
+                  value: enabled,
+                  enabled: !busy,
+                  onChanged: onChanged,
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.space6),
+            Text(
+              'Gunakan sensor lokasi untuk menampilkan leaderboard peringkat wilayah (kecamatan, kota, provinsi). Sekali diaktifkan, lokasi akan tetap berlaku hingga dimatikan sendiri.',
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: AppColors.textSecondary,
+                height: 1.43,
               ),
             ),
           ],

@@ -890,5 +890,17 @@ void main() {
       expect(cached.kota.first.poin, 4890);
       expect(cached.provinsi.first.jarakMeter, 12500.0);
     });
+
+    test('isEnabled dan setEnabled mengontrol status aktif serta menghapus cache saat dinonaktifkan', () async {
+      final service = LocationService.instance;
+      expect(await service.isEnabled(), isFalse);
+
+      await service.setEnabled(true);
+      expect(await service.isEnabled(), isTrue);
+
+      await service.setEnabled(false);
+      expect(await service.isEnabled(), isFalse);
+      expect(await service.readCached(), isNull);
+    });
   });
 }

@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import '../../models/region_location.dart';
 import '../../models/region_ranking.dart';
 import '../../services/api/api_client.dart';
 import '../../services/api/location_service.dart';
 import '../../services/session_service.dart';
-import '../../theme/app_colors.dart' show AppColors;
-import '../../theme/app_spacing.dart';
+import '../../theme/app_theme.dart';
 import '../../widgets/app_header_bar_with_actions.dart';
 import '../../widgets/app_snackbar.dart';
 import '../../widgets/status_filter.dart';
@@ -27,21 +27,21 @@ class _RankingRegionPageState extends State<RankingRegionPage> {
   String _activeLevel = _levels.first;
   String _meUsername = '';
   bool _locating = false;
-  bool _opened = false;
   final PageController _pageController = PageController();
 
   @override
   void initState() {
     super.initState();
     _loadMe();
-    _loadCached();
-    if (widget.isActive) _onOpened();
+    _initLocation();
   }
 
   @override
   void didUpdateWidget(covariant RankingRegionPage oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (!oldWidget.isActive && widget.isActive) _onOpened();
+    if (!oldWidget.isActive && widget.isActive) {
+      _onOpened();
+    }
   }
 
   @override
@@ -58,37 +58,178 @@ class _RankingRegionPageState extends State<RankingRegionPage> {
     setState(() => _meUsername = username);
   }
 
-  Future<void> _loadCached() async {
+  Future<void> _initLocation() async {
+    final enabled = await LocationService.instance.isEnabled();
+    if (!enabled) {
+      if (mounted) setState(() => _location = null);
+      return;
+    }
     final cached = await LocationService.instance.readCached();
-    if (!mounted || cached == null) return;
-    setState(() => _location = cached);
+    if (mounted && cached != null) {
+      setState(() => _location = cached);
+    }
   }
 
+  /// Membuka halaman atau berpindah tab: gunakan lokasi yang sudah tersimpan (aktif).
+  /// Sekali diaktifkan, lokasi akan tetap berlaku dan TIDAK meminta izin/GPS berulang kali.
   Future<void> _onOpened() async {
-    if (!_opened) {
-      _opened = true;
-      final access = await LocationService.ensurePermission();
-      if (!mounted) return;
-      switch (access) {
-        case LocationAccess.granted:
-          break;
-        case LocationAccess.serviceDisabled:
-          AppSnackBar.show(
-            context,
-            'GPS tidak aktif. Aktifkan layanan lokasi untuk peringkat wilayah.',
-          );
-          return;
-        case LocationAccess.deniedForever:
-          await _showPermissionSettingsDialog();
-          return;
-        case LocationAccess.denied:
-          AppSnackBar.show(context, 'Izin lokasi ditolak.');
-          return;
-        case LocationAccess.unavailable:
-          return;
-      }
+    if (_location != null) return;
+    await _initLocation();
+  }
+
+  Future<void> _enableLocation() async {
+    final access = await LocationService.ensurePermission();
+    if (!mounted) return;
+    switch (access) {
+      case LocationAccess.granted:
+        break;
+      case LocationAccess.serviceDisabled:
+        AppSnackBar.show(
+          context,
+          'GPS tidak aktif. Aktifkan layanan lokasi untuk peringkat wilayah.',
+        );
+        return;
+      case LocationAccess.deniedForever:
+        await _showPermissionSettingsDialog();
+        return;
+      case LocationAccess.denied:
+        AppSnackBar.show(context, 'Izin lokasi ditolak.');
+        return;
+      case LocationAccess.unavailable:
+        AppSnackBar.show(context, 'Layanan lokasi tidak tersedia.');
+        return;
     }
-    await _refreshLocation(silent: _location != null);
+
+    await LocationService.instance.setEnabled(true);
+    await _refreshLocation(silent: false);
+  }
+
+  Future<void> _disableLocation() async {
+    await LocationService.instance.setEnabled(false);
+    if (!mounted) return;
+    setState(() => _location = null);
+    AppSnackBar.show(context, 'Lokasi wilayah dinonaktifkan.');
+  }
+
+  Future<void> _showLocationOptions() async {
+    final action = await showModalBottomSheet<String>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Material(
+        color: Colors.white,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.space8,
+            vertical: AppSpacing.space6,
+          ),
+          child: SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryBorder,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: AppSpacing.space4),
+              Text(
+                'Pengaturan Lokasi Wilayah',
+                style: GoogleFonts.montserrat(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.space1),
+              Text(
+                'Wilayah saat ini: ${_levelLabel('kecamatan')}, ${_levelLabel('kota')}, ${_levelLabel('provinsi')}',
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 12,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.space6),
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: Container(
+                  padding: const EdgeInsets.all(AppSpacing.space2),
+                  decoration: const BoxDecoration(
+                    color: AppColors.surfaceSoft,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.my_location_rounded,
+                    color: AppColors.primary,
+                    size: AppIconSize.md,
+                  ),
+                ),
+                title: Text(
+                  'Perbarui Lokasi',
+                  style: GoogleFonts.plusJakartaSans(
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                subtitle: Text(
+                  'Ambil ulang posisi GPS terkini perangkat',
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 12,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+                onTap: () => Navigator.of(context).pop('refresh'),
+              ),
+              const Divider(height: AppSpacing.space4),
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: Container(
+                  padding: const EdgeInsets.all(AppSpacing.space2),
+                  decoration: const BoxDecoration(
+                    color: AppColors.errorSoft,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.location_off_rounded,
+                    color: AppColors.error,
+                    size: AppIconSize.md,
+                  ),
+                ),
+                title: Text(
+                  'Matikan Lokasi',
+                  style: GoogleFonts.plusJakartaSans(
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.error,
+                  ),
+                ),
+                subtitle: Text(
+                  'Nonaktifkan fitur lokasi sampai diaktifkan kembali',
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 12,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+                onTap: () => Navigator.of(context).pop('disable'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    ),
+  );
+
+    if (!mounted) return;
+    if (action == 'refresh') {
+      await _refreshLocation(silent: false);
+    } else if (action == 'disable') {
+      await _disableLocation();
+    }
   }
 
   Future<void> _showPermissionSettingsDialog() async {
@@ -214,7 +355,7 @@ class _RankingRegionPageState extends State<RankingRegionPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFCFCFC),
+      backgroundColor: AppColors.pageBase,
       appBar: AppHeaderBarWithActions(),
       body: _buildBody(),
     );
@@ -223,13 +364,22 @@ class _RankingRegionPageState extends State<RankingRegionPage> {
   Widget _buildBody() {
     return RefreshIndicator(
       color: AppColors.primary,
-      onRefresh: _refreshLocation,
-      child: _buildList());
+      onRefresh: () async {
+        if (_location == null) {
+          await _enableLocation();
+        } else {
+          await _refreshLocation(silent: false);
+        }
+      },
+      child: _buildList(),
+    );
   }
 
   Widget _buildList() {
-    final regionText =
-        '${_levelLabel('kecamatan')}, ${_levelLabel('kota')}, ${_levelLabel('provinsi')}';
+    final hasLocation = _location != null;
+    final regionText = hasLocation
+        ? '${_levelLabel('kecamatan')}, ${_levelLabel('kota')}, ${_levelLabel('provinsi')}'
+        : 'Lokasi Wilayah Dinonaktifkan';
 
     return Column(
       children: [
@@ -241,7 +391,7 @@ class _RankingRegionPageState extends State<RankingRegionPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SizedBox(height: 4),
+              const SizedBox(height: AppSpacing.space1),
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.symmetric(
@@ -249,69 +399,72 @@ class _RankingRegionPageState extends State<RankingRegionPage> {
                   vertical: AppSpacing.space4,
                 ),
                 decoration: ShapeDecoration(
-                  color: const Color(0xFFDEE8FF),
+                  color: AppColors.surfaceSoft,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(9999),
+                    borderRadius: AppRadius.pill,
                   ),
                 ),
                 child: Row(
                   children: [
-                    const Icon(
-                      Icons.location_on,
-                      size: 16,
-                      color: Color(0xFF111C2D),
+                    Icon(
+                      hasLocation ? Icons.location_on : Icons.location_off,
+                      size: AppIconSize.sm,
+                      color: hasLocation
+                          ? AppColors.textPrimary
+                          : AppColors.textMuted,
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: AppSpacing.space2),
                     Expanded(
                       child: Text(
                         regionText,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          color: Color(0xFF111C2D),
+                        style: GoogleFonts.plusJakartaSans(
+                          color: hasLocation
+                              ? AppColors.textPrimary
+                              : AppColors.textMuted,
                           fontSize: 12,
-                          fontFamily: 'Plus Jakarta Sans',
                           fontWeight: FontWeight.w600,
                           height: 1.33,
                         ),
                       ),
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: AppSpacing.space2),
                     GestureDetector(
-                      onTap: _locating ? null : _refreshLocation,
+                      onTap: _locating
+                          ? null
+                          : (hasLocation
+                              ? _showLocationOptions
+                              : _enableLocation),
                       child: Container(
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 4,
+                          horizontal: AppSpacing.space3,
+                          vertical: AppSpacing.space1,
                         ),
                         decoration: ShapeDecoration(
-                          color: Colors.white,
+                          color: AppColors.pureSurface,
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(9999),
+                            borderRadius: AppRadius.pill,
                           ),
-                          shadows: const [
-                            BoxShadow(
-                              color: Color(0x0C000000),
-                              blurRadius: 2,
-                              offset: Offset(0, 1),
-                              spreadRadius: 0,
-                            ),
-                          ],
+                          shadows: AppShadows.hairlineTight,
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            const Icon(
-                              Icons.edit_location_alt,
-                              size: 12,
-                              color: Color(0xFF4648D4),
+                            Icon(
+                              hasLocation
+                                  ? Icons.edit_location_alt
+                                  : Icons.my_location,
+                              size: AppIconSize.micro,
+                              color: AppColors.primary,
                             ),
-                            const SizedBox(width: 4),
+                            const SizedBox(width: AppSpacing.space1),
                             Text(
-                              _locating ? 'Memuat...' : 'Ubah',
-                              style: const TextStyle(
-                                color: Color(0xFF4648D4),
+                              _locating
+                                  ? 'Memuat...'
+                                  : (hasLocation ? 'Ubah' : 'Aktifkan'),
+                              style: GoogleFonts.plusJakartaSans(
+                                color: AppColors.primary,
                                 fontSize: 12,
-                                fontFamily: 'Plus Jakarta Sans',
                                 fontWeight: FontWeight.w600,
                                 height: 1.33,
                               ),
@@ -323,29 +476,27 @@ class _RankingRegionPageState extends State<RankingRegionPage> {
                   ],
                 ),
               ),
-              const SizedBox(height: 16),
-              const Text(
+              const SizedBox(height: AppSpacing.space4),
+              Text(
                 'Leaderboard Wilayah',
-                style: TextStyle(
-                  color: Color(0xFF111C2D),
+                style: GoogleFonts.montserrat(
+                  color: AppColors.textPrimary,
                   fontSize: 24,
-                  fontFamily: 'Montserrat',
                   fontWeight: FontWeight.w700,
                   height: 1.42,
                 ),
               ),
-              const SizedBox(height: 4),
-              const Text(
+              const SizedBox(height: AppSpacing.space1),
+              Text(
                 'Lihat jagoan kuis di sekitarmu dan rebut posisi teratas!',
-                style: TextStyle(
-                  color: Color(0xFF464554),
+                style: GoogleFonts.plusJakartaSans(
+                  color: AppColors.textSecondary,
                   fontSize: 14,
-                  fontFamily: 'Plus Jakarta Sans',
                   fontWeight: FontWeight.w400,
                   height: 1.71,
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.space4),
               StatusFilter<String>(
                 values: const ['kecamatan', 'kota', 'provinsi'],
                 selected: _activeLevel,
@@ -385,18 +536,20 @@ class _RankingRegionPageState extends State<RankingRegionPage> {
 
     return ListView(
       key: PageStorageKey<String>('ranking-list-$level'),
-      padding: const EdgeInsets.symmetric(horizontal: 20),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.space5),
       children: [
-        const SizedBox(height: 24),
+        const SizedBox(height: AppSpacing.space6),
         if (!hasData)
-          const _EmptyHint()
+          _EmptyHint(
+            isLocationDisabled: _location == null,
+            onEnable: _enableLocation,
+          )
         else ...[
           Text(
             'Top ${podium.length} $label',
-            style: const TextStyle(
-              color: Color(0xFF6063EE),
+            style: GoogleFonts.montserrat(
+              color: AppColors.brandIndigo,
               fontSize: 24,
-              fontFamily: 'Montserrat',
               fontWeight: FontWeight.w700,
               height: 1.33,
             ),
@@ -417,36 +570,34 @@ class _RankingRegionPageState extends State<RankingRegionPage> {
             ),
           ),
           if (listEntries.isNotEmpty) ...[
-            const SizedBox(height: 24),
+            const SizedBox(height: AppSpacing.space6),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
                   'Peringkat 4 – ${entries.length}',
-                  style: const TextStyle(
-                    color: Color(0xFF111C2D),
+                  style: GoogleFonts.montserrat(
+                    color: AppColors.textPrimary,
                     fontSize: 18,
-                    fontFamily: 'Montserrat',
                     fontWeight: FontWeight.w700,
                     height: 1.50,
                   ),
                 ),
                 Text(
                   listLabel,
-                  style: const TextStyle(
-                    color: Color(0xFF6063EE),
+                  style: GoogleFonts.plusJakartaSans(
+                    color: AppColors.brandIndigo,
                     fontSize: 12,
-                    fontFamily: 'Plus Jakarta Sans',
                     fontWeight: FontWeight.w700,
                     height: 1.33,
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppSpacing.space2),
             for (final entry in listEntries) ...[
               _RankListItem(entry: entry),
-              const SizedBox(height: 8),
+              const SizedBox(height: AppSpacing.space2),
             ],
           ],
           const SizedBox(height: 80),
@@ -473,15 +624,15 @@ class _PodiumItem extends StatelessWidget {
         ? 104.0
         : 72.0;
     final podiumColor = isFirst
-        ? const Color(0xFF4648D4)
+        ? AppColors.primary
         : rank == 2
-        ? const Color(0xFFD8E3FB)
-        : const Color(0xFFFFDDB8);
+        ? AppColors.quizCoverSurface
+        : AppColors.heroPeach;
     final ringColor = isFirst
         ? const Color(0xFFFACC15)
         : rank == 2
-        ? const Color(0xFFC7C4D7)
-        : const Color(0xFFA36700);
+        ? AppColors.primaryBorder
+        : AppColors.answerYellow;
     final badgeGradient = isFirst
         ? const [Color(0xFFFFD700), Color(0xFFFFA500)]
         : rank == 2
@@ -497,37 +648,23 @@ class _PodiumItem extends StatelessWidget {
             Container(
               width: avatarSize,
               height: avatarSize,
-              padding: const EdgeInsets.all(4),
+              padding: const EdgeInsets.all(AppSpacing.space1),
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                border: Border.all(color: ringColor, width: 4),
-                boxShadow: const [
-                  BoxShadow(
-                    color: Color(0x19000000),
-                    blurRadius: 6,
-                    offset: Offset(0, 4),
-                    spreadRadius: -4,
-                  ),
-                  BoxShadow(
-                    color: Color(0x19000000),
-                    blurRadius: 15,
-                    offset: Offset(0, 10),
-                    spreadRadius: -3,
-                  ),
-                ],
+                border: Border.all(color: ringColor, width: AppBorderWidth.heavy),
+                boxShadow: AppShadows.softCard,
               ),
               child: Container(
                 decoration: const BoxDecoration(
                   shape: BoxShape.circle,
-                  color: Colors.white,
+                  color: AppColors.pureSurface,
                 ),
                 child: Center(
                   child: Text(
                     entry.initials,
-                    style: TextStyle(
-                      color: const Color(0xFF4648D4),
+                    style: GoogleFonts.plusJakartaSans(
+                      color: AppColors.primary,
                       fontSize: isFirst ? 28 : 18,
-                      fontFamily: 'Plus Jakarta Sans',
                       fontWeight: FontWeight.w700,
                     ),
                   ),
@@ -543,28 +680,14 @@ class _PodiumItem extends StatelessWidget {
                 decoration: BoxDecoration(
                   gradient: LinearGradient(colors: badgeGradient),
                   shape: BoxShape.circle,
-                  boxShadow: const [
-                    BoxShadow(
-                      color: Color(0x19000000),
-                      blurRadius: 4,
-                      offset: Offset(0, 2),
-                      spreadRadius: -2,
-                    ),
-                    BoxShadow(
-                      color: Color(0x19000000),
-                      blurRadius: 6,
-                      offset: Offset(0, 4),
-                      spreadRadius: -1,
-                    ),
-                  ],
+                  boxShadow: AppShadows.layeredCard,
                 ),
                 child: Center(
                   child: Text(
                     '$rank',
-                    style: TextStyle(
-                      color: Colors.white,
+                    style: GoogleFonts.plusJakartaSans(
+                      color: AppColors.textOnPrimary,
                       fontSize: isFirst ? 24 : 14,
-                      fontFamily: 'Plus Jakarta Sans',
                       fontWeight: FontWeight.w700,
                     ),
                   ),
@@ -573,7 +696,7 @@ class _PodiumItem extends StatelessWidget {
             ),
           ],
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: AppSpacing.space3),
         SizedBox(
           width: 90,
           child: Text(
@@ -581,10 +704,9 @@ class _PodiumItem extends StatelessWidget {
             textAlign: TextAlign.center,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              color: const Color(0xFF111C2D),
+            style: GoogleFonts.montserrat(
+              color: AppColors.textPrimary,
               fontSize: isFirst ? 24 : 14,
-              fontFamily: 'Montserrat',
               fontWeight: FontWeight.w700,
               height: 1.33,
             ),
@@ -592,14 +714,13 @@ class _PodiumItem extends StatelessWidget {
         ),
         Text(
           entry.pointsLabel.replaceAll(' Pts', ''),
-          style: TextStyle(
-            color: const Color(0xFF4648D4),
+          style: GoogleFonts.plusJakartaSans(
+            color: AppColors.primary,
             fontSize: isFirst ? 18 : 12,
-            fontFamily: 'Plus Jakarta Sans',
             fontWeight: FontWeight.w700,
           ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: AppSpacing.space2),
         Container(
           width: double.infinity,
           height: podiumHeight,
@@ -609,22 +730,7 @@ class _PodiumItem extends StatelessWidget {
               topLeft: Radius.circular(32),
               topRight: Radius.circular(32),
             ),
-            boxShadow: isFirst
-                ? const [
-                    BoxShadow(
-                      color: Color(0x19000000),
-                      blurRadius: 6,
-                      offset: Offset(0, 4),
-                      spreadRadius: -4,
-                    ),
-                    BoxShadow(
-                      color: Color(0x19000000),
-                      blurRadius: 15,
-                      offset: Offset(0, 10),
-                      spreadRadius: -3,
-                    ),
-                  ]
-                : null,
+            boxShadow: isFirst ? AppShadows.softCard : null,
           ),
         ),
       ],
@@ -641,18 +747,11 @@ class _RankListItem extends StatelessWidget {
   Widget build(BuildContext context) {
     final isMe = entry.isCurrentUser;
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(AppSpacing.space3),
       decoration: ShapeDecoration(
-        color: isMe ? const Color(0xFFF0F3FF) : Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        shadows: const [
-          BoxShadow(
-            color: Color(0x33000000),
-            blurRadius: 2,
-            offset: Offset(0, 1),
-            spreadRadius: 0,
-          ),
-        ],
+        color: isMe ? AppColors.fieldBackground : AppColors.pureSurface,
+        shape: RoundedRectangleBorder(borderRadius: AppRadius.lg),
+        shadows: AppShadows.navBar,
       ),
       child: Row(
         children: [
@@ -661,54 +760,50 @@ class _RankListItem extends StatelessWidget {
             child: Text(
               '${entry.rank}',
               textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: Color(0xFF464554),
+              style: GoogleFonts.montserrat(
+                color: AppColors.textSecondary,
                 fontSize: 15,
-                fontFamily: 'Montserrat',
                 fontWeight: FontWeight.w700,
               ),
             ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: AppSpacing.space3),
           Container(
             width: 40,
             height: 40,
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               shape: BoxShape.circle,
-              color: isMe ? const Color(0xFFDEE8FF) : const Color(0xFFDEE8FF),
+              color: AppColors.surfaceSoft,
             ),
             child: Center(
               child: Text(
                 entry.initials,
-                style: const TextStyle(
-                  color: Color(0xFF4648D4),
+                style: GoogleFonts.plusJakartaSans(
+                  color: AppColors.primary,
                   fontSize: 14,
-                  fontFamily: 'Plus Jakarta Sans',
                   fontWeight: FontWeight.w700,
                 ),
               ),
             ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: AppSpacing.space3),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   isMe ? 'Kamu (${entry.name})' : entry.name,
-                  style: const TextStyle(
-                    color: Color(0xFF111C2D),
+                  style: GoogleFonts.plusJakartaSans(
+                    color: AppColors.textPrimary,
                     fontSize: 14,
-                    fontFamily: 'Plus Jakarta Sans',
                     fontWeight: FontWeight.w700,
                   ),
                 ),
                 Text(
                   entry.subtitle,
-                  style: const TextStyle(
-                    color: Color(0xFF464554),
+                  style: GoogleFonts.plusJakartaSans(
+                    color: AppColors.textSecondary,
                     fontSize: 12,
-                    fontFamily: 'Plus Jakarta Sans',
                     fontWeight: FontWeight.w400,
                   ),
                 ),
@@ -720,19 +815,17 @@ class _RankListItem extends StatelessWidget {
             children: [
               Text(
                 entry.pointsLabel.replaceAll(' Pts', ''),
-                style: const TextStyle(
-                  color: Color(0xFF111C2D),
+                style: GoogleFonts.plusJakartaSans(
+                  color: AppColors.textPrimary,
                   fontSize: 14,
-                  fontFamily: 'Plus Jakarta Sans',
                   fontWeight: FontWeight.w700,
                 ),
               ),
-              const Text(
+              Text(
                 'PTS',
-                style: TextStyle(
-                  color: Color(0xFF464554),
+                style: GoogleFonts.plusJakartaSans(
+                  color: AppColors.textSecondary,
                   fontSize: 10,
-                  fontFamily: 'Plus Jakarta Sans',
                   fontWeight: FontWeight.w400,
                 ),
               ),
@@ -745,49 +838,78 @@ class _RankListItem extends StatelessWidget {
 }
 
 class _EmptyHint extends StatelessWidget {
-  const _EmptyHint();
+  final bool isLocationDisabled;
+  final VoidCallback? onEnable;
+
+  const _EmptyHint({
+    this.isLocationDisabled = false,
+    this.onEnable,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(32),
+      padding: const EdgeInsets.all(AppSpacing.space8),
       decoration: ShapeDecoration(
-        color: Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        shadows: const [
-          BoxShadow(
-            color: Color(0x33000000),
-            blurRadius: 2,
-            offset: Offset(0, 1),
-            spreadRadius: 0,
-          ),
-        ],
+        color: AppColors.pureSurface,
+        shape: RoundedRectangleBorder(borderRadius: AppRadius.lg),
+        shadows: AppShadows.navBar,
       ),
       child: Column(
-        children: const [
-          Icon(Icons.public_off_outlined, size: 32, color: Color(0xFF6B7280)),
-          SizedBox(height: 16),
+        children: [
+          Icon(
+            isLocationDisabled
+                ? Icons.location_off_outlined
+                : Icons.public_off_outlined,
+            size: AppIconSize.xxl,
+            color: AppColors.textMuted,
+          ),
+          const SizedBox(height: AppSpacing.space4),
           Text(
-            'Belum ada data peringkat wilayah.',
-            style: TextStyle(
-              color: Color(0xFF111C2D),
+            isLocationDisabled
+                ? 'Lokasi Belum Diaktifkan'
+                : 'Belum ada data peringkat wilayah.',
+            style: GoogleFonts.plusJakartaSans(
+              color: AppColors.textPrimary,
               fontSize: 14,
-              fontFamily: 'Plus Jakarta Sans',
               fontWeight: FontWeight.w700,
             ),
           ),
-          SizedBox(height: 4),
+          const SizedBox(height: AppSpacing.space1),
           Text(
-            'Aktifkan izin lokasi lalu muat ulang untuk melihat peringkat terkini di sekitarmu.',
+            isLocationDisabled
+                ? 'Aktifkan lokasi perangkat untuk melihat peringkat pemain di sekitarmu. Sekali aktif, akan berlaku hingga kamu matikan sendiri.'
+                : 'Belum ada pemain yang terdaftar pada wilayah ini.',
             textAlign: TextAlign.center,
-            style: TextStyle(
-              color: Color(0xFF6B7280),
+            style: GoogleFonts.plusJakartaSans(
+              color: AppColors.textMuted,
               fontSize: 12,
-              fontFamily: 'Plus Jakarta Sans',
               fontWeight: FontWeight.w400,
             ),
           ),
+          if (isLocationDisabled && onEnable != null) ...[
+            const SizedBox(height: AppSpacing.space4),
+            ElevatedButton.icon(
+              onPressed: onEnable,
+              icon: const Icon(Icons.my_location_rounded, size: AppIconSize.sm),
+              label: const Text('Aktifkan Lokasi'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: AppRadius.pill),
+                elevation: 0,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.space6,
+                  vertical: AppSpacing.space3,
+                ),
+                textStyle: GoogleFonts.plusJakartaSans(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );

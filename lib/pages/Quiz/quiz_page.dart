@@ -83,14 +83,10 @@ class _QuizPageState extends State<QuizPage> {
 
   void _onActiveRoomChanged() {
     if (!mounted) return;
-    // Avoid calling setState during the build phase.
-    if (WidgetsBinding.instance?.schedulerPhase != SchedulerPhase.idle) {
-      WidgetsBinding.instance?.addPostFrameCallback((_) {
-        if (mounted) setState(() {});
-      });
-    } else {
-      setState(() {});
-    }
+    // Hindari memanggil setState di tengah fase build widget.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) setState(() {});
+    });
   }
 
   /// Daftar quiz dibaca dari cache lokal; server hanya dihubungi kalau cache

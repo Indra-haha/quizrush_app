@@ -9,7 +9,6 @@ import '../../theme/app_theme.dart';
 import '../../widgets/app_header_bar_with_actions.dart';
 import '../../widgets/app_primary_button.dart';
 import '../../widgets/app_snackbar.dart';
-import '../../widgets/points_indicator.dart';
 
 class FeedbackPage extends StatefulWidget {
   const FeedbackPage({super.key});
@@ -55,17 +54,6 @@ class _FeedbackPageState extends State<FeedbackPage> {
     return Text(text, style: CreateQuizTextStyles.fieldLabel);
   }
 
-  /// Field satu baris mengikuti gaya field judul di CreateQuizPage.
-  Widget _buildUsernameField() {
-    return TextField(
-      controller: _usernameController,
-      style: CreateQuizTextStyles.fieldValue,
-      textInputAction: TextInputAction.next,
-      decoration: CreateQuizPageStyles.fieldDecoration(
-        hint: 'Masukkan username...',
-      ),
-    );
-  }
 
   /// Field multi-baris mengikuti gaya field deskripsi di CreateQuizPage.
   Widget _buildKesanField() {
@@ -155,7 +143,6 @@ class _FeedbackPageState extends State<FeedbackPage> {
           onPressed: () => Navigator.of(context).pop(),
           icon: const Icon(Icons.arrow_back),
         ),
-        actions: const [PointsIndicator(style: PointsIndicatorStyle.home)],
       ),
       body: _buildList(),
     );
@@ -187,10 +174,6 @@ class _FeedbackPageState extends State<FeedbackPage> {
                     color: AppColors.textSecondary,
                   ),
                 ),
-                const SizedBox(height: AppSpacing.space10),
-                _buildLabel('Username'),
-                const SizedBox(height: AppSpacing.space4),
-                _buildUsernameField(),
                 const SizedBox(height: AppSpacing.space10),
                 _buildLabel('Kesan'),
                 const SizedBox(height: AppSpacing.space4),

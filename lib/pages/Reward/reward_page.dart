@@ -375,11 +375,12 @@ class _RewardPageState extends State<RewardPage> {
           ),
 
           Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.e,
             children: [
               if (isPointTab)
                 Text(title, style: RewardTextStyles.heroLabel)
               else
+                Text(title, style: RewardTextStyles.heroLabel),
                 DropdownButtonHideUnderline(
                   child: DropdownButton<String>(
                     value: _selectedCurrency,

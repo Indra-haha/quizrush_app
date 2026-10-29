@@ -46,10 +46,36 @@ class LocationService {
   );
 
   static const String _kCacheKey = 'region_location';
+  static const String _kEnabledKey = 'region_location_enabled';
   static const int _kCacheVersion = 2;
 
   final ApiClient _api;
   final PositionProvider _positionProvider;
+
+  /// Apakah fitur lokasi wilayah aktif.
+  /// Mengembalikan true bila secara eksplisit diaktifkan atau cache sudah pernah ada.
+  Future<bool> isEnabled() async {
+    final prefs = await SharedPreferences.getInstance();
+    final explicit = prefs.getBool(_kEnabledKey);
+    if (explicit != null) return explicit;
+    return prefs.containsKey(_kCacheKey);
+  }
+
+  /// Aktifkan atau nonaktifkan fitur lokasi wilayah.
+  /// Bila dinonaktifkan, cache dihapus agar halaman peringkat tidak menampilkan lokasi lama.
+  Future<void> setEnabled(bool enabled) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_kEnabledKey, enabled);
+    if (!enabled) {
+      await clearCache();
+    }
+  }
+
+  /// Hapus cache lokasi wilayah.
+  Future<void> clearCache() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_kCacheKey);
+  }
 
   /// Kirim koordinat user; respons berisi metadata wilayah + grouped
   /// leaderboard (kecamatan/kota/provinsi). Seluruh respons disimpan utuh.
@@ -72,6 +98,8 @@ class LocationService {
     }
     final result = LocationResult.fromJson(jsonMap(data));
     await _writeCache(result);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_kEnabledKey, true);
     return result;
   }
 
@@ -95,6 +123,7 @@ class LocationService {
   /// cache versi lama (respons mentah) maupun cache versi baru (tersimpan utuh).
   Future<LocationResult?> readCached() async {
     final prefs = await SharedPreferences.getInstance();
+    if (prefs.getBool(_kEnabledKey) == false) return null;
     final raw = prefs.getString(_kCacheKey);
     if (raw == null) return null;
     try {
@@ -123,6 +152,28 @@ class LocationService {
         'result': result.toJson(),
       }),
     );
+  }
+
+  /// Cek izin lokasi dan status GPS saat ini tanpa menampilkan dialog izin ke pengguna.
+  static Future<LocationAccess> checkCurrentPermission() async {
+    try {
+      if (!await Geolocator.isLocationServiceEnabled()) {
+        return LocationAccess.serviceDisabled;
+      }
+      final permission = await Geolocator.checkPermission();
+      switch (permission) {
+        case LocationPermission.whileInUse:
+        case LocationPermission.always:
+          return LocationAccess.granted;
+        case LocationPermission.deniedForever:
+          return LocationAccess.deniedForever;
+        case LocationPermission.denied:
+        case LocationPermission.unableToDetermine:
+          return LocationAccess.denied;
+      }
+    } catch (_) {
+      return LocationAccess.unavailable;
+    }
   }
 
   /// Minta akses lokasi: cek layanan GPS, izin tersimpan, lalu ajukan izin
