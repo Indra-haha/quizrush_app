@@ -341,7 +341,7 @@ class _RewardPageState extends State<RewardPage> {
     final int points = _points ?? 0;
     final int saldo = _saldoRupiah;
 
-    final String title = isPointTab ? 'TOTAL POIN QUIZRUSH' : 'TOTAL RUPIAH';
+    final String title = isPointTab ? 'TOTAL POIN QUIZRUSH' : 'TOTAL SALDO DOMPET';
 
     final String value = isPointTab
         ? formatPoints(points)
