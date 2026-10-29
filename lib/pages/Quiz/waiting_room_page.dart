@@ -493,7 +493,6 @@ class _WaitingRoomPageState extends State<WaitingRoomPage> {
               const SizedBox(height: AppSpacing.space8),
               _playersSection(),
               const SizedBox(height: AppSpacing.space6),
-              _cheerCard(),
               if (_isOwner && _nextStatus != null) ...[
                 const SizedBox(height: AppSpacing.space6),
                 _startBox(),
@@ -579,100 +578,32 @@ class _WaitingRoomPageState extends State<WaitingRoomPage> {
       );
     }
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final cardWidth = (constraints.maxWidth - AppSpacing.space4) / 2;
-        final slots = players.length < _minParticipantSlots
-            ? _minParticipantSlots - players.length
-            : 0;
+    return Padding(
+      padding: const EdgeInsets.all(AppSpacing.space8),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final cardWidth = (constraints.maxWidth - AppSpacing.space4) / 2;
+          final slots = players.length < _minParticipantSlots
+              ? _minParticipantSlots - players.length
+              : 0;
 
-        return Wrap(
-          spacing: AppSpacing.space4,
-          runSpacing: AppSpacing.space4,
-          children: [
-            for (final name in players)
-              SizedBox(
-                width: cardWidth,
-                child: QuizWaitingParticipant(
-                  name: name,
-                  isHost: _isHost(name),
-                ),
-              ),
-            for (var i = 0; i < slots; i++)
-              SizedBox(width: cardWidth, child: const QuizWaitingSlot()),
-          ],
-        );
-      },
-    );
-  }
-
-  Widget _cheerCard() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(AppSpacing.space4),
-      decoration: BoxDecoration(
-        color: AppColors.textOnPrimary,
-        border: Border.all(
-          color: AppColors.primaryBorder.withValues(alpha: 0.4),
-        ),
-        borderRadius: AppRadius.md,
-        boxShadow: AppShadows.hairlineTight,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
+          return Wrap(
+            spacing: AppSpacing.space4,
+            runSpacing: AppSpacing.space4,
             children: [
-              Expanded(
-                child: Text(
-                  'SORAKAN LIVE:',
-                  style: AppTextStyles.bodyCaption.copyWith(
-                    color: AppColors.textSecondary,
-                    fontWeight: AppFontWeight.bold,
-                    letterSpacing: 0.55,
+              for (final name in players)
+                SizedBox(
+                  width: cardWidth,
+                  child: QuizWaitingParticipant(
+                    name: name,
+                    isHost: _isHost(name),
                   ),
                 ),
-              ),
-              Text(
-                'Ketuk untuk kirim ke room',
-                style: AppTextStyles.bodyCaption.copyWith(
-                  color: AppColors.textSecondary,
-                  fontWeight: AppFontWeight.medium,
-                ),
-              ),
+              for (var i = 0; i < slots; i++)
+                SizedBox(width: cardWidth, child: const QuizWaitingSlot()),
             ],
-          ),
-          const SizedBox(height: AppSpacing.space4),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [for (final emoji in _cheers) _cheerButton(emoji)],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _cheerButton(String emoji) {
-    final connected = _status == RoomSocketStatus.connected;
-
-    return Expanded(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.space1),
-        child: InkWell(
-          onTapUp: (details) => _sendCheer(emoji, details.globalPosition),
-          borderRadius: AppRadius.sm,
-          child: Container(
-            height: AppSpacing.space13 + AppSpacing.space8,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: connected
-                  ? AppColors.primarySoft
-                  : AppColors.primarySoft.withValues(alpha: 0.5),
-              borderRadius: AppRadius.sm,
-            ),
-            child: Text(emoji, style: const TextStyle(fontSize: 28)),
-          ),
-        ),
+          );
+        },
       ),
     );
   }
