@@ -12,8 +12,11 @@ class WalletService {
   static final WalletService instance = WalletService._(ApiClient.instance);
 
   final ApiClient _api;
-  ///
-  /// Response: [WalletClaimResult] yang memuat status, pesan, tx_hash, dan remaining_points.
+  /// Mengirim request ke `POST /api/wallet/claim`.
+  /// Sesuai API.md §15:
+  /// - Menukar poin: [pointsToClaim] > 0, [rupiahValue] opsional/positif (poin × 10).
+  /// - Pengurangan rupiah: [pointsToClaim] = 0, [rupiahValue] negatif.
+  /// - Response: [WalletClaimResult] (status, message, tx_hash, remaining_points).
   Future<WalletClaimResult> claim({
     required String token,
     String? userId,
@@ -23,7 +26,7 @@ class WalletService {
     final body = <String, dynamic>{
       if (userId != null && userId.isNotEmpty) 'user_id': userId,
       'points_to_claim': pointsToClaim,
-      'rupiah_value': rupiahValue,
+      if (rupiahValue != null) 'rupiah_value': rupiahValue,
     };
 
     final response = await _api.post(

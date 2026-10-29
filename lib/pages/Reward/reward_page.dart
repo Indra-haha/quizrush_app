@@ -554,7 +554,7 @@ class _RewardPageState extends State<RewardPage> {
                 child: Padding(
                   padding: RewardTheme.actionPadding,
                   child: Text(
-                    isPointTab ? 'Konversi sekarang!' : 'Tarik saldo!',
+                    isPointTab ? 'Konversi sekarang!' : 'Klaim Poin ke Saldo',
                     textAlign: TextAlign.center,
                     style: RewardTextStyles.actionLabel,
                   ),
