@@ -168,5 +168,68 @@ void main() {
       expect(await LocationService.instance.isEnabled(), isFalse);
     },
   );
+
+  testWidgets(
+    'RankingRegionPage menampilkan peringkat 4-10 dengan style card riwayat',
+    (tester) async {
+      tester.view.physicalSize = const Size(1080, 2400);
+      tester.view.devicePixelRatio = 2.0;
+      addTearDown(() => tester.view.resetPhysicalSize());
+
+      final leaderboardWith12 = List.generate(
+        12,
+        (i) => {
+          'rank': i + 1,
+          'username': 'user_${i + 1}',
+          'nama': 'User ${i + 1}',
+          'poin': 2000 - (i * 100),
+          'jarak_meter': 300.0 + (i * 50),
+        },
+      );
+
+      final mockData = {
+        'status': 200,
+        'message': 'Grouped leaderboard successfully retrieved',
+        'metadata': _mockLocationJson['metadata'],
+        'data': {
+          'kecamatan': leaderboardWith12,
+          'kota': [],
+          'provinsi': [],
+        },
+      };
+
+      SharedPreferences.setMockInitialValues(<String, Object>{
+        'region_location': jsonEncode({
+          'version': 2,
+          'savedAt': DateTime.now().toIso8601String(),
+          'result': mockData,
+        }),
+        'region_location_enabled': true,
+      });
+
+      await tester.pumpWidget(
+        const MaterialApp(home: RankingRegionPage(isActive: true)),
+      );
+      await tester.pumpAndSettle();
+
+      // Memastikan header menampilkan Peringkat 4 - 10
+      expect(find.text('Peringkat 4 – 10'), findsOneWidget);
+
+      // Memastikan rank badge #4 hingga #10 muncul
+      expect(find.text('#4'), findsOneWidget);
+      expect(find.text('#5'), findsOneWidget);
+
+      await tester.drag(find.byType(ListView).first, const Offset(0, -600));
+      await tester.pumpAndSettle();
+
+      expect(find.text('#10'), findsOneWidget);
+
+      // Peringkat di luar 10 tidak ditampilkan
+      expect(find.text('#11'), findsNothing);
+
+      // Memastikan poin memakai format Pts
+      expect(find.text('1.700 Pts'), findsOneWidget);
+    },
+  );
 }
 

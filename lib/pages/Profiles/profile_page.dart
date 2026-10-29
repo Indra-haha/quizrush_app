@@ -284,26 +284,21 @@ class _ProfilePageState extends State<ProfilePage> {
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.only(
         top: AppSpacing.space8,
-        left: AppSpacing.space9,
-        right: AppSpacing.space9,
+        left: AppSpacing.space8,
+        right: AppSpacing.space8,
         bottom: AppSpacing.fabClearance,
       ),
       children: [
-        _centered(
-          _ProfileHeroCard(
+        _ProfileHeroCard(
             nama: _nama,
             username: _username,
             kelas: _kelas,
             initials: _initials,
           ),
-        ),
         const SizedBox(height: AppSpacing.space10),
-        _centered(
-          _StatsCard(stats: _stats, points: PointsStore.instance.points),
-        ),
+       _StatsCard(stats: _stats, points: PointsStore.instance.points),
         const SizedBox(height: AppSpacing.space10),
-        _centered(
-          _SettingsCard(
+        _SettingsCard(
             notificationsEnabled: _notificationsEnabled,
             onNotificationsChanged: _toggleNotifications,
             biometricEnabled: _biometricEnabled,
@@ -311,19 +306,10 @@ class _ProfilePageState extends State<ProfilePage> {
             onBiometricChanged: _toggleBiometric,
             onAdvancedTap: () => _sensorSettings('Pengaturan Sensor'),
           ),
-        ),
       ],
     );
   }
 
-  Widget _centered(Widget child) {
-    return Center(
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: AppSizes.profileCard),
-        child: child,
-      ),
-    );
-  }
 }
 
 class _ProfileHeroCard extends StatelessWidget {
@@ -425,7 +411,7 @@ class _StatsCard extends StatelessWidget {
           ),
           _StatTile(
             value: points == null ? '—' : formatPoints(points!),
-            label: 'Koin',
+            label: 'Pts',
             style: AppTextStyles.profileStatValue,
           ),
         ],

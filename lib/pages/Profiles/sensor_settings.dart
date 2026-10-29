@@ -21,13 +21,16 @@ class SensorSettingsPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.surface,
-      appBar: AppHeaderBarWithActions(
-        title: title,
+      appBar:  AppHeaderBarWithActions(
+        title: 'Pengaturan Sensor',
+        titleStyle: CreateQuizTextStyles.headerTitle,
+        backgroundColor: CreateQuizPageStyles.headerBackground,
+        elevation: CreateQuizPageStyles.headerElevation,
+        shadowColor: CreateQuizPageStyles.headerShadowColor,
         leading: IconButton(
           tooltip: 'Kembali',
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () => Navigator.of(context).pop(false),
           icon: const Icon(Icons.arrow_back),
-          color: AppColors.primary,
         ),
       ),
       body: _buildbody(),
@@ -393,8 +396,8 @@ class _SettingsState extends State<Settings> {
         child: Padding(
           padding: const EdgeInsets.only(
             top: AppSpacing.space8,
-            left: AppSpacing.space9,
-            right: AppSpacing.space9,
+            left: AppSpacing.space8,
+            right: AppSpacing.space8,
             bottom: AppSpacing.fabClearance,
           ),
           child: Column(

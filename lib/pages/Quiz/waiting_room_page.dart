@@ -142,10 +142,7 @@ class _WaitingRoomPageState extends State<WaitingRoomPage> {
   void _startShakeDetection() {
     _accelerometerSub?.cancel();
     _accelerometerSub = ShakeService.instance
-        .shakeEvents(
-          threshold: _shakeThreshold,
-          cooldown: _shakeCooldown,
-        )
+        .shakeEvents(threshold: _shakeThreshold, cooldown: _shakeCooldown)
         .listen(
           (_) {
             if (!_accelerometerEnabled || !mounted) return;
@@ -451,26 +448,28 @@ class _WaitingRoomPageState extends State<WaitingRoomPage> {
     // Semua teks di halaman ini dibesarkan sedikit agar lebih mudah dibaca.
     final textScaler = MediaQuery.textScalerOf(
       context,
-    ).clamp(minScaleFactor: 1.15);
+    ).clamp(minScaleFactor: 1.0);
 
     return MediaQuery(
       data: MediaQuery.of(context).copyWith(textScaler: textScaler),
       child: Scaffold(
         backgroundColor: AppColors.surface,
         appBar: AppHeaderBarWithActions(
-        title: "Ruang Tunggu",
-        leading: IconButton(
-          tooltip: 'Kembali',
-          onPressed: () => Navigator.of(context).pop(),
-          icon: const Icon(Icons.arrow_back),
+          title: 'Ruang Tunggu',
+          titleStyle: CreateQuizTextStyles.headerTitle,
+          backgroundColor: CreateQuizPageStyles.headerBackground,
+          elevation: CreateQuizPageStyles.headerElevation,
+          shadowColor: CreateQuizPageStyles.headerShadowColor,
+          leading: IconButton(
+            tooltip: 'Kembali',
+            onPressed: () => Navigator.of(context).pop(false),
+            icon: const Icon(Icons.arrow_back),
+          ),
         ),
-      ),
         body: SafeArea(
           top: false,
           child: ListView(
-            padding: const EdgeInsets.only(  
-              bottom :AppSpacing.space12,
-            ),
+            padding: const EdgeInsets.only(bottom: AppSpacing.space12),
             children: [
               _heroCard(),
               const SizedBox(height: AppSpacing.space8),
@@ -488,9 +487,6 @@ class _WaitingRoomPageState extends State<WaitingRoomPage> {
       ),
     );
   }
-
-
-
 
   /// Kartu hero ruang tunggu: judul kuis, ringkasan jumlah soal & total poin,
   /// serta GAME PIN (ketuk untuk menyalin kode).

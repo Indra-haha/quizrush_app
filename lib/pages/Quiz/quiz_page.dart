@@ -293,7 +293,7 @@ class _QuizPageState extends State<QuizPage> {
         Padding(
           padding: const EdgeInsets.fromLTRB(
             AppSpacing.space9,
-            AppSpacing.space4,
+            AppSpacing.space8,
             AppSpacing.space9,
             AppSpacing.space2,
           ),

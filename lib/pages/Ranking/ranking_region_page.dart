@@ -7,6 +7,7 @@ import '../../services/api/api_client.dart';
 import '../../services/api/location_service.dart';
 import '../../services/session_service.dart';
 import '../../theme/app_theme.dart';
+import '../../theme/reward_theme.dart';
 import '../../widgets/app_header_bar_with_actions.dart';
 import '../../widgets/app_snackbar.dart';
 import '../../widgets/status_filter.dart';
@@ -525,7 +526,7 @@ class _RankingRegionPageState extends State<RankingRegionPage> {
     final hasData = entries.isNotEmpty;
     final podium = entries.take(3).toList();
     final listEntries = entries.length > 3
-        ? entries.sublist(3)
+        ? entries.sublist(3, entries.length > 10 ? 10 : entries.length)
         : const <RegionRankingEntry>[];
     final label = _levelLabel(level);
     final listLabel = level == 'kecamatan'
@@ -536,9 +537,8 @@ class _RankingRegionPageState extends State<RankingRegionPage> {
 
     return ListView(
       key: PageStorageKey<String>('ranking-list-$level'),
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.space5),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.space8),
       children: [
-        const SizedBox(height: AppSpacing.space6),
         if (!hasData)
           _EmptyHint(
             isLocationDisabled: _location == null,
@@ -575,7 +575,9 @@ class _RankingRegionPageState extends State<RankingRegionPage> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'Peringkat 4 – ${entries.length}',
+                  listEntries.length == 7 || entries.length >= 10
+                      ? 'Peringkat 4 – 10'
+                      : 'Peringkat 4 – ${3 + listEntries.length}',
                   style: GoogleFonts.montserrat(
                     color: AppColors.textPrimary,
                     fontSize: 18,
@@ -594,10 +596,10 @@ class _RankingRegionPageState extends State<RankingRegionPage> {
                 ),
               ],
             ),
-            const SizedBox(height: AppSpacing.space2),
-            for (final entry in listEntries) ...[
-              _RankListItem(entry: entry),
-              const SizedBox(height: AppSpacing.space2),
+            const SizedBox(height: RewardTheme.historyTitleGap),
+            for (var i = 0; i < listEntries.length; i++) ...[
+              if (i > 0) const SizedBox(height: RewardTheme.historyItemGap),
+              _RankListItem(entry: listEntries[i]),
             ],
           ],
           const SizedBox(height: 80),
@@ -746,90 +748,103 @@ class _RankListItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isMe = entry.isCurrentUser;
+    final name = isMe ? 'Kamu (${entry.name})' : entry.name;
+    final subtitle = entry.subtitle;
+    final points = '${entry.pointsLabel} Pts';
+
     return Container(
-      padding: const EdgeInsets.all(AppSpacing.space3),
-      decoration: ShapeDecoration(
-        color: isMe ? AppColors.fieldBackground : AppColors.pureSurface,
-        shape: RoundedRectangleBorder(borderRadius: AppRadius.lg),
-        shadows: AppShadows.navBar,
+      width: double.infinity,
+      padding: RewardTheme.historyCardPadding,
+      decoration: BoxDecoration(
+        color: isMe ? AppColors.fieldBackground : AppColors.surface,
+        borderRadius: RewardTheme.historyCardRadius,
+        boxShadow: RewardTheme.historyCardShadow,
+        border: isMe
+            ? Border.all(color: AppColors.primaryBorder, width: 1.5)
+            : null,
       ),
       child: Row(
         children: [
-          SizedBox(
-            width: 24,
-            child: Text(
-              '${entry.rank}',
-              textAlign: TextAlign.center,
-              style: GoogleFonts.montserrat(
-                color: AppColors.textSecondary,
-                fontSize: 15,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ),
-          const SizedBox(width: AppSpacing.space3),
-          Container(
-            width: 40,
-            height: 40,
-            decoration: const BoxDecoration(
-              shape: BoxShape.circle,
-              color: AppColors.surfaceSoft,
-            ),
-            child: Center(
-              child: Text(
-                entry.initials,
-                style: GoogleFonts.plusJakartaSans(
-                  color: AppColors.primary,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700,
+          Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Container(
+                width: RewardTheme.iconCircleSize,
+                height: RewardTheme.iconCircleSize,
+                decoration: BoxDecoration(
+                  color: isMe
+                      ? AppColors.primarySoft
+                      : RewardTheme.historyIconBackground(1),
+                  shape: BoxShape.circle,
+                ),
+                child: Center(
+                  child: Text(
+                    entry.initials,
+                    style: GoogleFonts.plusJakartaSans(
+                      color: isMe
+                          ? AppColors.primary
+                          : RewardTheme.historyIconColor(1),
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
                 ),
               ),
-            ),
+              Positioned(
+                right: -4,
+                bottom: -4,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                  decoration: BoxDecoration(
+                    color: isMe ? AppColors.primary : AppColors.rewardAmountInk,
+                    borderRadius: AppRadius.pill,
+                    boxShadow: AppShadows.hairlineTight,
+                  ),
+                  child: Text(
+                    '#${entry.rank}',
+                    style: GoogleFonts.montserrat(
+                      color: Colors.white,
+                      fontSize: 9,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
-          const SizedBox(width: AppSpacing.space3),
+
+          const SizedBox(width: RewardTheme.contentGap),
+
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  isMe ? 'Kamu (${entry.name})' : entry.name,
-                  style: GoogleFonts.plusJakartaSans(
-                    color: AppColors.textPrimary,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                  ),
+                  name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: RewardTextStyles.historyItemTitle,
                 ),
+
+                const SizedBox(height: AppSpacing.space1),
+
                 Text(
-                  entry.subtitle,
-                  style: GoogleFonts.plusJakartaSans(
-                    color: AppColors.textSecondary,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w400,
-                  ),
+                  subtitle,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: RewardTextStyles.historyItemMeta,
                 ),
               ],
             ),
           ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                entry.pointsLabel.replaceAll(' Pts', ''),
-                style: GoogleFonts.plusJakartaSans(
-                  color: AppColors.textPrimary,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              Text(
-                'PTS',
-                style: GoogleFonts.plusJakartaSans(
-                  color: AppColors.textSecondary,
-                  fontSize: 10,
-                  fontWeight: FontWeight.w400,
-                ),
-              ),
-            ],
+
+          const SizedBox(width: AppSpacing.space3),
+
+          Text(
+            points,
+            style: RewardTextStyles.historyAmount.copyWith(
+              color: isMe ? AppColors.primary : AppColors.rewardAmountInk,
+            ),
           ),
         ],
       ),
