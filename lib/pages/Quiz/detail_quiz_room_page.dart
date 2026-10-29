@@ -67,7 +67,7 @@ class _DetailQuizRoomPageState extends State<DetailQuizRoomPage> {
             room: rooms[i],
             index: i,
             isFocused: rooms[i].kode == widget.focusKode && widget.focusKode != null,
-            onJoin: _joining ? null : () => _joinRoom(context, rooms[i].kode),
+            onJoin: _joining ? null : () => _joinRoom(rooms[i].kode),
           ),
         ],
         const SizedBox(height: AppSpacing.space10),
@@ -75,7 +75,7 @@ class _DetailQuizRoomPageState extends State<DetailQuizRoomPage> {
     );
   }
 
-  Future<void> _joinRoom(BuildContext context, String pin) async {
+  Future<void> _joinRoom(String pin) async {
     if (_joining) return;
     setState(() => _joining = true);
     try {

@@ -699,7 +699,7 @@ void main() {
       expect(find.byIcon(Icons.search), findsOneWidget);
     });
 
-    testWidgets('QuizResultsList menampilkan loading', (
+    testWidgets('QuizResultsList menampilkan empty state saat kosong', (
       WidgetTester tester,
     ) async {
       await tester.pumpWidget(
@@ -714,7 +714,7 @@ void main() {
           ),
         ),
       );
-      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+      expect(find.byType(EmptyStateView), findsOneWidget);
     });
   });
 
@@ -776,9 +776,9 @@ void main() {
         ),
       );
 
-      expect(find.text('Umum'), findsOneWidget);
+      expect(find.text('Kuis Matematika'), findsOneWidget);
       expect(find.text('1 Soal'), findsOneWidget);
-      expect(find.byIcon(Icons.menu_book_rounded), findsOneWidget);
+      expect(find.byIcon(Icons.quiz), findsOneWidget);
     });
   });
 

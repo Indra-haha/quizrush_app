@@ -4,7 +4,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:quizrush/widgets/app_header_bar_with_actions.dart';
-import 'package:sensors_plus/sensors_plus.dart';
+import '../../helpers/shake_service.dart';
 
 import '../../helpers/format.dart';
 import '../../helpers/json.dart';
@@ -63,8 +63,7 @@ class _WaitingRoomPageState extends State<WaitingRoomPage> {
   static const _shakeThreshold = 12.0;
   static const _shakeCooldown = Duration(milliseconds: 1500);
 
-  StreamSubscription<UserAccelerometerEvent>? _accelerometerSub;
-  DateTime _lastShakeAt = DateTime.fromMillisecondsSinceEpoch(0);
+  StreamSubscription<ShakeReading>? _accelerometerSub;
   bool _accelerometerEnabled = false;
 
   /// Nama pemain yang terlihat di room. Roster awal diambil dari daftar
@@ -142,28 +141,22 @@ class _WaitingRoomPageState extends State<WaitingRoomPage> {
 
   void _startShakeDetection() {
     _accelerometerSub?.cancel();
-    try {
-      _accelerometerSub = userAccelerometerEventStream().listen(
-        (event) {
-          if (!_accelerometerEnabled || !mounted) return;
-          final magnitude = sqrt(
-            event.x * event.x + event.y * event.y + event.z * event.z,
-          );
-          if (magnitude < _shakeThreshold) return;
-          final now = DateTime.now();
-          if (now.difference(_lastShakeAt) < _shakeCooldown) return;
-          _lastShakeAt = now;
-          _sendAutoCheer();
-        },
-        onError: (_) {
-          _accelerometerSub?.cancel();
-          _accelerometerSub = null;
-        },
-        cancelOnError: true,
-      );
-    } catch (_) {
-      _accelerometerSub = null;
-    }
+    _accelerometerSub = ShakeService.instance
+        .shakeEvents(
+          threshold: _shakeThreshold,
+          cooldown: _shakeCooldown,
+        )
+        .listen(
+          (_) {
+            if (!_accelerometerEnabled || !mounted) return;
+            _sendAutoCheer();
+          },
+          onError: (_) {
+            _accelerometerSub?.cancel();
+            _accelerometerSub = null;
+          },
+          cancelOnError: true,
+        );
   }
 
   void _sendAutoCheer() {

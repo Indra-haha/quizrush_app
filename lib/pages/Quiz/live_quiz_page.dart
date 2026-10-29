@@ -2,14 +2,13 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:sensors_plus/sensors_plus.dart';
 
 import '../../helpers/format.dart';
+import '../../helpers/gyro_tilt_service.dart';
 import '../../models/live_game.dart';
 import '../../models/room.dart';
 import '../../services/live_game_controller.dart';
 import '../../services/api/room_socket.dart';
-import '../../services/notification_service.dart';
 import '../../services/profile_settings_service.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/quiz_option_theme.dart';
@@ -59,30 +58,9 @@ class _LiveQuizPageState extends State<LiveQuizPage> {
   bool _navHandled = false;
 
   // Fitur auto-choose jawaban via Gyroscope / kemiringan
+  final GyroTiltService _gyroService = GyroTiltService();
   bool _gyroAnswerEnabled = false;
-  bool _hasBaseline = false;
-  int _calibrationSamples = 0;
-  double _sumAccX = 0.0;
-  double _sumAccY = 0.0;
-  double _sumAccZ = 0.0;
-  double _baseAccX = 0.0;
-  double _baseAccY = 0.0;
-  double _baseAccZ = 0.0;
-
-  double _currentAccX = 0.0;
-  double _currentAccY = 0.0;
-  double _currentAccZ = 0.0;
-  double _currentGyroX = 0.0;
-  double _currentGyroY = 0.0;
-  double _currentGyroZ = 0.0;
-
-  StreamSubscription<GyroscopeEvent>? _gyroSub;
-  StreamSubscription<AccelerometerEvent>? _accelSub;
-
-  bool _isNeutral = true;
-  int? _lastChosenIndex;
   int? _lastQuestionIndex;
-  DateTime _lastTriggerTime = DateTime.fromMillisecondsSinceEpoch(0);
 
   @override
   void initState() {
@@ -105,14 +83,9 @@ class _LiveQuizPageState extends State<LiveQuizPage> {
     final enabled = await service.gyroscopeEnabled();
     if (!mounted || !enabled) return;
 
-    final baseline = await service.getGyroBaseline();
-    if (baseline != null) {
-      _baseAccX = baseline['x']!;
-      _baseAccY = baseline['y']!;
-      _baseAccZ = baseline['z']!;
-      _hasBaseline = true;
-    }
+    await _gyroService.init();
 
+    if (!mounted) return;
     setState(() {
       _gyroAnswerEnabled = true;
     });
@@ -121,90 +94,27 @@ class _LiveQuizPageState extends State<LiveQuizPage> {
   }
 
   void _startGyroListening() {
-    _gyroSub?.cancel();
-    _accelSub?.cancel();
+    _gyroService.start(
+      cooldown: const Duration(milliseconds: 1200),
+      onTilt: (event) {
+        if (!_gyroAnswerEnabled || widget.isHost || !mounted) return;
+        final question = _controller.question;
+        if (question == null ||
+            _controller.answered ||
+            _controller.phase != LivePhase.question) {
+          return;
+        }
 
-    try {
-      _accelSub = accelerometerEventStream(
-        samplingPeriod: SensorInterval.uiInterval,
-      ).listen(
-        (event) {
-          if (!_gyroAnswerEnabled || widget.isHost || !mounted) return;
-
-          _currentAccX = event.x;
-          _currentAccY = event.y;
-          _currentAccZ = event.z;
-
-          // Jika belum memiliki baseline tersimpan, kalibrasi dari 5 sampel awal
-          if (!_hasBaseline) {
-            _sumAccX += event.x;
-            _sumAccY += event.y;
-            _sumAccZ += event.z;
-            _calibrationSamples++;
-
-            if (_calibrationSamples >= 5) {
-              _baseAccX = _sumAccX / _calibrationSamples;
-              _baseAccY = _sumAccY / _calibrationSamples;
-              _baseAccZ = _sumAccZ / _calibrationSamples;
-              setState(() {
-                _hasBaseline = true;
-              });
-              unawaited(ProfileSettingsService.instance.setGyroBaseline(
-                x: _baseAccX,
-                y: _baseAccY,
-                z: _baseAccZ,
-              ));
-            }
-            return;
-          }
-
-          _evaluateGyroAnswer();
-        },
-        onError: (_) {
-          _accelSub?.cancel();
-          _accelSub = null;
-        },
-        cancelOnError: true,
-      );
-    } catch (_) {
-      _accelSub = null;
-    }
-
-    try {
-      _gyroSub = gyroscopeEventStream(
-        samplingPeriod: SensorInterval.uiInterval,
-      ).listen(
-        (event) {
-          if (!_gyroAnswerEnabled || widget.isHost || !mounted) return;
-
-          _currentGyroX = event.x;
-          _currentGyroY = event.y;
-          _currentGyroZ = event.z;
-
-          if (_hasBaseline) {
-            _evaluateGyroAnswer();
-          }
-        },
-        onError: (_) {
-          _gyroSub?.cancel();
-          _gyroSub = null;
-        },
-        cancelOnError: true,
-      );
-    } catch (_) {
-      _gyroSub = null;
-    }
+        final targetIndex = event.index;
+        if (targetIndex >= 0 && targetIndex < question.options.length) {
+          _handleGyroAnswerSelected(targetIndex, event.directionName);
+        }
+      },
+    );
   }
 
   void _recalibratePosition() {
-    setState(() {
-      _hasBaseline = false;
-      _calibrationSamples = 0;
-      _sumAccX = 0.0;
-      _sumAccY = 0.0;
-      _sumAccZ = 0.0;
-      _isNeutral = true;
-    });
+    _gyroService.recalibrate();
     HapticFeedback.lightImpact();
 
     if (!mounted) return;
@@ -231,81 +141,6 @@ class _LiveQuizPageState extends State<LiveQuizPage> {
     );
   }
 
-  void _evaluateGyroAnswer() {
-    if (!_gyroAnswerEnabled || widget.isHost || !mounted) return;
-    final question = _controller.question;
-    if (question == null ||
-        _controller.answered ||
-        _controller.phase != LivePhase.question) {
-      return;
-    }
-
-    if (!_hasBaseline) return;
-
-    final deltaAccX = _currentAccX - _baseAccX;
-    final deltaAccY = _currentAccY - _baseAccY;
-
-    final gyroPitch = _currentGyroX; // Pitch rotasi sumbu X (gerakan ke depan/belakang)
-    final gyroRoll = _currentGyroY;  // Roll rotasi sumbu Y (kemiringan ke kiri/kanan)
-
-    // Gabungan sinyal kemiringan & goyangan dinamis
-    final signalX = deltaAccX + (gyroRoll * 1.0);
-    final signalY = deltaAccY + (gyroPitch * 1.0);
-
-    const double triggerThreshold = 2.0;
-    const double neutralThreshold = 0.8;
-
-    final absX = signalX.abs();
-    final absY = signalY.abs();
-
-    if (absX < neutralThreshold && absY < neutralThreshold) {
-      _isNeutral = true;
-      return;
-    }
-
-    if (absX >= triggerThreshold || absY >= triggerThreshold) {
-      int targetIndex = -1;
-      String directionName = '';
-
-      if (absY > absX) {
-        if (signalY < -triggerThreshold) {
-          // Gerakan ke depan -> Opsi C (index 2)
-          targetIndex = 2;
-          directionName = 'Tilt Depan / Atas';
-        } else if (signalY > triggerThreshold) {
-          // Gerakan ke belakang -> Opsi D (index 3)
-          targetIndex = 3;
-          directionName = 'Tilt Belakang / Bawah';
-        }
-      } else {
-        if (signalX > triggerThreshold) {
-          // Miring ke kiri -> Opsi A (index 0)
-          targetIndex = 0;
-          directionName = 'Ke Kiri';
-        } else if (signalX < -triggerThreshold) {
-          // Miring ke kanan -> Opsi B (index 1)
-          targetIndex = 1;
-          directionName = 'Ke Kanan';
-        }
-      }
-
-      if (targetIndex >= 0 && targetIndex < question.options.length) {
-        final now = DateTime.now();
-        final isDifferent = targetIndex != _lastChosenIndex;
-        final cooldownPassed =
-            now.difference(_lastTriggerTime) > const Duration(milliseconds: 1200);
-
-        if (_isNeutral || isDifferent || cooldownPassed) {
-          _isNeutral = false;
-          _lastTriggerTime = now;
-          _lastChosenIndex = targetIndex;
-
-          _handleGyroAnswerSelected(targetIndex, directionName);
-        }
-      }
-    }
-  }
-
   void _handleGyroAnswerSelected(int index, String directionName) {
     if (_controller.answered) return;
 
@@ -315,12 +150,6 @@ class _LiveQuizPageState extends State<LiveQuizPage> {
     HapticFeedback.mediumImpact();
 
     final letter = String.fromCharCode(65 + index % optionThemes.length);
-    final optionText = (_controller.question != null &&
-            index < _controller.question!.options.length)
-        ? _controller.question!.options[index]
-        : '';
-
-    
 
     // Visual In-App Notification (Floating SnackBar)
     if (mounted) {
@@ -379,8 +208,7 @@ class _LiveQuizPageState extends State<LiveQuizPage> {
 
   @override
   void dispose() {
-    _gyroSub?.cancel();
-    _accelSub?.cancel();
+    _gyroService.dispose();
     _controller.removeListener(_onChanged);
     _controller.dispose();
     super.dispose();
@@ -414,8 +242,7 @@ class _LiveQuizPageState extends State<LiveQuizPage> {
     final currentQIndex = _controller.question?.index;
     if (currentQIndex != _lastQuestionIndex) {
       _lastQuestionIndex = currentQIndex;
-      _isNeutral = true;
-      _lastChosenIndex = null;
+      _gyroService.resetNeutral();
     }
 
     setState(() {});

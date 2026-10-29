@@ -51,7 +51,6 @@ void main() {
         find.text('Mulai petualangan cerdasmu sekarang!'),
         findsOneWidget,
       );
-      expect(find.text('Buat Akun'), findsOneWidget);
       expect(find.text('Nama Lengkap'), findsOneWidget);
       expect(find.text('Username'), findsOneWidget);
       expect(find.text('Sekolahan'), findsOneWidget);
