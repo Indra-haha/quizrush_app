@@ -14,6 +14,7 @@ class HomeStatCard extends StatelessWidget {
   final bool largeValue;
   final Color? iconBackground;
   final Color? iconColor;
+  final VoidCallback? onTap;
 
   const HomeStatCard({
     super.key,
@@ -24,6 +25,7 @@ class HomeStatCard extends StatelessWidget {
     this.largeValue = false,
     this.iconBackground,
     this.iconColor,
+    this.onTap,
   });
 
   @override
@@ -41,7 +43,7 @@ class HomeStatCard extends StatelessWidget {
               ? AppTextStyles.homeStatValueOnPrimary
               : AppTextStyles.homeStatValue);
 
-    return Container(
+    final card = Container(
       width: double.infinity,
       height: 128,
       padding: const EdgeInsets.all(AppSpacing.md),
@@ -84,5 +86,13 @@ class HomeStatCard extends StatelessWidget {
         ],
       ),
     );
+
+    if (onTap != null) {
+      return GestureDetector(
+        onTap: onTap,
+        child: card,
+      );
+    }
+    return card;
   }
 }

@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 
+import '../../helpers/format.dart';
 import '../../models/quiz.dart';
+import '../../services/points_store.dart';
 import '../../services/quiz_feed.dart';
 import '../../services/quiz_index.dart';
 import '../../theme/app_theme.dart';
-import '../../helpers/format.dart';
 import '../../widgets/app_header_bar_with_actions.dart';
 import '../../widgets/app_pill_button.dart';
 import '../../widgets/app_snackbar.dart';
@@ -17,6 +18,7 @@ import '../../widgets/section_header.dart';
 import '../MyQuiz/create_quiz_page.dart';
 import '../MyQuiz/my_quiz_page.dart';
 import '../Quiz/detail_quiz_room_page.dart' show DetailQuizRoomPage;
+import '../Reward/reward_page.dart';
 import '../login_redirect.dart';
 
 class HomePage extends StatefulWidget {
@@ -37,15 +39,33 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
+    if (widget.user != null) {
+      PointsStore.instance.setFromUser(widget.user);
+    }
+    PointsStore.instance.refresh();
     _load();
+  }
+
+  @override
+  void didUpdateWidget(covariant HomePage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.user != null && widget.user != oldWidget.user) {
+      PointsStore.instance.setFromUser(widget.user);
+    }
   }
 
   /// Daftar quiz dibaca dari cache lokal; server hanya dihubungi kalau cache
   /// belum pernah diisi.
-  Future<void> _load() => _run(QuizFeed.loadMine);
+  Future<void> _load() {
+    PointsStore.instance.refresh();
+    return _run(QuizFeed.loadMine);
+  }
 
   /// Dipakai oleh tombol refresh dan setelah quiz/room dibuat.
-  Future<void> _sync() => _run(QuizFeed.syncMine);
+  Future<void> _sync() {
+    PointsStore.instance.refresh();
+    return _run(QuizFeed.syncMine);
+  }
 
   Future<void> _run(Future<QuizFeedResult> Function() feed) async {
     if (_syncing) return;
@@ -190,55 +210,93 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildStats() {
-    return Column(
-      children: [
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
+    final index = _index;
+    final totalGames = index == null
+        ? (_loading ? '-' : '0')
+        : '${index.all.fold<int>(0, (total, quiz) => total + quiz.rooms.length)}';
+
+    var openRoomsCount = 0;
+    if (index != null) {
+      for (final quiz in index.all) {
+        for (final room in quiz.rooms) {
+          if (room.status.trim().toLowerCase() == 'open') {
+            openRoomsCount++;
+          }
+        }
+      }
+    }
+    final activeHost = index == null
+        ? (_loading ? '-' : '0')
+        : '$openRoomsCount';
+
+    return ListenableBuilder(
+      listenable: PointsStore.instance,
+      builder: (context, _) {
+        final points = PointsStore.instance.points;
+        final saldoPts = points == null
+            ? (_loading ? '-' : '0')
+            : formatPoints(points);
+
+        return Column(
           children: [
-            Expanded(
-              child: HomeStatCard(
-                label: 'Total Main',
-                value: '1.2k',
-                icon: Icons.sports_esports,
-                iconBackground: AppColors.homeTotalTint,
-              ),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: HomeStatCard(
+                    label: 'Total Main',
+                    value: totalGames,
+                    icon: Icons.sports_esports,
+                    iconBackground: AppColors.homeTotalTint,
+                    onTap: _openAll,
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.md),
+                Expanded(
+                  child: HomeStatCard(
+                    label: 'Saldo Pts',
+                    value: saldoPts,
+                    icon: Icons.toll_rounded,
+                    highlight: true,
+                    onTap: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => const RewardPage(),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(width: AppSpacing.md),
-            Expanded(
-              child: HomeStatCard(
-                label: 'Rating Rata-rata',
-                value: '4.8',
-                icon: Icons.star,
-                highlight: true,
-              ),
+            const SizedBox(height: AppSpacing.md),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: HomeStatCard(
+                    label: 'Host Aktif',
+                    value: activeHost,
+                    icon: Icons.person,
+                    largeValue: true,
+                    iconBackground: AppColors.homeHostTint,
+                    onTap: _openAll,
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.md),
+                Expanded(
+                  child: HomeStatCard(
+                    label: 'Terakhir Update',
+                    value: _savedAtLabel(),
+                    icon: Icons.access_time,
+                    iconBackground: AppColors.homeUpdateTint,
+                  ),
+                ),
+              ],
             ),
           ],
-        ),
-        const SizedBox(height: AppSpacing.md),
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              child: HomeStatCard(
-                label: 'Host Aktif',
-                value: '12',
-                icon: Icons.person,
-                largeValue: true,
-                iconBackground: AppColors.homeHostTint,
-              ),
-            ),
-            const SizedBox(width: AppSpacing.md),
-            Expanded(
-              child: HomeStatCard(
-                label: 'Terakhir Update',
-                value: _savedAtLabel(),
-                icon: Icons.access_time,
-                iconBackground: AppColors.homeUpdateTint,
-              ),
-            ),
-          ],
-        ),
-      ],
+        );
+      },
     );
   }
 
