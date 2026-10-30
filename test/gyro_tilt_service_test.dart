@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quizrush/helpers/gyro_tilt_service.dart';
 import 'package:quizrush/services/profile_settings_service.dart';
@@ -35,6 +37,46 @@ void main() {
     });
   });
 
+  group('Angle Calculations', () {
+    test('calculatePitch computes forward/backward degrees accurately', () {
+      // Phone vertical: y = 9.8, x = 0, z = 0 -> 90 degrees
+      expect(GyroTiltService.calculatePitch(0, 9.8, 0), closeTo(90.0, 0.1));
+
+      // Phone flat on table: y = 0, x = 0, z = 9.8 -> 0 degrees
+      expect(GyroTiltService.calculatePitch(0, 0, 9.8), closeTo(0.0, 0.1));
+
+      // Phone reading position at 45 degrees
+      final g = 9.8;
+      final y45 = g * math.sin(45 * math.pi / 180);
+      final z45 = g * math.cos(45 * math.pi / 180);
+      expect(GyroTiltService.calculatePitch(0, y45, z45), closeTo(45.0, 0.1));
+
+      // Tilt forward 15 degrees: from 45 down to 30 degrees
+      final y30 = g * math.sin(30 * math.pi / 180);
+      final z30 = g * math.cos(30 * math.pi / 180);
+      final pitch30 = GyroTiltService.calculatePitch(0, y30, z30);
+      final pitch45 = GyroTiltService.calculatePitch(0, y45, z45);
+      expect(pitch30 - pitch45, closeTo(-15.0, 0.1));
+    });
+
+    test('calculateRoll computes left/right degrees accurately', () {
+      final g = 9.8;
+
+      // Phone flat without roll
+      expect(GyroTiltService.calculateRoll(0, 0, g), closeTo(0.0, 0.1));
+
+      // Tilt left 15 degrees (x becomes positive)
+      final xLeft15 = g * math.sin(15 * math.pi / 180);
+      final zLeft15 = g * math.cos(15 * math.pi / 180);
+      expect(GyroTiltService.calculateRoll(xLeft15, 0, zLeft15), closeTo(15.0, 0.1));
+
+      // Tilt right 15 degrees (x becomes negative)
+      final xRight15 = -g * math.sin(15 * math.pi / 180);
+      final zRight15 = g * math.cos(15 * math.pi / 180);
+      expect(GyroTiltService.calculateRoll(xRight15, 0, zRight15), closeTo(-15.0, 0.1));
+    });
+  });
+
   group('GyroTiltService', () {
     test('init loads saved baseline from ProfileSettingsService', () async {
       await ProfileSettingsService.instance.setGyroBaseline(
@@ -58,4 +100,3 @@ void main() {
     });
   });
 }
-

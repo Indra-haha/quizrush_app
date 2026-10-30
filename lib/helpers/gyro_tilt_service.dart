@@ -1,49 +1,4 @@
 import 'dart:async';
-
-import 'package:flutter/material.dart';
-import 'package:sensors_plus/sensors_plus.dart';
-
-import '../services/profile_settings_service.dart';
-
-/// Arah kemiringan (tilt) yang didukung oleh sistem kendali gestur.
-enum TiltDirection {
-  left(name: 'Ke Kiri', icon: Icons.arrow_back_rounded),
-  right(name: 'Ke Kanan', icon: Icons.arrow_forward_rounded),
-  forward(name: 'Tilt Depan / Atas', icon: Icons.arrow_upward_rounded),
-  backward(name: 'Tilt Belakang / Bawah', icon: Icons.arrow_downward_rounded);
-
-  const TiltDirection({
-    required this.name,
-    required this.icon,
-  });
-
-  final String name;
-  final IconData icon;
-
-  static TiltDirection? fromIndex(int idx) {
-    if (idx >= 0 && idx < values.length) {
-      return values[idx];
-    }
-    return null;
-  }
-}
-
-/// Event hasil deteksi gerakan atau kemiringan perangkat.
-class TiltEvent {
-  const TiltEvent({
-    required this.direction,
-    required this.index,
-    required this.directionName,
-    required this.icon,
-  });
-
-  final TiltDirection direction;
-  final int index;
-  final String directionName;
-  final IconData icon;
-}
-
-import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
