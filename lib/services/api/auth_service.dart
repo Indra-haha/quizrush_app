@@ -61,7 +61,7 @@ class AuthService {
   Future<User> register({
     required String nama,
     required String username,
-    required String kelas,
+    required String sekolah,
     required String tanggalLahir,
     required String password,
   }) async {
@@ -70,7 +70,7 @@ class AuthService {
       body: {
         'nama': nama,
         'username': username,
-        'kelas': kelas,
+        'sekolah': sekolah.trim(),
         'tanggal_lahir': tanggalLahir,
         'password': hashPassword(password),
       },

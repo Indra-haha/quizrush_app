@@ -34,7 +34,7 @@ void main() {
       const user = User(
         username: 'user123',
         nama: 'User Test',
-        kelas: 'SI-B',
+        sekolah: 'SI-B',
         tanggalLahir: '2000-01-01',
         urlImg: 'https://res.cloudinary.com/test/image/upload/v123/avatar.jpg',
       );
@@ -45,7 +45,7 @@ void main() {
       final parsed = User.fromJson(json);
       expect(parsed.username, 'user123');
       expect(parsed.nama, 'User Test');
-      expect(parsed.kelas, 'SI-B');
+      expect(parsed.sekolah, 'SI-B');
       expect(parsed.tanggalLahir, '2000-01-01');
       expect(parsed.urlImg, 'https://res.cloudinary.com/test/image/upload/v123/avatar.jpg');
     });
@@ -54,7 +54,7 @@ void main() {
       const user = User(
         username: 'user123',
         nama: 'User Test',
-        kelas: 'SI-B',
+        sekolah: 'SI-B',
         tanggalLahir: '2000-01-01',
       );
       expect(user.urlImg, isNull);
@@ -102,7 +102,7 @@ void main() {
             'user': {
               'username': 'user123',
               'nama': 'User Test',
-              'kelas': 'SI-B',
+              'sekolah': 'SI-B',
               'url_img': 'https://cloudinary.com/new_avatar.jpg',
             },
           }),
@@ -203,4 +203,6 @@ void main() {
     });
   });
 }
+
+
 

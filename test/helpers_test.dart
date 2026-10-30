@@ -59,7 +59,7 @@ void main() {
     String? call({
       String nama = 'Budi',
       String username = 'budi',
-      String kelas = '6A',
+      String sekolah = '6A',
       String tanggalLahir = '2005-01-01',
       String password = 'rahasia',
       String confirmPassword = 'rahasia',
@@ -67,7 +67,7 @@ void main() {
       return AuthValidator.register(
         nama: nama,
         username: username,
-        kelas: kelas,
+        sekolah: sekolah,
         tanggalLahir: tanggalLahir,
         password: password,
         confirmPassword: confirmPassword,
@@ -241,3 +241,5 @@ void main() {
     });
   });
 }
+
+

@@ -16,20 +16,20 @@ class UserService {
 
   /// Memperbarui data pengguna via `PATCH /api/user`.
   ///
-  /// Menerima [urlImg] (URL foto dari Cloudinary), [nama], [kelas],
+  /// Menerima [urlImg] (URL foto dari Cloudinary), [nama], [sekolah],
   /// dan [tanggalLahir] secara parsial.
   Future<Map<String, dynamic>> updateProfile({
     required String token,
     String? urlImg,
     String? nama,
-    String? kelas,
+    String? sekolah,
     String? tanggalLahir,
     Map<String, dynamic>? additionalFields,
   }) async {
     final body = <String, dynamic>{};
     if (urlImg != null) body['url_img'] = urlImg;
     if (nama != null) body['nama'] = nama;
-    if (kelas != null) body['kelas'] = kelas;
+    if (sekolah != null) body['sekolah'] = sekolah;
     if (tanggalLahir != null) body['tanggal_lahir'] = tanggalLahir;
     if (additionalFields != null) body.addAll(additionalFields);
 
@@ -84,4 +84,3 @@ class UserService {
     );
   }
 }
-

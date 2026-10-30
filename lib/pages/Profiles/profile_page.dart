@@ -216,7 +216,11 @@ class _ProfilePageState extends State<ProfilePage> {
 
   String get _nama => (_user?['nama'] as String?)?.trim() ?? '';
   String get _username => (_user?['username'] as String?)?.trim() ?? '';
-  String get _kelas => (_user?['kelas'] as String?)?.trim() ?? '';
+  String get _sekolah {
+    final s = (_user?['sekolah'] as String?)?.trim();
+    if (s != null && s.isNotEmpty) return s;
+    return (_user?['kelas'] as String?)?.trim() ?? '';
+  }
   String? get _urlImg => (_user?['url_img'] as String?)?.trim();
 
   String get _initials {
@@ -394,7 +398,7 @@ class _ProfilePageState extends State<ProfilePage> {
         _ProfileHeroCard(
           nama: _nama,
           username: _username,
-          kelas: _kelas,
+          sekolah: _sekolah,
           initials: _initials,
           urlImg: _urlImg,
           onAvatarTap: _changeProfilePhoto,
@@ -419,7 +423,7 @@ class _ProfilePageState extends State<ProfilePage> {
 class _ProfileHeroCard extends StatelessWidget {
   final String nama;
   final String username;
-  final String kelas;
+  final String sekolah;
   final String initials;
   final String? urlImg;
   final VoidCallback? onAvatarTap;
@@ -428,7 +432,7 @@ class _ProfileHeroCard extends StatelessWidget {
   const _ProfileHeroCard({
     required this.nama,
     required this.username,
-    required this.kelas,
+    required this.sekolah,
     required this.initials,
     this.urlImg,
     this.onAvatarTap,
@@ -552,7 +556,7 @@ class _ProfileHeroCard extends StatelessWidget {
             padding: ProfileTheme.pillPadding,
             decoration: ProfileTheme.pillDecoration,
             child: Text(
-              kelas.isEmpty ? '—' : kelas,
+              sekolah.isEmpty ? '—' : sekolah,
               textAlign: TextAlign.center,
               style: AppTextStyles.profileLocation,
             ),

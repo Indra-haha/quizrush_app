@@ -375,13 +375,13 @@ void main() {
       const user = User(
         username: 'budi',
         nama: 'Budi',
-        kelas: '6A',
+        sekolah: '6A',
         tanggalLahir: '2005-03-05',
       );
       final kembali = User.fromJson(user.toJson());
       expect(kembali.username, 'budi');
       expect(kembali.nama, 'Budi');
-      expect(kembali.kelas, '6A');
+      expect(kembali.sekolah, '6A');
       expect(kembali.tanggalLahir, '2005-03-05');
     });
   });
@@ -406,3 +406,4 @@ void main() {
     });
   });
 }
+

@@ -25,7 +25,7 @@ void main() {
           user: {
             'username': 'budi123',
             'nama': 'Budi Santoso',
-            'kelas': 'SI-A',
+            'sekolah': 'SI-A',
           },
         ),
       ),

@@ -21,7 +21,7 @@ class RegisterPage extends StatefulWidget {
 class _RegisterPageState extends State<RegisterPage> {
   final TextEditingController _namaController = TextEditingController();
   final TextEditingController _usernameController = TextEditingController();
-  final TextEditingController _kelasController = TextEditingController();
+  final TextEditingController _sekolahController = TextEditingController();
   final TextEditingController _tanggalLahirController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _confirmPasswordController =
@@ -50,7 +50,7 @@ class _RegisterPageState extends State<RegisterPage> {
     if (_isLoading) return;
     final nama = _namaController.text.trim();
     final username = _usernameController.text.trim();
-    final kelas = _kelasController.text.trim();
+    final sekolah = _sekolahController.text.trim();
     final tanggalLahir = formatTanggalLahir(
       _tanggalLahirController.text.trim(),
     );
@@ -60,7 +60,7 @@ class _RegisterPageState extends State<RegisterPage> {
     final error = AuthValidator.register(
       nama: nama,
       username: username,
-      kelas: kelas,
+      sekolah: sekolah,
       tanggalLahir: tanggalLahir,
       password: password,
       confirmPassword: confirmPassword,
@@ -82,7 +82,7 @@ class _RegisterPageState extends State<RegisterPage> {
       final user = await AuthService.instance.register(
         nama: nama,
         username: username,
-        kelas: kelas,
+        sekolah: sekolah,
         tanggalLahir: tanggalLahir,
         password: password,
       );
@@ -113,7 +113,7 @@ class _RegisterPageState extends State<RegisterPage> {
   void dispose() {
     _namaController.dispose();
     _usernameController.dispose();
-    _kelasController.dispose();
+    _sekolahController.dispose();
     _tanggalLahirController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
@@ -143,9 +143,9 @@ class _RegisterPageState extends State<RegisterPage> {
               icon: Icons.alternate_email,
             ),
             AuthField(
-              controller: _kelasController,
-              label: 'Sekolahan',
-              hint: 'Contoh: Pemrograman Mobile SI-B',
+              controller: _sekolahController,
+              label: 'Sekolah',
+              hint: 'Contoh: SMAN 1 Jakarta / Pemrograman Mobile',
               icon: Icons.school,
               iconSize: AppIconSize.xl,
               iconOffset: AppSpacing.space15,

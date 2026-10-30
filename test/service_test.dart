@@ -153,12 +153,12 @@ void main() {
       final user = await service.register(
         nama: 'Budi',
         username: 'budi',
-        kelas: '6A',
+        sekolah: '6A',
         tanggalLahir: '2005-03-05',
         password: 'rahasia',
       );
       expect(user.username, 'budi');
-      expect(user.kelas, '6A');
+      expect(user.sekolah, '6A');
       expect(sentPassword, hashPassword('rahasia'));
     });
 
@@ -904,3 +904,4 @@ void main() {
     });
   });
 }
+

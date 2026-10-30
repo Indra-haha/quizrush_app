@@ -3,23 +3,24 @@ import '../helpers/json.dart';
 class User {
   final String username;
   final String nama;
-  final String kelas;
+  final String sekolah;
   final String tanggalLahir;
   final String? urlImg;
 
   const User({
     required this.username,
     required this.nama,
-    required this.kelas,
+    required this.sekolah,
     required this.tanggalLahir,
     this.urlImg,
   });
 
   factory User.fromJson(Map<String, dynamic> json) {
+    final school = json['sekolah'] ?? json['kelas'];
     return User(
       username: jsonString(json['username']),
       nama: jsonString(json['nama']),
-      kelas: jsonString(json['kelas']),
+      sekolah: jsonString(school),
       tanggalLahir: jsonString(json['tanggal_lahir']),
       urlImg: json['url_img'] as String?,
     );
@@ -29,7 +30,7 @@ class User {
     return {
       'username': username,
       'nama': nama,
-      'kelas': kelas,
+      'sekolah': sekolah,
       'tanggal_lahir': tanggalLahir,
       if (urlImg != null) 'url_img': urlImg,
     };
@@ -38,14 +39,14 @@ class User {
   User copyWith({
     String? username,
     String? nama,
-    String? kelas,
+    String? sekolah,
     String? tanggalLahir,
     String? urlImg,
   }) {
     return User(
       username: username ?? this.username,
       nama: nama ?? this.nama,
-      kelas: kelas ?? this.kelas,
+      sekolah: sekolah ?? this.sekolah,
       tanggalLahir: tanggalLahir ?? this.tanggalLahir,
       urlImg: urlImg ?? this.urlImg,
     );

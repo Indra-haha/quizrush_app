@@ -20,14 +20,14 @@ class AuthValidator {
   static String? register({
     required String nama,
     required String username,
-    required String kelas,
+    required String sekolah,
     required String tanggalLahir,
     required String password,
     required String confirmPassword,
   }) {
     if (nama.trim().isEmpty ||
         username.trim().isEmpty ||
-        kelas.trim().isEmpty ||
+        sekolah.trim().isEmpty ||
         tanggalLahir.trim().isEmpty ||
         password.isEmpty ||
         confirmPassword.isEmpty) {

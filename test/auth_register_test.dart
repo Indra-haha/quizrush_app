@@ -53,7 +53,7 @@ void main() {
       );
       expect(find.text('Nama Lengkap'), findsOneWidget);
       expect(find.text('Username'), findsOneWidget);
-      expect(find.text('Sekolahan'), findsOneWidget);
+      expect(find.text('Sekolah'), findsOneWidget);
       expect(find.text('Tanggal Lahir'), findsOneWidget);
       expect(find.text('Kata Sandi'), findsOneWidget);
       expect(find.text('Konfirmasi Kata Sandi'), findsOneWidget);
@@ -62,14 +62,13 @@ void main() {
       expect(find.text('Masuk di sini'), findsOneWidget);
     });
 
-    testWidgets('field kelas digantikan label sekolahan', (
+    testWidgets('field kelas digantikan label sekolah', (
       WidgetTester tester,
     ) async {
       await _openPage(tester);
 
-      expect(find.text('Sekolahan'), findsOneWidget);
+      expect(find.text('Sekolah'), findsOneWidget);
       expect(find.text('Kelas'), findsNothing);
-      expect(find.text('Sekolah'), findsNothing);
     });
 
     testWidgets('menampilkan teks syarat dan kebijakan privasi', (
