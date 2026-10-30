@@ -54,7 +54,8 @@ class _SettingsState extends State<Settings> {
   bool _gyroscopeEnabled = true;
   bool _locationEnabled = false;
   bool _locationBusy = false;
-  int _selectedTilt = 1;
+  int? _selectedTilt;
+  TiltAngleInfo? _currentAngleInfo;
 
   final List<TextEditingController> _tiltControllers = List.generate(
     4,
@@ -89,6 +90,7 @@ class _SettingsState extends State<Settings> {
       _accelerometerEnabled = acc;
       _gyroscopeEnabled = gyro;
       _locationEnabled = loc;
+      _selectedTilt = null;
     });
 
     if (acc) {
@@ -96,6 +98,8 @@ class _SettingsState extends State<Settings> {
     }
     if (gyro) {
       _startGyroscopeDetection();
+      // Rekam posisi awal awal saat dibuka agar 0° sesuai genggaman pengguna saat ini
+      _recalibrateInitialPosition(showSnackbar: false);
     }
   }
 
@@ -111,10 +115,14 @@ class _SettingsState extends State<Settings> {
   }
 
   Future<void> _toggleGyroscope(bool value) async {
-    setState(() => _gyroscopeEnabled = value);
+    setState(() {
+      _gyroscopeEnabled = value;
+      _selectedTilt = null;
+    });
     await ProfileSettingsService.instance.setGyroscopeEnabled(value);
     if (value) {
       _startGyroscopeDetection(notifyOnReady: true);
+      _recalibrateInitialPosition(showSnackbar: false);
     } else {
       _stopGyroscopeDetection();
     }
@@ -197,15 +205,16 @@ class _SettingsState extends State<Settings> {
     }
   }
 
-  void _recalibrateInitialPosition() {
+  void _recalibrateInitialPosition({bool showSnackbar = true}) {
     if (!_gyroscopeEnabled) return;
     setState(() {
+      _selectedTilt = null;
       _gyroService.recalibrate();
     });
 
     HapticFeedback.lightImpact();
 
-    if (!mounted) return;
+    if (!mounted || !showSnackbar) return;
     ScaffoldMessenger.of(context).hideCurrentSnackBar();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -215,7 +224,7 @@ class _SettingsState extends State<Settings> {
             SizedBox(width: 8),
             Expanded(
               child: Text(
-                'Mengkalibrasi posisi awal... Tahan posisi ponsel.',
+                'Merekam posisi awal... Tahan ponsel di posisi nyaman.',
                 style: TextStyle(color: Colors.white),
               ),
             ),
@@ -231,10 +240,20 @@ class _SettingsState extends State<Settings> {
 
   void _startGyroscopeDetection({bool notifyOnReady = false}) {
     _gyroService.start(
-      cooldown: const Duration(milliseconds: 1000),
+      triggerAngle: 15.0,
+      neutralAngle: 8.0,
+      cooldown: const Duration(milliseconds: 800),
+      onAngleUpdate: (info) {
+        if (!mounted) return;
+        setState(() {
+          _currentAngleInfo = info;
+        });
+      },
       onCalibrated: () {
         if (mounted) {
-          setState(() {});
+          setState(() {
+            _selectedTilt = null;
+          });
         }
         if (notifyOnReady && mounted) {
           ScaffoldMessenger.of(context).hideCurrentSnackBar();
@@ -246,7 +265,7 @@ class _SettingsState extends State<Settings> {
                   SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      'Posisi awal gyroscope disimpan! Gerakkan ke depan/belakang atau miringkan ke kiri/kanan.',
+                      'Posisi awal (0°) disimpan! Miringkan ponsel min. 15° untuk memilih opsi jawaban.',
                       style: TextStyle(color: Colors.white),
                     ),
                   ),
@@ -268,6 +287,7 @@ class _SettingsState extends State<Settings> {
           event.index,
           directionName: event.directionName,
           icon: event.icon,
+          angle: event.angleDegrees,
           fromSensor: true,
         );
       },
@@ -303,6 +323,7 @@ class _SettingsState extends State<Settings> {
     int index, {
     required String directionName,
     required IconData icon,
+    double? angle,
     bool fromSensor = true,
   }) {
     if (!mounted) return;
@@ -325,6 +346,10 @@ class _SettingsState extends State<Settings> {
     final color = CreateQuizQuestionStyles
         .answerColors[index % CreateQuizQuestionStyles.answerColors.length];
 
+    final angleText = (angle != null && angle > 0)
+        ? ' (${angle.toStringAsFixed(1)}°)'
+        : '';
+
     ScaffoldMessenger.of(context).hideCurrentSnackBar();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -334,7 +359,7 @@ class _SettingsState extends State<Settings> {
             const SizedBox(width: 8),
             Expanded(
               child: Text(
-                '$directionName terpilih: $displayText',
+                '$directionName$angleText terpilih: $displayText',
                 style: const TextStyle(color: Colors.white),
               ),
             ),
@@ -419,8 +444,9 @@ class _SettingsState extends State<Settings> {
                   fromSensor: false,
                 ),
                 tiltControllers: _tiltControllers,
-                onRecalibrate: _recalibrateInitialPosition,
+                onRecalibrate: () => _recalibrateInitialPosition(showSnackbar: true),
                 isCalibrated: _gyroService.hasBaseline,
+                angleInfo: _currentAngleInfo,
               ),
             ],
           ),
@@ -563,11 +589,12 @@ class _AccelerometerCard extends StatelessWidget {
 class _GyroscopeCard extends StatelessWidget {
   final bool enabled;
   final ValueChanged<bool> onChanged;
-  final int selectedTilt;
+  final int? selectedTilt;
   final ValueChanged<int> onTiltSelected;
   final List<TextEditingController> tiltControllers;
   final VoidCallback onRecalibrate;
   final bool isCalibrated;
+  final TiltAngleInfo? angleInfo;
 
   const _GyroscopeCard({
     required this.enabled,
@@ -577,7 +604,186 @@ class _GyroscopeCard extends StatelessWidget {
     required this.tiltControllers,
     required this.onRecalibrate,
     required this.isCalibrated,
+    this.angleInfo,
   });
+
+  Widget _buildRealtimeBadge() {
+    final info = angleInfo;
+    if (info == null || info.isCalibrating || !isCalibrated) {
+      return Container(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.space3,
+          vertical: AppSpacing.space1,
+        ),
+        decoration: BoxDecoration(
+          color: AppColors.primarySoft,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(
+              width: 10,
+              height: 10,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+            const SizedBox(width: 6),
+            Text(
+              'Merekam Posisi...',
+              style: AppTextStyles.labelStrongSmall.copyWith(
+                color: AppColors.primary,
+                fontSize: 11,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (info.direction != null) {
+      final dir = info.direction!;
+      final color = CreateQuizQuestionStyles
+          .answerColors[dir.index % CreateQuizQuestionStyles.answerColors.length];
+      final label = dir == TiltDirection.forward
+          ? '⬆ Depan (${info.dominantAngle.toStringAsFixed(0)}°)'
+          : dir == TiltDirection.backward
+          ? '⬇ Belakang (${info.dominantAngle.toStringAsFixed(0)}°)'
+          : dir == TiltDirection.left
+          ? '⬅ Kiri (${info.dominantAngle.toStringAsFixed(0)}°)'
+          : '➡ Kanan (${info.dominantAngle.toStringAsFixed(0)}°)';
+
+      return Container(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.space3,
+          vertical: AppSpacing.space1,
+        ),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.18),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: color, width: 1.5),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.bold,
+            color: color,
+          ),
+        ),
+      );
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.space3,
+        vertical: AppSpacing.space1,
+      ),
+      decoration: BoxDecoration(
+        color: AppColors.primarySoft,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: AppColors.outlineVariant),
+      ),
+      child: Text(
+        '⚪ Netral (< 15°)',
+        style: AppTextStyles.labelStrongSmall.copyWith(
+          color: AppColors.textSecondary,
+          fontSize: 11,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDegreeStatusBox() {
+    final isCalibrating = angleInfo?.isCalibrating ?? false;
+    final dominant = angleInfo?.dominantAngle ?? 0.0;
+    final currentDir = angleInfo?.direction;
+    final targetAngle = angleInfo?.triggerAngle ?? 15.0;
+    final progress = (dominant / targetAngle).clamp(0.0, 1.0);
+
+    String statusText;
+    String detailText;
+    Color statusColor;
+
+    if (isCalibrating || !isCalibrated) {
+      statusText = 'Merekam posisi awal ponsel (0°)...';
+      detailText = 'Tahan smartphone di posisi membaca yang nyaman.';
+      statusColor = AppColors.primary;
+    } else if (currentDir != null) {
+      final dirName = currentDir == TiltDirection.forward
+          ? 'Tilt Depan'
+          : currentDir == TiltDirection.backward
+          ? 'Tilt Belakang'
+          : currentDir == TiltDirection.left
+          ? 'Miring Kiri'
+          : 'Miring Kanan';
+      statusText = '$dirName: ${dominant.toStringAsFixed(1)}° (≥ 15°) Terdeteksi!';
+      detailText = 'Opsi jawaban telah dipilih otomatis oleh sensor.';
+      statusColor = CreateQuizQuestionStyles
+          .answerColors[currentDir.index % CreateQuizQuestionStyles.answerColors.length];
+    } else {
+      statusText = 'Posisi Netral: ${dominant.toStringAsFixed(1)}° (Target min. 15.0°)';
+      detailText = 'Miringkan ponsel minimal 15° ke salah satu arah untuk menjawab.';
+      statusColor = AppColors.textSecondary;
+    }
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(AppSpacing.space4),
+      decoration: BoxDecoration(
+        color: statusColor.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(
+          color: statusColor.withValues(alpha: 0.25),
+          width: 1,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                currentDir != null
+                    ? currentDir.icon
+                    : Icons.screen_lock_rotation_rounded,
+                size: 16,
+                color: statusColor,
+              ),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  statusText,
+                  style: AppTextStyles.labelStrongSmall.copyWith(
+                    color: statusColor,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(
+            detailText,
+            style: AppTextStyles.bodySmall.copyWith(
+              color: AppColors.textSecondary,
+              fontSize: 11,
+            ),
+          ),
+          const SizedBox(height: 6),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(4),
+            child: LinearProgressIndicator(
+              value: progress,
+              backgroundColor: AppColors.outlineVariant.withValues(alpha: 0.3),
+              valueColor: AlwaysStoppedAnimation<Color>(statusColor),
+              minHeight: 5,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -610,7 +816,7 @@ class _GyroscopeCard extends StatelessWidget {
             ),
             const SizedBox(height: AppSpacing.space6),
             Text(
-              'Kemiringan ponsel untuk memilih opsi jawaban cepat saat kuis berlangsung.',
+              'Kemiringan ponsel untuk memilih opsi jawaban cepat saat kuis berlangsung (kemiringan minimal 15°).',
               style: AppTextStyles.bodyMedium.copyWith(
                 color: AppColors.textSecondary,
                 height: 1.43,
@@ -626,44 +832,13 @@ class _GyroscopeCard extends StatelessWidget {
                     color: AppColors.textPrimary,
                   ),
                 ),
-                if (enabled)
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: AppSpacing.space3,
-                      vertical: AppSpacing.space1,
-                    ),
-                    decoration: BoxDecoration(
-                      color: CreateQuizQuestionStyles
-                          .answerColors[selectedTilt %
-                              CreateQuizQuestionStyles.answerColors.length]
-                          .withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                        color:
-                            CreateQuizQuestionStyles.answerColors[selectedTilt %
-                                CreateQuizQuestionStyles.answerColors.length],
-                        width: 1,
-                      ),
-                    ),
-                    child: Text(
-                      selectedTilt == 0
-                          ? '⬅ Kiri'
-                          : selectedTilt == 1
-                          ? '➡ Kanan'
-                          : selectedTilt == 2
-                          ? '⬆ Depan'
-                          : '⬇ Belakang',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                        color:
-                            CreateQuizQuestionStyles.answerColors[selectedTilt %
-                                CreateQuizQuestionStyles.answerColors.length],
-                      ),
-                    ),
-                  ),
+                if (enabled) _buildRealtimeBadge(),
               ],
             ),
+            if (enabled) ...[
+              const SizedBox(height: AppSpacing.space4),
+              _buildDegreeStatusBox(),
+            ],
             const SizedBox(height: AppSpacing.space6),
             Column(
               children: [
@@ -701,9 +876,7 @@ class _GyroscopeCard extends StatelessWidget {
                     children: [
                       Icon(
                         enabled
-                            ? (isCalibrated
-                                  ? Icons.screen_rotation_alt_rounded
-                                  : Icons.refresh_rounded)
+                            ? Icons.crop_rotate_rounded
                             : Icons.touch_app_rounded,
                         size: AppIconSize.sm,
                         color: AppColors.locationInk,
@@ -711,10 +884,8 @@ class _GyroscopeCard extends StatelessWidget {
                       const SizedBox(width: AppSpacing.space3),
                       Text(
                         enabled
-                            ? (!isCalibrated
-                                  ? 'Belum digunakan'
-                                  : 'Coba miringkan smartphone')
-                            : 'Aktifkan Gyroscope untuk Mencoba',
+                            ? 'Rekam Posisi Awal (Kalibrasi 0°)'
+                            : 'Aktifkan Gyroscope untuk Kalibrasi',
                         style: AppTextStyles.labelStrongSmall.copyWith(
                           color: AppColors.locationInk,
                         ),
@@ -724,6 +895,19 @@ class _GyroscopeCard extends StatelessWidget {
                 ),
               ),
             ),
+            if (enabled) ...[
+              const SizedBox(height: AppSpacing.space2),
+              Padding(
+                padding: const EdgeInsets.only(left: AppSpacing.space2),
+                child: Text(
+                  'Tips: Pegang ponsel di posisi nyaman Anda, lalu tekan tombol di atas untuk merekam posisi awal 0°. Gerakkan minimal 15° untuk memilih jawaban.',
+                  style: AppTextStyles.bodySmall.copyWith(
+                    color: AppColors.textSecondary,
+                    fontSize: 11,
+                  ),
+                ),
+              ),
+            ],
           ],
         ),
       ),
