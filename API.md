@@ -58,7 +58,7 @@ Respons `401` dari `middleware.Auth` memakai envelope bersarang `{ "status": 401
 | POST | `/api/login` | ✗ | Login dan mendapatkan token |
 | POST | `/api/logout` | ✓ | Mengakhiri sesi token |
 | GET | `/api/session` | ✓ | Mengecek sesi login masih aktif |
-| PATCH | `/api/user` | ✓ | Mengubah data profil user (foto profil `url_img`, nama, kelas, tanggal lahir) |
+| PATCH | `/api/user` | ✓ | Mengubah data profil user (foto profil `url_img`, nama, sekolah, tanggal lahir) |
 | GET | `/api/my-quizzes` | ✓ | List kuis milik user (dikelompokkan by status room) |
 | POST | `/api/create/signature` | ✓ | Membuat signature Cloudinary untuk upload gambar kuis langsung dari klien |
 | POST | `/api/create/quiz` | ✓ | Membuat kuis baru (setelah gambar diunggah ke Cloudinary) |
@@ -117,7 +117,7 @@ Respons `401` dari `middleware.Auth` memakai envelope bersarang `{ "status": 401
 |---|---|---|---|---|
 | 1 | `username` | string | ✅ | Username unik (min 3 karakter: huruf, angka, underscore, atau dash) |
 | 2 | `nama` | string | ✅ | Nama lengkap |
-| 3 | `kelas` | string | ✅ | Nama kelas |
+| 3 | `sekolah` | string | ✅ | Nama sekolah |
 | 4 | `password` | string | ✅ | Password dalam bentuk hash **SHA-256** (hex lowercase 64 karakter), bukan plaintext |
 | 5 | `tanggal_lahir` | string | ✅ | Format `YYYY-MM-DD`, tidak boleh di masa depan |
 
@@ -131,7 +131,7 @@ Content-Type: application/json
 {
   "username": "124240200",
   "nama": "Budi Santoso",
-  "kelas": "Pemrograman Mobile SI-B",
+  "sekolah": "SMA Negeri 1 Jakarta",
   "password": "bee5688aea66a47460b19c76f8f199c6b9585eb726f8322b1429793863609ca2",
   "tanggal_lahir": "2004-03-10"
 }
@@ -161,7 +161,7 @@ Content-Type: application/json
   "user": {
     "username": "124240200",
     "nama": "Budi Santoso",
-    "kelas": "Pemrograman Mobile SI-B",
+    "sekolah": "SMA Negeri 1 Jakarta",
     "tanggal_lahir": "2004-03-10"
   }
 }
@@ -171,7 +171,7 @@ Content-Type: application/json
 
 ```json
 // Wajib diisi / format salah
-{ "message": "Username, nama, kelas, password, dan tanggal lahir wajib diisi" }
+{ "message": "Username, nama, sekolah, password, dan tanggal lahir wajib diisi" }
 
 // Username tidak valid
 { "message": "Username minimal 3 karakter, hanya huruf, angka, underscore, atau dash" }
@@ -249,7 +249,7 @@ Content-Type: application/json
   "user": {
     "username": "124240200",
     "nama": "Budi Santoso",
-    "kelas": "Pemrograman Mobile SI-B",
+    "sekolah": "SMA Negeri 1 Jakarta",
     "points": 120
   }
 }
@@ -366,7 +366,7 @@ Authorization: Bearer <TOKEN>
   "user": {
     "username": "124240200",
     "nama": "Budi Santoso",
-    "kelas": "Pemrograman Mobile SI-B",
+    "sekolah": "SMA Negeri 1 Jakarta",
     "points": 120
   }
 }
@@ -391,7 +391,7 @@ Authorization: Bearer <TOKEN>
 |---|---|---|
 | PATCH | `/api/user` | ✓ |
 
-Endpoint ini digunakan untuk memperbarui informasi akun user yang sedang login, seperti URL foto profil (`url_img`), nama lengkap, kelas, atau tanggal lahir.
+Endpoint ini digunakan untuk memperbarui informasi akun user yang sedang login, seperti URL foto profil (`url_img`), nama lengkap, sekolah, atau tanggal lahir.
 
 > **Alur Foto Profil (Cloudinary):**
 > 1. Klien meminta signature resmi ke server via `POST /api/create/signature` (§4.2).
@@ -405,7 +405,7 @@ Endpoint ini digunakan untuk memperbarui informasi akun user yang sedang login, 
 |---|---|---|---|---|
 | 1 | `url_img` | string | ✗* | URL foto profil dari Cloudinary (mis. `secure_url`) |
 | 2 | `nama` | string | ✗* | Nama lengkap baru (minimal 1 karakter) |
-| 3 | `kelas` | string | ✗* | Nama kelas baru |
+| 3 | `sekolah` | string | ✗* | Nama sekolah baru |
 | 4 | `tanggal_lahir` | string | ✗* | Format `YYYY-MM-DD`, tidak boleh di masa depan |
 
 > `*` Minimal satu field harus disertakan dalam body request.
@@ -433,7 +433,7 @@ Content-Type: application/json
 
 {
   "nama": "Budi Santoso Baru",
-  "kelas": "Pemrograman Mobile SI-A",
+  "sekolah": "SMA Negeri 2 Jakarta",
   "url_img": "https://res.cloudinary.com/dlxxyz123/image/upload/v1792154590/galery-quiz/quiz-image/avatar_124240200.jpg"
 }
 ```
@@ -456,7 +456,7 @@ Content-Type: application/json
   "user": {
     "username": "124240200",
     "nama": "Budi Santoso Baru",
-    "kelas": "Pemrograman Mobile SI-A",
+    "sekolah": "SMA Negeri 2 Jakarta",
     "tanggal_lahir": "2004-03-10",
     "url_img": "https://res.cloudinary.com/dlxxyz123/image/upload/v1792154590/galery-quiz/quiz-image/avatar_124240200.jpg",
     "points": 120
@@ -507,8 +507,8 @@ sequenceDiagram
     participant SP as SessionService / SharedPreferences
 
     Note over U,SP: Register - tidak menerbitkan token
-    U->>UI: isi nama, username, kelas, tanggal lahir, password
-    UI->>SVC: register(nama, username, kelas, tanggalLahir, password)
+    U->>UI: isi nama, username, sekolah, tanggal lahir, password
+    UI->>SVC: register(nama, username, sekolah, tanggalLahir, password)
     SVC->>SVC: hashPassword + formatTanggalLahir
     SVC->>AC: POST /api/register
     AC->>API: JSON body tanpa Authorization
@@ -592,14 +592,14 @@ sequenceDiagram
 | `lib/services/device_service.dart` | `DeviceService.instance.getId()` | `device_id` (`dev-<fnv1a>`) |
 | `lib/services/api/api_client.dart` | `headers()` | `User-Agent` smartphone; `Authorization` bila token ada |
 | `lib/services/session_service.dart` | `auth_token`, `auth_user` | disimpan setelah login berhasil |
-| `lib/pages/regis_page.dart` | controller nama/username/kelas/tanggal/password | body register; tanggal dikonversi `dd/mm/yyyy` → `YYYY-MM-DD` |
+| `lib/pages/regis_page.dart` | controller nama/username/sekolah/tanggal/password | body register; tanggal dikonversi `dd/mm/yyyy` → `YYYY-MM-DD` |
 
 1. `LoginPage._login()` memvalidasi `_usernameController` dan `_passwordController`, lalu memanggil `AuthService.login(username, password)`.
 2. `AuthService.login()` memanggil `hashPassword()` (SHA-256 hex lowercase), lalu `loginWithHash()` mengirim body `{username, password: passwordHash, device_id}` melalui `ApiClient.post`.
 3. `ApiClient.headers()` menambahkan `User-Agent` smartphone dari `DeviceService.instance.userAgent`; `device_id` dibuat stabil dari platform (`dev-...`).
 4. Respons `200` diubah menjadi `LoginResult(token, user)`. `LoginPage` menyimpan `token` ke `SharedPreferences` key `auth_token` dan `user` ke `auth_user` lewat `SessionService.saveSession`.
 5. Saat aplikasi dibuka kembali, `LoginPage._restoreSession()` mengambil `auth_token` lalu memanggil `AuthService.checkSession(token)`. Bila `checkSession` melempar error apa pun (`401`, timeout, atau masalah jaringan), `SessionService.clear()` dan `ActiveRoomService.clear()` dijalankan, lalu user diarahkan ke login.
-6. `RegisterPage._register()` mengisi `nama`, `username`, `kelas`, `tanggalLahir` (hasil `formatTanggalLahir`), dan `password`; `AuthService.register()` mengirim password yang sudah di-hash. Register **tidak** menyimpan token.
+6. `RegisterPage._register()` mengisi `nama`, `username`, `sekolah`, `tanggalLahir` (hasil `formatTanggalLahir`), dan `password`; `AuthService.register()` mengirim password yang sudah di-hash. Register **tidak** menyimpan token.
 7. Login biometrik memakai `loginWithHash()` dengan hash yang tersimpan, bukan plaintext. Logout di `ProfilePage._logout()` mengirim `AuthService.logout(token)`, lalu tetap menghapus sesi lokal dan cache walaupun server tidak terjangkau.
 
 **Output ke UI:**
@@ -1058,7 +1058,7 @@ Authorization: Bearer <TOKEN>
         {
           "id": "<room_id>",
           "judul": "Room Latihan Mobile",
-          "isi": "Sesi latihan pemrograman mobile bersama teman sekelas.",
+          "isi": "Sesi latihan pemrograman mobile bersama teman sekolah.",
           "kode": "482913",
           "status": "open",
           "type": "public",
@@ -3785,7 +3785,6 @@ perangkat, dan data disimpan di koleksi `feedback`.
 
 | No | Field | Tipe | Wajib | Deskripsi |
 |---|---|---|---|---|
-| 1 | `username` | string | ✅ | Username pengirim; spasi di awal/akhir dipangkas |
 | 2 | `saran` | string | ✅ | Saran pengguna; spasi di awal/akhir dipangkas |
 | 3 | `kesan` | string | ✅ | Kesan pengguna; spasi di awal/akhir dipangkas |
 
@@ -3800,7 +3799,6 @@ Host: localhost:8080
 Content-Type: application/json
 
 {
-  "username": "124240200",
   "saran": "Tambahkan mode latihan soal per bab.",
   "kesan": "Aplikasinya seru dan mudah dipakai."
 }
