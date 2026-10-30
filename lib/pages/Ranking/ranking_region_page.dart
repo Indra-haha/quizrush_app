@@ -8,6 +8,7 @@ import '../../services/session_service.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/app_header_bar_with_actions.dart';
 import '../../widgets/app_snackbar.dart';
+import '../../widgets/realtime_clock_widget.dart';
 import '../../widgets/status_filter.dart';
 
 class RankingRegionPage extends StatefulWidget {
@@ -455,9 +456,30 @@ class _RankingRegionPageState extends State<RankingRegionPage> {
                 ),
               ),
               const SizedBox(height: AppSpacing.space6),
-              Text(
-                'Leaderboard Wilayah',
-                style: AppTextStyles.rankingTitle,
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Leaderboard',
+                          style: AppTextStyles.rankingTitle,
+                        ),
+                        Text(
+                          'Wilayah',
+                          style: AppTextStyles.rankingTitle,
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.space2),
+                  const Padding(
+                    padding: EdgeInsets.only(top: 4),
+                    child: RealtimeClockWidget(),
+                  ),
+                ],
               ),
               const SizedBox(height: AppSpacing.space1),
               Text(

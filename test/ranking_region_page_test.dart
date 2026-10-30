@@ -75,7 +75,8 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('Leaderboard Wilayah'), findsOneWidget);
+      expect(find.text('Leaderboard'), findsOneWidget);
+      expect(find.text('Wilayah'), findsOneWidget);
       expect(find.text('Lokasi Wilayah Dinonaktifkan'), findsOneWidget);
       expect(find.text('Aktifkan'), findsOneWidget);
       expect(find.text('Lokasi Belum Diaktifkan'), findsOneWidget);
