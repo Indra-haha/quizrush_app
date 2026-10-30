@@ -245,6 +245,11 @@ class _SettingsState extends State<Settings> {
   }) {
     if (!mounted) return;
 
+    // Jika jawaban yang terpilih masih sama dengan pilihan sebelumnya,
+    // abaikan agar tidak memunculkan notifikasi berulang kali.
+    // Notifikasi hanya dimunculkan kembali saat user berpindah jawaban.
+    if (_selectedTilt == index) return;
+
     setState(() {
       _selectedTilt = index;
     });
@@ -524,183 +529,6 @@ class _GyroscopeCard extends StatelessWidget {
     this.angleInfo,
   });
 
-  Widget _buildRealtimeBadge() {
-    final info = angleInfo;
-    if (info == null || info.isCalibrating || !isCalibrated) {
-      return Container(
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.space3,
-          vertical: AppSpacing.space1,
-        ),
-        decoration: BoxDecoration(
-          color: AppColors.primarySoft,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(
-              Icons.sync_rounded,
-              size: 13,
-              color: AppColors.primary,
-            ),
-            const SizedBox(width: 4),
-            Text(
-              'Merekam Posisi...',
-              style: AppTextStyles.labelStrongSmall.copyWith(
-                color: AppColors.primary,
-                fontSize: 11,
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-
-    if (info.direction != null) {
-      final dir = info.direction!;
-      final color = CreateQuizQuestionStyles
-          .answerColors[dir.index % CreateQuizQuestionStyles.answerColors.length];
-      final label = dir == TiltDirection.forward
-          ? '⬆ Depan (${info.dominantAngle.toStringAsFixed(0)}°)'
-          : dir == TiltDirection.backward
-          ? '⬇ Belakang (${info.dominantAngle.toStringAsFixed(0)}°)'
-          : dir == TiltDirection.left
-          ? '⬅ Kiri (${info.dominantAngle.toStringAsFixed(0)}°)'
-          : '➡ Kanan (${info.dominantAngle.toStringAsFixed(0)}°)';
-
-      return Container(
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.space3,
-          vertical: AppSpacing.space1,
-        ),
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.18),
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: color, width: 1.5),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.bold,
-            color: color,
-          ),
-        ),
-      );
-    }
-
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.space3,
-        vertical: AppSpacing.space1,
-      ),
-      decoration: BoxDecoration(
-        color: AppColors.primarySoft,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppColors.primaryBorder),
-      ),
-      child: Text(
-        '⚪ Netral (< 15°)',
-        style: AppTextStyles.labelStrongSmall.copyWith(
-          color: AppColors.textSecondary,
-          fontSize: 11,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildDegreeStatusBox() {
-    final isCalibrating = angleInfo?.isCalibrating ?? false;
-    final dominant = angleInfo?.dominantAngle ?? 0.0;
-    final currentDir = angleInfo?.direction;
-    final targetAngle = angleInfo?.triggerAngle ?? 15.0;
-    final progress = (dominant / targetAngle).clamp(0.0, 1.0);
-
-    String statusText;
-    String detailText;
-    Color statusColor;
-
-    if (isCalibrating || !isCalibrated) {
-      statusText = 'Merekam posisi awal ponsel (0°)...';
-      detailText = 'Tahan smartphone di posisi membaca yang nyaman.';
-      statusColor = AppColors.primary;
-    } else if (currentDir != null) {
-      final dirName = currentDir == TiltDirection.forward
-          ? 'Tilt Depan'
-          : currentDir == TiltDirection.backward
-          ? 'Tilt Belakang'
-          : currentDir == TiltDirection.left
-          ? 'Miring Kiri'
-          : 'Miring Kanan';
-      statusText = '$dirName: ${dominant.toStringAsFixed(1)}° (≥ 15°) Terdeteksi!';
-      detailText = 'Opsi jawaban telah dipilih otomatis oleh sensor.';
-      statusColor = CreateQuizQuestionStyles
-          .answerColors[currentDir.index % CreateQuizQuestionStyles.answerColors.length];
-    } else {
-      statusText = 'Posisi Netral: ${dominant.toStringAsFixed(1)}° (Target min. 15.0°)';
-      detailText = 'Miringkan ponsel minimal 15° ke salah satu arah untuk menjawab.';
-      statusColor = AppColors.textSecondary;
-    }
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(AppSpacing.space4),
-      decoration: BoxDecoration(
-        color: statusColor.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(
-          color: statusColor.withValues(alpha: 0.25),
-          width: 1,
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(
-                currentDir != null
-                    ? currentDir.icon
-                    : Icons.screen_lock_rotation_rounded,
-                size: 16,
-                color: statusColor,
-              ),
-              const SizedBox(width: 6),
-              Expanded(
-                child: Text(
-                  statusText,
-                  style: AppTextStyles.labelStrongSmall.copyWith(
-                    color: statusColor,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 4),
-          Text(
-            detailText,
-            style: AppTextStyles.bodySmall.copyWith(
-              color: AppColors.textSecondary,
-              fontSize: 11,
-            ),
-          ),
-          const SizedBox(height: 6),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(4),
-            child: LinearProgressIndicator(
-              value: progress,
-              backgroundColor: AppColors.primaryBorder.withValues(alpha: 0.3),
-              valueColor: AlwaysStoppedAnimation<Color>(statusColor),
-              minHeight: 5,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -751,14 +579,8 @@ class _GyroscopeCard extends StatelessWidget {
                     ),
                   ),
                 ),
-                const SizedBox(width: AppSpacing.space2),
-                if (enabled) _buildRealtimeBadge(),
               ],
             ),
-            if (enabled) ...[
-              const SizedBox(height: AppSpacing.space4),
-              _buildDegreeStatusBox(),
-            ],
             const SizedBox(height: AppSpacing.space6),
             Column(
               children: [
