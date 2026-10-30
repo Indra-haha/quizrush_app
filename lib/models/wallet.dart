@@ -42,7 +42,7 @@ class WalletHistoryItem {
   bool get isClaim => pointsClaimed > 0 || rupiahValue > 0;
 }
 
-/// Respons dari GET /api/wallet/{user} maupun GET /api/me/wallet.
+/// Respons dari GET /api/me/wallet.
 class WalletResponse {
   final String status;
   final String message;
@@ -59,12 +59,34 @@ class WalletResponse {
   });
 
   factory WalletResponse.fromJson(Map<String, dynamic> json) {
+    // Dukung kemungkinan data dibungkus dalam key `data` seperti:
+    // { "status": "SUCCESS", "data": { "current_balance": 10000, ... } }
+    final rawData = json['data'];
+    final Map<String, dynamic> dataMap = rawData is Map<String, dynamic> ? rawData : json;
+
     return WalletResponse(
       status: jsonString(json['status'], 'SUCCESS'),
-      message: jsonString(json['message']),
-      walletAddress: jsonString(json['wallet_address']),
-      currentBalance: jsonInt(json['current_balance']),
-      data: jsonMapList(json['data']).map(WalletHistoryItem.fromJson).toList(),
+      message: jsonString(json['message'] ?? dataMap['message']),
+      walletAddress: jsonString(json['wallet_address'] ?? dataMap['wallet_address']),
+      currentBalance: jsonInt(
+        dataMap['current_balance'] ??
+            json['current_balance'] ??
+            dataMap['currentWallet'] ??
+            json['currentWallet'] ??
+            dataMap['current_wallet'] ??
+            json['current_wallet'] ??
+            dataMap['balance'] ??
+            json['balance'] ??
+            dataMap['saldo'] ??
+            json['saldo'] ??
+            dataMap['equivalent_rupiah'] ??
+            json['equivalent_rupiah'],
+      ),
+      data: rawData is List
+          ? jsonMapList(rawData).map(WalletHistoryItem.fromJson).toList()
+          : (dataMap['transactions'] is List
+              ? jsonMapList(dataMap['transactions']).map(WalletHistoryItem.fromJson).toList()
+              : jsonMapList(dataMap['data']).map(WalletHistoryItem.fromJson).toList()),
     );
   }
 }

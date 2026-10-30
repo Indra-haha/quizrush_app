@@ -150,7 +150,7 @@ class _RewardPageState extends State<RewardPage> {
       String? walletError;
 
       try {
-        final wallet = await _walletService.fetchMyWallet(token: token);
+        final wallet = await _walletService.fetchMyWallet(token: token, user: username);
         saldo = wallet.currentBalance;
         walletHistory = wallet.data;
         // Simpan ke cache lokal
@@ -240,7 +240,7 @@ class _RewardPageState extends State<RewardPage> {
   // ============================================================
 
   // Isi dari API saldo yang sudah ada di aplikasi.
-  int _saldoRupiah = 0;
+  int _saldoRupiah = RewardCacheService.instance.cachedWallet?.currentBalance ?? 0;
 
   // Controller input jumlah poin.
   final TextEditingController _pointConversionController =

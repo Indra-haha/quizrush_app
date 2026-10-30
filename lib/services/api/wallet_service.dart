@@ -1,3 +1,4 @@
+import 'package:http/http.dart' as http;
 import '../../helpers/json.dart';
 import '../../models/wallet.dart';
 import 'api_client.dart';
@@ -48,11 +49,34 @@ class WalletService {
 
   /// Ambil saldo rupiah on-chain dan riwayat transaksi dari GET /api/me/wallet.
   /// Identitas diambil dari token (tanpa perlu mengirim user di path).
-  Future<WalletResponse> fetchMyWallet({required String token}) async {
-    final response = await _api.get(
-      '/api/me/wallet',
-      token: token,
-    );
+  /// Bila endpoint `/api/me/wallet` gagal (mis. fallback 404), dicoba ke `/api/wallet/{user}` bila username tersedia.
+  Future<WalletResponse> fetchMyWallet({
+    required String token,
+    String? user,
+  }) async {
+    http.Response response;
+    try {
+      response = await _api.get(
+        '/api/me/wallet',
+        token: token,
+      );
+    } catch (_) {
+      if (user != null && user.isNotEmpty) {
+        response = await _api.get(
+          '/api/wallet/${Uri.encodeComponent(user)}',
+          token: token,
+        );
+      } else {
+        rethrow;
+      }
+    }
+
+    if (response.statusCode == 404 && user != null && user.isNotEmpty) {
+      response = await _api.get(
+        '/api/wallet/${Uri.encodeComponent(user)}',
+        token: token,
+      );
+    }
 
     final data = ApiClient.decode(response);
     if (response.statusCode != 200) {
@@ -70,7 +94,7 @@ class WalletService {
     required String token,
     String? user,
   }) async {
-    return fetchMyWallet(token: token);
+    return fetchMyWallet(token: token, user: user);
   }
 
 }

@@ -14,6 +14,11 @@ class RewardCacheService {
 
   static const _prefix = 'cache_reward_';
 
+  WalletResponse? _cachedWallet;
+
+  /// Nilai dompet/saldo yang tersimpan di memori (sinkron), null bila belum pernah dibaca/disimpan.
+  WalletResponse? get cachedWallet => _cachedWallet;
+
   Future<String> _scope() async {
     final user = await SessionService.instance.getUser();
     final username = (user?['username'] as String?)?.trim() ?? '';
@@ -71,6 +76,7 @@ class RewardCacheService {
   // ==========================================
 
   Future<void> saveWallet(WalletResponse data) async {
+    _cachedWallet = data;
     try {
       final prefs = await SharedPreferences.getInstance();
       final scope = await _scope();
@@ -106,7 +112,9 @@ class RewardCacheService {
       if (raw == null || raw.isEmpty) return null;
       final map = jsonDecode(raw);
       if (map is Map<String, dynamic>) {
-        return WalletResponse.fromJson(map);
+        final res = WalletResponse.fromJson(map);
+        _cachedWallet = res;
+        return res;
       }
     } catch (e) {
       debugPrint('Error reading wallet cache: $e');
