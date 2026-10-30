@@ -58,6 +58,7 @@ Respons `401` dari `middleware.Auth` memakai envelope bersarang `{ "status": 401
 | POST | `/api/login` | ✗ | Login dan mendapatkan token |
 | POST | `/api/logout` | ✓ | Mengakhiri sesi token |
 | GET | `/api/session` | ✓ | Mengecek sesi login masih aktif |
+| PATCH | `/api/user` | ✓ | Mengubah data profil user (foto profil `url_img`, nama, kelas, tanggal lahir) |
 | GET | `/api/my-quizzes` | ✓ | List kuis milik user (dikelompokkan by status room) |
 | POST | `/api/create/signature` | ✓ | Membuat signature Cloudinary untuk upload gambar kuis langsung dari klien |
 | POST | `/api/create/quiz` | ✓ | Membuat kuis baru (setelah gambar diunggah ke Cloudinary) |
@@ -384,13 +385,103 @@ Authorization: Bearer <TOKEN>
 { "status": 401, "error": "Unauthorized", "message": "User tidak ditemukan" }
 ```
 
-### 3.5 Alur Token — Auth
+### 3.5 PATCH /api/user
+
+| Metode | Path | Auth |
+|---|---|---|
+| PATCH | `/api/user` | ✓ |
+
+Endpoint ini digunakan untuk memperbarui informasi akun user yang sedang login, seperti URL foto profil (`url_img`), nama lengkap, kelas, atau tanggal lahir.
+
+> **Alur Foto Profil (Cloudinary):**
+> 1. Klien meminta signature resmi ke server via `POST /api/create/signature` (§4.2).
+> 2. Klien mengunggah file gambar langsung ke Cloudinary via `POST /image/upload` (§4.3) dengan kredensial & signature yang diperoleh.
+> 3. Cloudinary mengembalikan URL aman aset (`secure_url`).
+> 4. Klien memanggil `PATCH /api/user` dengan menyertakan `url_img: <secure_url>` di request body.
+
+**Request body:**
+
+| No | Field | Tipe | Wajib | Deskripsi |
+|---|---|---|---|---|
+| 1 | `url_img` | string | ✗* | URL foto profil dari Cloudinary (mis. `secure_url`) |
+| 2 | `nama` | string | ✗* | Nama lengkap baru (minimal 1 karakter) |
+| 3 | `kelas` | string | ✗* | Nama kelas baru |
+| 4 | `tanggal_lahir` | string | ✗* | Format `YYYY-MM-DD`, tidak boleh di masa depan |
+
+> `*` Minimal satu field harus disertakan dalam body request.
+
+**Contoh request (Ubah Foto Profil):**
+
+```http
+PATCH /api/user HTTP/1.1
+Host: localhost:8080
+Authorization: Bearer <TOKEN>
+Content-Type: application/json
+
+{
+  "url_img": "https://res.cloudinary.com/dlxxyz123/image/upload/v1792154590/galery-quiz/quiz-image/avatar_124240200.jpg"
+}
+```
+
+**Contoh request (Ubah Profil Lengkap):**
+
+```http
+PATCH /api/user HTTP/1.1
+Host: localhost:8080
+Authorization: Bearer <TOKEN>
+Content-Type: application/json
+
+{
+  "nama": "Budi Santoso Baru",
+  "kelas": "Pemrograman Mobile SI-A",
+  "url_img": "https://res.cloudinary.com/dlxxyz123/image/upload/v1792154590/galery-quiz/quiz-image/avatar_124240200.jpg"
+}
+```
+
+**Response:**
+
+| Status | Deskripsi |
+|---|---|
+| 200 | Profil user berhasil diperbarui |
+| 400 | Body kosong atau format data tidak valid |
+| 401 | Token tidak valid / sesi berakhir / bukan smartphone / user tidak ditemukan |
+| 500 | Gagal menyimpan perubahan data user |
+
+**Contoh response — `200 OK`**
+
+```json
+{
+  "success": true,
+  "message": "Profil berhasil diperbarui",
+  "user": {
+    "username": "124240200",
+    "nama": "Budi Santoso Baru",
+    "kelas": "Pemrograman Mobile SI-A",
+    "tanggal_lahir": "2004-03-10",
+    "url_img": "https://res.cloudinary.com/dlxxyz123/image/upload/v1792154590/galery-quiz/quiz-image/avatar_124240200.jpg",
+    "points": 120
+  }
+}
+```
+
+**Contoh response — `400 Bad Request`**
+
+```json
+// Body kosong
+{ "message": "Setidaknya satu field harus diisi untuk memperbarui profil" }
+
+// Tanggal lahir tidak valid
+{ "message": "Tanggal lahir tidak boleh di masa depan" }
+```
+
+### 3.6 Alur Token — Auth
 
 | Endpoint | Token yang dikirim | Token yang diterbitkan | Keterangan |
 |---|---|---|---|
 | `POST /api/register` | — | — | Hanya membuat akun; tidak ada sesi/token |
 | `POST /api/login` | — | Login JWT (24 jam) | Token ditandatangani HS256 dan hash-nya disimpan di `tokens` |
 | `GET /api/session` | Login JWT | — | Memvalidasi sesi dan mengembalikan user dari context |
+| `PATCH /api/user` | Login JWT | — | Memperbarui profil akun user dan foto profil |
 | `POST /api/logout` | Login JWT | — | Mencabut token aktif (`tokens.revoked_at`) |
 
 **Langkah alur token:**
@@ -3807,7 +3898,7 @@ curl -X POST http://localhost:8080/api/feedback \
 
 | Service | Bagian |
 |---|---|
-| Auth | §3.5 |
+| Auth | §3.6 |
 | Quiz | §4.6 |
 | Room | §5.6 |
 | Result | §6.5 |

@@ -9,5 +9,5 @@ export 'quiz_service.dart';
 export 'result_service.dart';
 export 'room_service.dart';
 export 'room_socket.dart';
+export 'user_service.dart';
 export 'wallet_service.dart';
-

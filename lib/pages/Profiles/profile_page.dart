@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:quizrush/pages/Profiles/sensor_settings.dart'
     show SensorSettingsPage;
 
 import '../../helpers/format.dart';
 import '../../helpers/password_hasher.dart';
+import '../../helpers/quiz_image.dart';
 import '../../services/active_room_service.dart';
 import '../../services/api/auth_service.dart';
+import '../../services/api/user_service.dart';
 import '../../services/biometric_service.dart';
 import '../../services/notification_service.dart';
 import '../../services/points_store.dart';
@@ -45,6 +48,8 @@ class _ProfilePageState extends State<ProfilePage> {
   bool _biometricEnabled = false;
   bool _biometricBusy = false;
   bool _notificationsEnabled = true;
+  bool _uploadingAvatar = false;
+  final ImagePicker _picker = ImagePicker();
 
   ProfileStatsService get _statsService =>
       widget.statsService ?? ProfileStatsService.instance;
@@ -212,11 +217,108 @@ class _ProfilePageState extends State<ProfilePage> {
   String get _nama => (_user?['nama'] as String?)?.trim() ?? '';
   String get _username => (_user?['username'] as String?)?.trim() ?? '';
   String get _kelas => (_user?['kelas'] as String?)?.trim() ?? '';
+  String? get _urlImg => (_user?['url_img'] as String?)?.trim();
 
   String get _initials {
     final words = _nama.split(RegExp(r'\s+'))..removeWhere((w) => w.isEmpty);
     if (words.isEmpty) return '?';
     return words.take(2).map((w) => w[0].toUpperCase()).join();
+  }
+
+  Future<void> _changeProfilePhoto() async {
+    if (_uploadingAvatar) return;
+
+    final source = await showModalBottomSheet<ImageSource>(
+      context: context,
+      backgroundColor: AppColors.pureSurface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            vertical: AppSpacing.space6,
+            horizontal: AppSpacing.space4,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Ubah Foto Profil',
+                style: AppTextStyles.heading6.copyWith(
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.space4),
+              ListTile(
+                leading: const Icon(
+                  Icons.photo_library_rounded,
+                  color: AppColors.primary,
+                ),
+                title: const Text('Pilih dari Galeri'),
+                onTap: () => Navigator.of(ctx).pop(ImageSource.gallery),
+              ),
+              ListTile(
+                leading: const Icon(
+                  Icons.camera_alt_rounded,
+                  color: AppColors.primary,
+                ),
+                title: const Text('Ambil dari Kamera'),
+                onTap: () => Navigator.of(ctx).pop(ImageSource.camera),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    if (source == null || !mounted) return;
+
+    try {
+      final picked = await _picker.pickImage(
+        source: source,
+        maxWidth: 1024,
+        imageQuality: 85,
+      );
+      if (picked == null || !mounted) return;
+
+      final bytes = await picked.readAsBytes();
+      if (!QuizImage.isWithinSizeLimit(bytes.length)) {
+        if (!mounted) return;
+        AppSnackBar.error(context, 'Ukuran foto maksimal 5 MB.');
+        return;
+      }
+
+      final token = await SessionService.instance.getToken();
+      if (token == null || token.isEmpty) {
+        if (!mounted) return;
+        AppSnackBar.error(context, 'Sesi berakhir. Silakan login kembali.');
+        return;
+      }
+
+      setState(() => _uploadingAvatar = true);
+
+      final updatedUser = await UserService.instance.updateProfilePhoto(
+        token: token,
+        imageBytes: bytes,
+        imageFilename: picked.name,
+      );
+
+      final mergedUser = Map<String, dynamic>.from(_user ?? {})
+        ..addAll(updatedUser);
+      await SessionService.instance.saveUser(mergedUser);
+
+      if (!mounted) return;
+      setState(() {
+        _user = mergedUser;
+      });
+      AppSnackBar.success(context, 'Foto profil berhasil diperbarui!');
+    } catch (e) {
+      if (!mounted) return;
+      AppSnackBar.error(context, 'Gagal memperbarui foto profil: $e');
+    } finally {
+      if (mounted) setState(() => _uploadingAvatar = false);
+    }
   }
 
   Future<void> _logout() async {
@@ -290,26 +392,28 @@ class _ProfilePageState extends State<ProfilePage> {
       ),
       children: [
         _ProfileHeroCard(
-            nama: _nama,
-            username: _username,
-            kelas: _kelas,
-            initials: _initials,
-          ),
+          nama: _nama,
+          username: _username,
+          kelas: _kelas,
+          initials: _initials,
+          urlImg: _urlImg,
+          onAvatarTap: _changeProfilePhoto,
+          isUploading: _uploadingAvatar,
+        ),
         const SizedBox(height: AppSpacing.space10),
-       _StatsCard(stats: _stats, points: PointsStore.instance.points),
+        _StatsCard(stats: _stats, points: PointsStore.instance.points),
         const SizedBox(height: AppSpacing.space10),
         _SettingsCard(
-            notificationsEnabled: _notificationsEnabled,
-            onNotificationsChanged: _toggleNotifications,
-            biometricEnabled: _biometricEnabled,
-            biometricBusy: _biometricBusy,
-            onBiometricChanged: _toggleBiometric,
-            onAdvancedTap: () => _sensorSettings('Pengaturan Sensor'),
-          ),
+          notificationsEnabled: _notificationsEnabled,
+          onNotificationsChanged: _toggleNotifications,
+          biometricEnabled: _biometricEnabled,
+          biometricBusy: _biometricBusy,
+          onBiometricChanged: _toggleBiometric,
+          onAdvancedTap: () => _sensorSettings('Pengaturan Sensor'),
+        ),
       ],
     );
   }
-
 }
 
 class _ProfileHeroCard extends StatelessWidget {
@@ -317,12 +421,18 @@ class _ProfileHeroCard extends StatelessWidget {
   final String username;
   final String kelas;
   final String initials;
+  final String? urlImg;
+  final VoidCallback? onAvatarTap;
+  final bool isUploading;
 
   const _ProfileHeroCard({
     required this.nama,
     required this.username,
     required this.kelas,
     required this.initials,
+    this.urlImg,
+    this.onAvatarTap,
+    this.isUploading = false,
   });
 
   @override
@@ -334,20 +444,88 @@ class _ProfileHeroCard extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Container(
-            width: AppSizes.profileAvatar,
-            height: AppSizes.profileAvatar,
-            padding: ProfileTheme.paddingSmall,
-            decoration: ProfileTheme.avatarDecoration,
-            child: ClipOval(
-              child: Container(
-                color: ProfileTheme.avatarBackground,
-                alignment: Alignment.center,
-                child: Text(
-                  initials,
-                  style: AppTextStyles.profileAvatarInitials,
+          GestureDetector(
+            onTap: isUploading ? null : onAvatarTap,
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Container(
+                  width: AppSizes.profileAvatar,
+                  height: AppSizes.profileAvatar,
+                  padding: ProfileTheme.paddingSmall,
+                  decoration: ProfileTheme.avatarDecoration,
+                  child: ClipOval(
+                    child: Container(
+                      color: ProfileTheme.avatarBackground,
+                      alignment: Alignment.center,
+                      child: isUploading
+                          ? const SizedBox(
+                              width: 24,
+                              height: 24,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2.5,
+                                color: AppColors.primary,
+                              ),
+                            )
+                          : (urlImg != null && urlImg!.isNotEmpty)
+                              ? Image.network(
+                                  urlImg!,
+                                  width: AppSizes.profileAvatar,
+                                  height: AppSizes.profileAvatar,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (_, _, _) => Text(
+                                    initials,
+                                    style: AppTextStyles.profileAvatarInitials,
+                                  ),
+                                  loadingBuilder: (_, child, progress) {
+                                    if (progress == null) return child;
+                                    return const Center(
+                                      child: SizedBox(
+                                        width: 20,
+                                        height: 20,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          color: AppColors.primary,
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                )
+                              : Text(
+                                  initials,
+                                  style: AppTextStyles.profileAvatarInitials,
+                                ),
+                    ),
+                  ),
                 ),
-              ),
+                Positioned(
+                  bottom: 2,
+                  right: 2,
+                  child: Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary,
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: AppColors.pureSurface,
+                        width: 2,
+                      ),
+                      boxShadow: const [
+                        BoxShadow(
+                          color: Color(0x33000000),
+                          blurRadius: 4,
+                          offset: Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: const Icon(
+                      Icons.camera_alt_rounded,
+                      size: 14,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
           const SizedBox(height: ProfileTheme.gapMedium),

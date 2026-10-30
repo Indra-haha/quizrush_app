@@ -15,6 +15,11 @@ class SessionService {
     await prefs.setString(_kUser, jsonEncode(user));
   }
 
+  Future<void> saveUser(Map<String, dynamic> user) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_kUser, jsonEncode(user));
+  }
+
   Future<String?> getToken() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString(_kToken);

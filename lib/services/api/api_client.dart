@@ -81,6 +81,21 @@ class ApiClient {
         .timeout(timeout);
   }
 
+  Future<http.Response> patch(
+    String path, {
+    String? token,
+    Object? body,
+    Duration timeout = defaultTimeout,
+  }) {
+    return _client
+        .patch(
+          uri(path),
+          headers: headers(token: token, body: body != null),
+          body: body == null ? null : jsonEncode(body),
+        )
+        .timeout(timeout);
+  }
+
   /// Kirim [request] mentah (mis. `MultipartRequest`) memakai client ini.
   Future<http.Response> send(
     http.BaseRequest request, {
