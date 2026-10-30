@@ -9,7 +9,7 @@ import '../../services/api/auth_service.dart';
 import '../../services/api/points_service.dart';
 import '../../services/api/wallet_service.dart';
 import '../../services/points_store.dart';
-import '../../services/reward_cache_service.dart';
+import '../../services/cache/reward_cache_service.dart';
 import '../../services/session_service.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/app_header_bar_with_actions.dart';

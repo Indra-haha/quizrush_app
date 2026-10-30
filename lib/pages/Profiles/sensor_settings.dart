@@ -422,12 +422,6 @@ class _SettingsState extends State<Settings> {
                 onRecalibrate: _recalibrateInitialPosition,
                 isCalibrated: _gyroService.hasBaseline,
               ),
-              const SizedBox(height: AppSpacing.space8),
-              _LocationCard(
-                enabled: _locationEnabled,
-                busy: _locationBusy,
-                onChanged: _toggleLocation,
-              ),
             ],
           ),
         ),
@@ -737,57 +731,3 @@ class _GyroscopeCard extends StatelessWidget {
   }
 }
 
-class _LocationCard extends StatelessWidget {
-  final bool enabled;
-  final bool busy;
-  final ValueChanged<bool> onChanged;
-
-  const _LocationCard({
-    required this.enabled,
-    required this.busy,
-    required this.onChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      decoration: ProfileTheme.cardDecoration,
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.space8),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Expanded(
-                  child: Text(
-                    'Aktifkan\nLokasi (GPS)',
-                    style: AppTextStyles.heading6.copyWith(
-                      color: AppColors.textPrimary,
-                      height: 1.25,
-                    ),
-                  ),
-                ),
-                _SensorToggle(
-                  value: enabled,
-                  enabled: !busy,
-                  onChanged: onChanged,
-                ),
-              ],
-            ),
-            const SizedBox(height: AppSpacing.space6),
-            Text(
-              'Gunakan sensor lokasi untuk menampilkan leaderboard peringkat wilayah (kecamatan, kota, provinsi). Sekali diaktifkan, lokasi akan tetap berlaku hingga dimatikan sendiri.',
-              style: AppTextStyles.bodyMedium.copyWith(
-                color: AppColors.textSecondary,
-                height: 1.43,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}

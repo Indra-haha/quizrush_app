@@ -2,7 +2,7 @@ import 'package:flutter/foundation.dart';
 
 import '../models/quiz.dart';
 import 'api/api_client.dart';
-import 'quiz_cache_service.dart';
+import 'cache/quiz_cache_service.dart';
 import 'quiz_index.dart';
 import 'api/quiz_service.dart';
 import 'session_service.dart';

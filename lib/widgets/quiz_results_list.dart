@@ -40,7 +40,7 @@ class QuizResultsList extends StatelessWidget {
           : EmptyStateView.noResult(query);
       return Padding(
         padding: const EdgeInsets.only(
-          top: AppSpacing.space4,
+          top: AppSpacing.scrollClearance,
           bottom: AppSpacing.scrollClearance,
         ),
         child: emptyWidget,

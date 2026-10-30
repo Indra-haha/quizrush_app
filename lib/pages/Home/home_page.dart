@@ -251,7 +251,7 @@ class _HomePageState extends State<HomePage> {
 
   Widget _buildEmpty() {
     return const Padding(
-      padding: EdgeInsets.symmetric(vertical: AppSpacing.space14),
+      padding: EdgeInsets.symmetric(vertical: AppSpacing.scrollClearance),
       child: EmptyStateView.empty(message: 'Belum ada quiz untukmu.'),
     );
   }

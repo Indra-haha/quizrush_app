@@ -2,7 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quizrush/models/quiz.dart';
-import 'package:quizrush/services/quiz_cache_service.dart';
+import 'package:quizrush/services/cache/quiz_cache_service.dart';
 import 'package:quizrush/services/quiz_index.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 

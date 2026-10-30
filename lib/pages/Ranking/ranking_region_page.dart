@@ -454,7 +454,7 @@ class _RankingRegionPageState extends State<RankingRegionPage> {
                   ],
                 ),
               ),
-              const SizedBox(height: AppSpacing.space4),
+              const SizedBox(height: AppSpacing.space6),
               Text(
                 'Leaderboard Wilayah',
                 style: AppTextStyles.rankingTitle,
@@ -467,7 +467,7 @@ class _RankingRegionPageState extends State<RankingRegionPage> {
                   height: 1.71,
                 ),
               ),
-              const SizedBox(height: AppSpacing.space4),
+              const SizedBox(height: AppSpacing.space6),
               StatusFilter<String>(
                 values: const ['kecamatan', 'kota', 'provinsi'],
                 selected: _activeLevel,

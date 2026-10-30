@@ -11,7 +11,7 @@ import '../../services/notification_service.dart';
 import '../../services/points_store.dart';
 import '../../services/profile_settings_service.dart';
 import '../../services/profile_stats_service.dart';
-import '../../services/quiz_cache_service.dart';
+import '../../services/cache/quiz_cache_service.dart';
 import '../../services/session_service.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/app_header_bar_with_actions.dart';
