@@ -42,6 +42,14 @@ class _CreateRoomSheetState extends State<CreateRoomSheet> {
   List<Quizes> get _quarantine => widget.all;
 
   @override
+  void initState() {
+    super.initState();
+    if (_quarantine.isNotEmpty) {
+      _selectedQuizId = _quarantine.first.id;
+    }
+  }
+
+  @override
   void dispose() {
     _titleController.dispose();
     _descriptionController.dispose();
@@ -105,33 +113,90 @@ class _CreateRoomSheetState extends State<CreateRoomSheet> {
         children: [
           _buildFieldLabel('Pilih Kuis'),
           const SizedBox(height: AppSpacing.space2),
-          DropdownButtonFormField<String>(
-            initialValue: _selectedQuizId,
-            isExpanded: true,
-            isDense: true,
-            menuMaxHeight: MediaQuery.sizeOf(context).height * 0.4,
-            style: AppTextStyles.body,
-            decoration: _inputDecoration('Pilih kuis...'),
-            hint: Text(
-              _quarantine.isEmpty
-                  ? 'Tidak ada kuis tanpa room'
-                  : 'Pilih kuis...',
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: CreateQuizTextStyles.fieldHint,
+          Container(
+            decoration: BoxDecoration(
+              color: AppColors.pureSurface,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: AppColors.primaryBorder,
+                width: 1,
+              ),
             ),
-            items: [
-              for (final quiz in _quarantine)
-                DropdownMenuItem(
-                  value: quiz.id,
-                  child: Text(
-                    quiz.title,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.space4),
+            child: DropdownButtonHideUnderline(
+              child: DropdownButton<String>(
+                value: _quarantine.any((q) => q.id == _selectedQuizId)
+                    ? _selectedQuizId
+                    : null,
+                isExpanded: true,
+                borderRadius: BorderRadius.circular(12),
+                icon: const Icon(
+                  Icons.keyboard_arrow_down_rounded,
+                  color: AppColors.textPrimary,
                 ),
-            ],
-            onChanged: _submitting ? null : _onQuizChanged,
+                hint: Text(
+                  _quarantine.isEmpty
+                      ? 'Tidak ada kuis tanpa room'
+                      : 'Pilih kuis...',
+                  style: CreateQuizTextStyles.fieldHint,
+                ),
+                items: _quarantine.map((quiz) {
+                  final isSelected = quiz.id == _selectedQuizId;
+                  return DropdownMenuItem<String>(
+                    value: quiz.id,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.space2,
+                        vertical: AppSpacing.space2,
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.quiz_outlined,
+                            size: 20,
+                            color: isSelected
+                                ? AppColors.primary
+                                : AppColors.textSecondary,
+                          ),
+                          const SizedBox(width: AppSpacing.space3),
+                          Expanded(
+                            child: Text(
+                              quiz.title,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: AppTextStyles.body.copyWith(
+                                fontWeight: isSelected
+                                    ? FontWeight.w700
+                                    : FontWeight.w600,
+                                color: isSelected
+                                    ? AppColors.primary
+                                    : AppColors.textPrimary,
+                              ),
+                            ),
+                          ),
+                          if (quiz.description.isNotEmpty) ...[
+                            const SizedBox(width: AppSpacing.space2),
+                            Flexible(
+                              child: Text(
+                                '— ${quiz.description}',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: AppTextStyles.bodySecondary.copyWith(
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  );
+                }).toList(),
+                onChanged: _submitting || _quarantine.isEmpty
+                    ? null
+                    : _onQuizChanged,
+              ),
+            ),
           ),
           const SizedBox(height: AppSpacing.space8),
           _buildFieldLabel('Judul'),

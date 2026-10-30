@@ -161,7 +161,12 @@ class _WaitingRoomPageState extends State<WaitingRoomPage> {
     final emoji = _cheers[Random().nextInt(_cheers.length)];
     HapticFeedback.mediumImpact();
     final size = MediaQuery.of(context).size;
-    ReactionOverlay.show(context, emoji, x: size.width / 2);
+    ReactionOverlay.show(
+      context,
+      emoji,
+      username: _me.isNotEmpty ? _me : _myLabel,
+      x: size.width / 2,
+    );
     final socket = _socket;
     if (socket == null) return;
     socket.sendReaction(emoji);
@@ -328,8 +333,13 @@ class _WaitingRoomPageState extends State<WaitingRoomPage> {
       case 'reaction':
         final reaction = RoomSocket.parseReaction(message.data);
         if (reaction != null) {
-          // Sorakan masuk tampil melayang sejenak, tanpa chat teks.
-          ReactionOverlay.show(context, reaction);
+          // Sorakan masuk tampil melayang beserta username pengirimnya.
+          final sender = _labelOf(message.from);
+          ReactionOverlay.show(
+            context,
+            reaction,
+            username: sender.isNotEmpty ? sender : null,
+          );
         } else if (message.data != null) {
           AppSnackBar.show(
             context,
